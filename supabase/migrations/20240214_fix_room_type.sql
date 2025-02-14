@@ -14,6 +14,11 @@ UPDATE venue_rooms
 SET room_type = 'other'
 WHERE room_type IS NULL;
 
--- Make room_type not null again
-ALTER TABLE venue_rooms 
-ALTER COLUMN room_type SET NOT NULL;
+-- Make room_type not null if it isn't already
+DO $$ 
+BEGIN
+    ALTER TABLE venue_rooms 
+    ALTER COLUMN room_type SET NOT NULL;
+EXCEPTION
+    WHEN others THEN null;
+END $$;
