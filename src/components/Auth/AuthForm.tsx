@@ -3,15 +3,10 @@ import { supabase } from '../../lib/supabase';
 
 type AuthMode = 'sign-in' | 'sign-up';
 
-const validateEmail = (email: string): boolean => {
-  const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  return re.test(email);
-};
-
 export const AuthForm: React.FC = () => {
-  const [mode, setMode] = useState<AuthMode>('sign-up');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [mode, setMode] = useState<AuthMode>('sign-in');
+  const [username, setUsername] = useState('demo');
+  const [password, setPassword] = useState('demo123');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,8 +14,8 @@ export const AuthForm: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    if (!validateEmail(email)) {
-      setError('Please enter a valid email address');
+    if (username.length < 3) {
+      setError('Username must be at least 3 characters');
       return;
     }
 
@@ -33,14 +28,13 @@ export const AuthForm: React.FC = () => {
 
     try {
       if (mode === 'sign-up') {
-        console.log('Attempting signup with:', { email });
+        console.log('Attempting signup with:', { username });
         const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
+          email: `${username}@wedding.local`,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
             data: {
-              email
+              username
             }
           }
         });
@@ -51,11 +45,10 @@ export const AuthForm: React.FC = () => {
         }
         
         console.log('Signup successful:', data);
-        setError('Please check your email for the confirmation link.');
       } else {
-        console.log('Attempting signin with:', { email });
+        console.log('Attempting signin with:', { username });
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
+          email: `${username}@wedding.local`,
           password
         });
         
@@ -81,6 +74,11 @@ export const AuthForm: React.FC = () => {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             {mode === 'sign-in' ? 'Sign in to your account' : 'Create your account'}
           </h2>
+          {mode === 'sign-in' && (
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Default credentials: demo / demo123
+            </p>
+          )}
         </div>
         
         {error && (
@@ -93,13 +91,13 @@ export const AuthForm: React.FC = () => {
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <input
-                name="email"
-                type="email"
+                name="username"
+                type="text"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
               />
             </div>
             <div>
@@ -131,6 +129,14 @@ export const AuthForm: React.FC = () => {
             onClick={() => {
               setMode(mode === 'sign-in' ? 'sign-up' : 'sign-in');
               setError(null);
+              // Reset to default credentials when switching to sign-in
+              if (mode === 'sign-up') {
+                setUsername('demo');
+                setPassword('demo123');
+              } else {
+                setUsername('');
+                setPassword('');
+              }
             }}
             className="text-emerald-600 hover:text-emerald-500"
           >
