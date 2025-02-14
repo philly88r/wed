@@ -13,7 +13,7 @@ interface VenueSelectorProps {
   rooms: Room[];
   selectedRoom: string;
   onSelect: (roomId: string) => void;
-  setRooms: (rooms: Room[]) => void;
+  setRooms: React.Dispatch<React.SetStateAction<Room[]>>;
 }
 
 export const VenueSelector: React.FC<VenueSelectorProps> = ({
@@ -58,11 +58,13 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
         return;
       }
 
-      setRooms(prev => [...prev, data]);
-      setShowCreateForm(false);
-      setNewRoomName('');
-      setNewRoomLength('');
-      setNewRoomWidth('');
+      if (data) {
+        setRooms(prev => [...prev, data as Room]);
+        setShowCreateForm(false);
+        setNewRoomName('');
+        setNewRoomLength('');
+        setNewRoomWidth('');
+      }
     } catch (err) {
       console.error('Error creating room:', err);
       setError('Failed to create room. Please try again.');
