@@ -167,6 +167,29 @@ export function Seating() {
     }
   };
 
+  const calculateScale = (room: Room) => {
+    // Get window dimensions, leaving some margin
+    const maxWidth = window.innerWidth - 100; // 50px margin on each side
+    const maxHeight = window.innerHeight - 200; // 100px margin on top and bottom
+
+    // Calculate scales that would fit the room in each dimension
+    const scaleX = maxWidth / room.length;
+    const scaleY = maxHeight / room.width;
+
+    // Use the smaller scale to ensure room fits in both dimensions
+    // Round down to nearest multiple of 5 for cleaner numbers
+    return Math.floor(Math.min(scaleX, scaleY) / 5) * 5;
+  };
+
+  useEffect(() => {
+    if (selectedRoom) {
+      const room = rooms.find(r => r.id === selectedRoom);
+      if (room) {
+        setScale(calculateScale(room));
+      }
+    }
+  }, [selectedRoom, rooms]);
+
   const selectedRoomData = selectedRoom ? rooms.find(r => r.id === selectedRoom) : null;
 
   return (

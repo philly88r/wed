@@ -196,7 +196,9 @@ export const TableEditor: React.FC<TableEditorProps> = ({
     position: 'relative' as const,
     border: '2px solid #ccc',
     backgroundColor: '#f9fafb',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    maxWidth: '100%',
+    maxHeight: 'calc(100vh - 200px)' // Leave space for header and margins
   };
 
   return (
