@@ -42,6 +42,7 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
     }
 
     try {
+      console.log('Creating room with:', { name: newRoomName, length, width });
       const { data, error: insertError } = await supabase
         .from('venue_rooms')
         .insert({
@@ -58,6 +59,7 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
         return;
       }
 
+      console.log('Created room:', data);
       if (data) {
         setRooms(prev => [...prev, data as Room]);
         setShowCreateForm(false);

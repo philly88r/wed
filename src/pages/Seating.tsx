@@ -55,6 +55,7 @@ export function Seating() {
 
   const fetchRooms = async () => {
     try {
+      console.log('Fetching rooms...');
       const { data, error } = await supabase
         .from('venue_rooms')
         .select('*')
@@ -65,6 +66,7 @@ export function Seating() {
         return;
       }
 
+      console.log('Fetched rooms:', data);
       setRooms(data || []);
     } catch (err) {
       console.error('Error fetching rooms:', err);
