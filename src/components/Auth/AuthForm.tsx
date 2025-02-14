@@ -1,70 +1,19 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { supabase } from '../../lib/supabase';
-
-type AuthMode = 'sign-in' | 'sign-up';
+import { useNavigate } from 'react-router-dom';
 
 export const AuthForm: React.FC = () => {
-  const [mode, setMode] = useState<AuthMode>('sign-in');
-  const [username, setUsername] = useState('demo');
-  const [password, setPassword] = useState('demo123');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (username.length < 3) {
-      setError('Username must be at least 3 characters');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      if (mode === 'sign-up') {
-        console.log('Attempting signup with:', { username });
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email: `${username}@wedding.local`,
-          password,
-          options: {
-            data: {
-              username
-            }
-          }
-        });
-        
-        if (signUpError) {
-          console.error('Signup error:', signUpError);
-          throw signUpError;
-        }
-        
-        console.log('Signup successful:', data);
-      } else {
-        console.log('Attempting signin with:', { username });
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email: `${username}@wedding.local`,
-          password
-        });
-        
-        if (signInError) {
-          console.error('Signin error:', signInError);
-          throw signInError;
-        }
-        
-        console.log('Signin successful:', data);
-      }
-    } catch (err) {
-      console.error('Full error object:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
+  const navigate = useNavigate();
+  
+  const handleEnterSite = async () => {
+    // Sign in with a test account automatically
+    await supabase.auth.signInWithPassword({
+      email: 'test@test.com',
+      password: 'test123'
+    });
+    
+    // Navigate to dashboard
+    navigate('/dashboard');
   };
 
   return (
@@ -72,75 +21,19 @@ export const AuthForm: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {mode === 'sign-in' ? 'Sign in to your account' : 'Create your account'}
+            Wedding Planner
           </h2>
-          {mode === 'sign-in' && (
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Default credentials: demo / demo123
-            </p>
-          )}
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Click below to enter the site
+          </p>
         </div>
-        
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
-            <span className="block sm:inline">{error}</span>
-          </div>
-        )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleAuth}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <input
-                name="username"
-                type="text"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 focus:z-10 sm:text-sm"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
-            <div>
-              <input
-                name="password"
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50"
-            >
-              {loading ? 'Loading...' : mode === 'sign-in' ? 'Sign in' : 'Sign up'}
-            </button>
-          </div>
-        </form>
-
-        <div className="text-center">
+        <div>
           <button
-            onClick={() => {
-              setMode(mode === 'sign-in' ? 'sign-up' : 'sign-in');
-              setError(null);
-              // Reset to default credentials when switching to sign-in
-              if (mode === 'sign-up') {
-                setUsername('demo');
-                setPassword('demo123');
-              } else {
-                setUsername('');
-                setPassword('');
-              }
-            }}
-            className="text-emerald-600 hover:text-emerald-500"
+            onClick={handleEnterSite}
+            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
           >
-            {mode === 'sign-in' ? 'Create an account' : 'Already have an account? Sign in'}
+            Enter Site
           </button>
         </div>
       </div>
