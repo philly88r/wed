@@ -1,6 +1,22 @@
+-- Create a system user UUID if needed (for templates)
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+DO $$ 
+BEGIN
+    -- Create system_user if it doesn't exist
+    INSERT INTO auth.users (id, email, role)
+    VALUES (
+        '00000000-0000-0000-0000-000000000000',
+        'system@wedding-planner.com',
+        'authenticated'
+    )
+    ON CONFLICT (id) DO NOTHING;
+END $$;
+
 -- Create table_templates table if it doesn't exist
 CREATE TABLE IF NOT EXISTS table_templates (
     id uuid primary key default uuid_generate_v4(),
+    created_by uuid not null default '00000000-0000-0000-0000-000000000000' references auth.users(id),
     name text not null,
     shape text not null check (shape in ('round', 'rectangular', 'square', 'oval')),
     width numeric not null,
