@@ -127,7 +127,8 @@ export function Seating() {
           room_id: selectedRoom,
           position_x: 0,
           position_y: 0,
-          rotation: 0
+          rotation: 0,
+          created_by: '00000000-0000-0000-0000-000000000000'
         })
         .select(`
           *,
