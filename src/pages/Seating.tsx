@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Plus, TableIcon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { TableEditor } from '../components/Seating/TableEditor';
-import { RoomSelector } from '../components/Seating/RoomSelector';
+import { VenueSelector } from '../components/Seating/VenueSelector';
 
 interface Room {
   id: string;
@@ -169,10 +169,11 @@ export function Seating() {
   return (
     <div className="container mx-auto p-4">
       <div className="space-y-4">
-        <RoomSelector
+        <VenueSelector
           rooms={rooms}
           selectedRoom={selectedRoom}
           onSelect={setSelectedRoom}
+          setRooms={setRooms}
         />
 
         {selectedRoom && (

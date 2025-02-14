@@ -5,20 +5,22 @@ import { Plus } from 'lucide-react';
 interface Room {
   id: string;
   name: string;
-  length: number; // in feet
-  width: number; // in feet
+  length: number;
+  width: number;
 }
 
-interface RoomSelectorProps {
+interface VenueSelectorProps {
   rooms: Room[];
   selectedRoom: string;
   onSelect: (roomId: string) => void;
+  setRooms: (rooms: Room[]) => void;
 }
 
-export const RoomSelector: React.FC<RoomSelectorProps> = ({
+export const VenueSelector: React.FC<VenueSelectorProps> = ({
   rooms,
   selectedRoom,
-  onSelect
+  onSelect,
+  setRooms
 }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
@@ -40,13 +42,15 @@ export const RoomSelector: React.FC<RoomSelectorProps> = ({
     }
 
     try {
-      const { error: insertError } = await supabase
+      const { data, error: insertError } = await supabase
         .from('venue_rooms')
         .insert({
           name: newRoomName,
           length,
           width
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) {
         console.error('Error creating room:', insertError);
@@ -54,8 +58,11 @@ export const RoomSelector: React.FC<RoomSelectorProps> = ({
         return;
       }
 
-      // Refresh the page to show the new room
-      window.location.reload();
+      setRooms(prev => [...prev, data]);
+      setShowCreateForm(false);
+      setNewRoomName('');
+      setNewRoomLength('');
+      setNewRoomWidth('');
     } catch (err) {
       console.error('Error creating room:', err);
       setError('Failed to create room. Please try again.');
@@ -160,4 +167,4 @@ export const RoomSelector: React.FC<RoomSelectorProps> = ({
   );
 };
 
-export default RoomSelector;
+export default VenueSelector;
