@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS table_templates (
 -- Enable RLS
 ALTER TABLE table_templates ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if any
+DROP POLICY IF EXISTS "Allow public read access" ON table_templates;
+
 -- Allow public access for now
 CREATE POLICY "Allow public read access"
     ON table_templates
@@ -32,5 +35,4 @@ VALUES
     ('Square Table (8)', 'square', 6, 6, 8),
     ('Oval Table (12)', 'oval', 5, 12, 12),
     ('Head Table (16)', 'rectangular', 4, 16, 16),
-    ('Sweetheart Table', 'rectangular', 3, 4, 2)
-ON CONFLICT (id) DO NOTHING;
+    ('Sweetheart Table', 'rectangular', 3, 4, 2);
