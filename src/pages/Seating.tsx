@@ -51,26 +51,12 @@ export function Seating() {
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showCreateLayoutModal, setShowCreateLayoutModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        window.location.href = '/auth';
-        return;
-      }
-      setUser(session.user);
-      setLoading(false);
-    });
+    fetchVenues();
+    fetchTemplates();
   }, []);
-
-  useEffect(() => {
-    if (user) {
-      fetchVenues();
-      fetchTemplates();
-    }
-  }, [user]);
 
   useEffect(() => {
     if (selectedVenue) {
@@ -87,8 +73,7 @@ export function Seating() {
   const fetchVenues = async () => {
     const { data, error } = await supabase
       .from('venues')
-      .select('*')
-      .eq('created_by', user.id);
+      .select('*');
 
     if (error) {
       console.error('Error fetching venues:', error);
@@ -102,8 +87,7 @@ export function Seating() {
     const { data, error } = await supabase
       .from('seating_layouts')
       .select('*')
-      .eq('venue_id', selectedVenue)
-      .eq('created_by', user.id);
+      .eq('venue_id', selectedVenue);
 
     if (error) {
       console.error('Error fetching layouts:', error);
@@ -116,8 +100,7 @@ export function Seating() {
   const fetchTemplates = async () => {
     const { data, error } = await supabase
       .from('table_templates')
-      .select('*')
-      .eq('created_by', user.id);
+      .select('*');
 
     if (error) {
       console.error('Error fetching templates:', error);
@@ -130,7 +113,7 @@ export function Seating() {
   const fetchTables = async () => {
     const { data, error } = await supabase
       .from('table_instances')
-      .select('*, template:template_id(*)')
+      .select('*, template:table_templates(*)')
       .eq('layout_id', selectedLayout);
 
     if (error) {
@@ -141,59 +124,40 @@ export function Seating() {
     setTables(data || []);
   };
 
-  const handleTableMove = async (tableId: string, deltaX: number, deltaY: number) => {
-    const table = tables.find(t => t.id === tableId);
-    if (!table) return;
-
-    const newX = table.position_x + deltaX;
-    const newY = table.position_y + deltaY;
-
-    const { error } = await supabase
-      .from('table_instances')
-      .update({
-        position_x: newX,
-        position_y: newY
-      })
-      .eq('id', tableId);
+  const handleCreateLayout = async (layoutData: Partial<SeatingLayout>) => {
+    const { data, error } = await supabase
+      .from('seating_layouts')
+      .insert([{ ...layoutData, venue_id: selectedVenue }])
+      .select()
+      .single();
 
     if (error) {
-      console.error('Error updating table position:', error);
+      console.error('Error creating layout:', error);
       return;
     }
 
-    setTables(prev => prev.map(t => 
-      t.id === tableId 
-        ? { ...t, position_x: newX, position_y: newY }
-        : t
-    ));
+    setLayouts([...layouts, data]);
+    setSelectedLayout(data.id);
+    setShowCreateLayoutModal(false);
   };
 
-  const handleRotateTable = async (tableId: string) => {
-    const table = tables.find(t => t.id === tableId);
-    if (!table) return;
-
-    const newRotation = (table.rotation + 45) % 360;
-
+  const handleUpdateTable = async (tableId: string, updates: Partial<TableInstance>) => {
     const { error } = await supabase
       .from('table_instances')
-      .update({
-        rotation: newRotation
-      })
+      .update(updates)
       .eq('id', tableId);
 
     if (error) {
-      console.error('Error updating table rotation:', error);
+      console.error('Error updating table:', error);
       return;
     }
 
-    setTables(prev => prev.map(t => 
-      t.id === tableId 
-        ? { ...t, rotation: newRotation }
-        : t
+    setTables(tables.map(table => 
+      table.id === tableId ? { ...table, ...updates } : table
     ));
   };
 
-  const addTable = async () => {
+  const handleAddTable = async () => {
     if (!selectedTemplate || !selectedLayout) return;
 
     const template = templates.find(t => t.id === selectedTemplate);
@@ -201,15 +165,15 @@ export function Seating() {
 
     const { data, error } = await supabase
       .from('table_instances')
-      .insert({
-        layout_id: selectedLayout,
+      .insert([{
         template_id: selectedTemplate,
-        name: `${template.name} ${tables.length + 1}`,
-        position_x: 100,
-        position_y: 100,
-        rotation: 0
-      })
-      .select('*, template:template_id(*)')
+        layout_id: selectedLayout,
+        position_x: 0,
+        position_y: 0,
+        rotation: 0,
+        name: `Table ${tables.length + 1}`
+      }])
+      .select('*, template:table_templates(*)')
       .single();
 
     if (error) {
@@ -217,175 +181,92 @@ export function Seating() {
       return;
     }
 
-    setTables(prev => [...prev, data]);
-    setShowTemplateModal(false);
+    setTables([...tables, data]);
   };
 
-  const currentLayout = layouts.find(l => l.id === selectedLayout);
-
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-4xl font-bold text-red-500">TESTING - CAN YOU SEE THIS?</h1>
-        <button
-          onClick={() => window.location.href = '/auth'}
-          className="bg-red-500 text-white px-4 py-2 rounded-lg text-xl"
-        >
-          TEST LOGIN BUTTON
-        </button>
-      </div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Seating Layout</h1>
-        <div className="flex gap-4">
+    <div className="p-4">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <VenueSelector
+            venues={venues}
+            selectedVenue={selectedVenue}
+            onSelect={setSelectedVenue}
+          />
           {selectedVenue && (
-            <button
-              onClick={() => setShowCreateLayoutModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-            >
-              <Plus className="w-4 h-4" />
-              New Layout
-            </button>
-          )}
-          {selectedLayout && (
-            <button
-              onClick={() => setShowTemplateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              <TableIcon className="w-4 h-4" />
-              Add Table
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="flex flex-col space-y-4">
-        <VenueSelector 
-          onVenueSelect={(venue) => {
-            if (venue) {
-              setSelectedVenue(venue.id);
-            } else {
-              setSelectedVenue('');
-              setSelectedLayout('');
-            }
-          }} 
-        />
-
-        {selectedVenue && (
-          <div className="flex items-center justify-between">
-            <div className="flex-1 mr-4">
-              <label htmlFor="layout" className="block text-sm font-medium text-gray-700">
-                Select Layout
-              </label>
+            <>
               <select
-                id="layout"
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                className="border rounded p-2"
                 value={selectedLayout}
                 onChange={(e) => setSelectedLayout(e.target.value)}
               >
-                <option value="">Select a layout</option>
-                {layouts.map((layout) => (
+                <option value="">Select Layout</option>
+                {layouts.map(layout => (
                   <option key={layout.id} value={layout.id}>
-                    {layout.name} ({layout.width}' × {layout.length}')
+                    {layout.name}
                   </option>
                 ))}
               </select>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <div>
-          <label className="block mb-2">Scale (px/ft)</label>
-          <input
-            type="number"
-            value={scale}
-            onChange={(e) => setScale(Number(e.target.value))}
-            min={20}
-            max={100}
-            step={5}
-            className="w-full p-2 border rounded"
-          />
+              <button
+                className="bg-emerald-500 text-white px-4 py-2 rounded flex items-center"
+                onClick={() => setShowCreateLayoutModal(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Layout
+              </button>
+            </>
+          )}
         </div>
-
-        {currentLayout && (
-          <div>
-            <label className="block mb-2">Room Size</label>
-            <div className="text-sm text-gray-600">
-              {currentLayout.width}' × {currentLayout.length}'
-              ({currentLayout.width * currentLayout.length} sq ft)
-            </div>
-          </div>
-        )}
       </div>
 
-      {currentLayout && (
-        <div className="overflow-auto p-4 bg-gray-100 rounded-lg">
-          <div className="mb-4 text-sm text-gray-600">
-            Grid lines represent 1 foot intervals. Tables are drawn to scale.
-          </div>
+      {selectedLayout && (
+        <div className="mb-4 flex items-center space-x-4">
+          <select
+            className="border rounded p-2"
+            value={selectedTemplate}
+            onChange={(e) => setSelectedTemplate(e.target.value)}
+          >
+            <option value="">Select Table Template</option>
+            {templates.map(template => (
+              <option key={template.id} value={template.id}>
+                {template.name} ({template.shape}, {template.seats} seats)
+              </option>
+            ))}
+          </select>
+          <button
+            className="bg-emerald-500 text-white px-4 py-2 rounded flex items-center"
+            onClick={handleAddTable}
+            disabled={!selectedTemplate}
+          >
+            <TableIcon className="w-4 h-4 mr-2" />
+            Add Table
+          </button>
+        </div>
+      )}
+
+      {selectedLayout && (
+        <div className="border rounded-lg p-4 bg-white">
           <TableEditor
             tables={tables}
-            onTableMove={handleTableMove}
-            layoutWidth={currentLayout.width}
-            layoutLength={currentLayout.length}
             scale={scale}
+            onUpdateTable={handleUpdateTable}
+            layout={layouts.find(l => l.id === selectedLayout)}
           />
         </div>
       )}
 
-      {/* Template Selection Modal */}
-      {showTemplateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full">
-            <h2 className="text-xl font-bold mb-4">Add Table</h2>
-            <div className="mb-4">
-              <label className="block mb-2">Table Template</label>
-              <select
-                value={selectedTemplate}
-                onChange={(e) => setSelectedTemplate(e.target.value)}
-                className="w-full p-2 border rounded"
-              >
-                <option value="">Select Template</option>
-                {templates.map(template => (
-                  <option key={template.id} value={template.id}>
-                    {template.name} ({template.width}' × {template.length}', {template.seats} seats)
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowTemplateModal(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={addTable}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                disabled={!selectedTemplate}
-              >
-                Add Table
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create Layout Modal */}
       {showCreateLayoutModal && (
         <CreateLayoutModal
-          venueId={selectedVenue}
           onClose={() => setShowCreateLayoutModal(false)}
-          onLayoutCreated={(layoutId) => {
-            fetchLayouts();
-            setSelectedLayout(layoutId);
-          }}
+          onCreate={handleCreateLayout}
         />
       )}
     </div>
   );
 }
+
+export default Seating;
