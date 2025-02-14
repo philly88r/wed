@@ -1,18 +1,11 @@
 import React from 'react';
-import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 
 export const AuthForm: React.FC = () => {
   const navigate = useNavigate();
   
-  const handleEnterSite = async () => {
-    // Sign in with a test account automatically
-    await supabase.auth.signInWithPassword({
-      email: 'test@test.com',
-      password: 'test123'
-    });
-    
-    // Navigate to dashboard
+  const handleEnterSite = () => {
+    // Just navigate to dashboard without auth
     navigate('/dashboard');
   };
 
