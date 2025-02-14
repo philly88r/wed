@@ -16,6 +16,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="space-x-4">
             <Link to="/dashboard" className="text-white hover:text-emerald-100">Dashboard</Link>
             <Link to="/guests" className="text-white hover:text-emerald-100">Guests</Link>
+            <Link to="/seating" className="text-white hover:text-emerald-100">Seating Chart</Link>
             <Link to="/budget" className="text-white hover:text-emerald-100">Budget</Link>
             <Link to="/timeline" className="text-white hover:text-emerald-100">Timeline</Link>
             <Link to="/vendors" className="text-white hover:text-emerald-100">Vendors</Link>
