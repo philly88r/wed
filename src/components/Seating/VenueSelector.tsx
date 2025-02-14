@@ -26,7 +26,7 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
   const handleCreateVenue = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('venues')
         .insert({
           name: newVenueName,
