@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Sidebar } from './components/Sidebar';
+import AuthForm from './components/Auth/AuthForm';
 import { Budget } from './pages/Budget';
 import { Timeline } from './pages/Timeline';
 import { Vendors } from './pages/Vendors';
@@ -9,26 +9,24 @@ import { Events } from './pages/Events';
 import { VisionBoard } from './pages/VisionBoard';
 import { Seating } from './pages/Seating';
 import { Dashboard } from './pages/Dashboard';
-import Questionnaire from './components/Questionnaire';
-import { supabase } from './lib/supabase';
-import type { User } from '@supabase/supabase-js';
-import type { Profile } from './lib/supabase';
 import { Test } from './pages/Test';
+import Layout from './components/Layout/Layout';
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/budget" element={<Budget />} />
-        <Route path="/timeline" element={<Timeline />} />
-        <Route path="/vendors" element={<Vendors />} />
-        <Route path="/guests" element={<Guests />} />
-        <Route path="/checklist" element={<Checklist />} />
-        <Route path="/events" element={<Events />} />
-        <Route path="/vision-board" element={<VisionBoard />} />
-        <Route path="/seating" element={<Seating />} />
-        <Route path="/test" element={<Test />} />
+        <Route path="/" element={<AuthForm />} />
+        <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+        <Route path="/budget" element={<Layout><Budget /></Layout>} />
+        <Route path="/timeline" element={<Layout><Timeline /></Layout>} />
+        <Route path="/vendors" element={<Layout><Vendors /></Layout>} />
+        <Route path="/guests" element={<Layout><Guests /></Layout>} />
+        <Route path="/checklist" element={<Layout><Checklist /></Layout>} />
+        <Route path="/events" element={<Layout><Events /></Layout>} />
+        <Route path="/vision-board" element={<Layout><VisionBoard /></Layout>} />
+        <Route path="/seating" element={<Layout><Seating /></Layout>} />
+        <Route path="/test" element={<Layout><Test /></Layout>} />
       </Routes>
     </Router>
   );
