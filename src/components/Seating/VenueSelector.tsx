@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Plus } from 'lucide-react';
 
@@ -9,163 +9,110 @@ interface Venue {
 }
 
 interface VenueSelectorProps {
-  onVenueSelect: (venue: Venue | null) => void;
+  venues: Venue[];
+  selectedVenue: string;
+  onSelect: (venueId: string) => void;
 }
 
 export const VenueSelector: React.FC<VenueSelectorProps> = ({
-  onVenueSelect,
+  venues,
+  selectedVenue,
+  onSelect
 }) => {
-  const [venues, setVenues] = useState<Venue[]>([]);
-  const [selectedVenue, setSelectedVenue] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newVenueName, setNewVenueName] = useState('');
   const [newVenueAddress, setNewVenueAddress] = useState('');
 
-  useEffect(() => {
-    fetchVenues();
-  }, []);
-
-  useEffect(() => {
-    if (selectedVenue) {
-      const venue = venues.find(v => v.id === selectedVenue) || null;
-      onVenueSelect(venue);
-    } else {
-      onVenueSelect(null);
-    }
-  }, [selectedVenue, venues]);
-
-  const fetchVenues = async () => {
-    try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('Please log in to view venues');
-      }
-
-      const { data, error } = await supabase
-        .from('venues')
-        .select('*')
-        .eq('created_by', user.id);
-
-      if (error) throw error;
-
-      setVenues(data || []);
-    } catch (err) {
-      console.error('Error fetching venues:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCreateVenue = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('Please log in to create a venue');
-      }
-
       const { data, error } = await supabase
         .from('venues')
         .insert({
           name: newVenueName,
-          address: newVenueAddress,
-          created_by: user.id
+          address: newVenueAddress
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      setVenues(prev => [...prev, data]);
       setNewVenueName('');
       setNewVenueAddress('');
       setShowCreateForm(false);
     } catch (err) {
       console.error('Error creating venue:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
 
-  if (loading) return <div>Loading venues...</div>;
-  if (error) return <div>Error: {error}</div>;
-
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="flex-1 mr-4">
-          <label htmlFor="venue" className="block text-sm font-medium text-gray-700">
-            Select Venue
-          </label>
-          <select
-            id="venue"
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-            value={selectedVenue}
-            onChange={(e) => setSelectedVenue(e.target.value)}
-          >
-            <option value="">Select a venue</option>
-            {venues.map((venue) => (
-              <option key={venue.id} value={venue.id}>
-                {venue.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      <div className="flex items-center space-x-4">
+        <select
+          className="border rounded p-2"
+          value={selectedVenue}
+          onChange={(e) => onSelect(e.target.value)}
         >
-          <Plus className="h-5 w-5 mr-2" />
-          Add Venue
+          <option value="">Select Venue</option>
+          {venues.map(venue => (
+            <option key={venue.id} value={venue.id}>
+              {venue.name}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={() => setShowCreateForm(true)}
+          className="bg-emerald-500 text-white px-4 py-2 rounded flex items-center"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          New Venue
         </button>
       </div>
 
       {showCreateForm && (
-        <form onSubmit={handleCreateVenue} className="space-y-4 mt-4 p-4 bg-gray-50 rounded-md">
-          <div>
-            <label htmlFor="venueName" className="block text-sm font-medium text-gray-700">
-              Venue Name
-            </label>
-            <input
-              type="text"
-              id="venueName"
-              value={newVenueName}
-              onChange={(e) => setNewVenueName(e.target.value)}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-            />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full">
+            <h2 className="text-xl font-bold mb-4">Create New Venue</h2>
+            <form onSubmit={handleCreateVenue}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block mb-1">Venue Name</label>
+                  <input
+                    type="text"
+                    value={newVenueName}
+                    onChange={(e) => setNewVenueName(e.target.value)}
+                    className="w-full p-2 border rounded"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1">Address (Optional)</label>
+                  <input
+                    type="text"
+                    value={newVenueAddress}
+                    onChange={(e) => setNewVenueAddress(e.target.value)}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateForm(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600"
+                >
+                  Create Venue
+                </button>
+              </div>
+            </form>
           </div>
-          <div>
-            <label htmlFor="venueAddress" className="block text-sm font-medium text-gray-700">
-              Address (optional)
-            </label>
-            <input
-              type="text"
-              id="venueAddress"
-              value={newVenueAddress}
-              onChange={(e) => setNewVenueAddress(e.target.value)}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
-          <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={() => setShowCreateForm(false)}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              Create Venue
-            </button>
-          </div>
-        </form>
+        </div>
       )}
     </div>
   );

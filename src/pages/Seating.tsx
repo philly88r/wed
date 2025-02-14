@@ -113,7 +113,10 @@ export function Seating() {
   const fetchTables = async () => {
     const { data, error } = await supabase
       .from('table_instances')
-      .select('*, template:table_templates(*)')
+      .select(`
+        *,
+        template:table_templates (*)
+      `)
       .eq('layout_id', selectedLayout);
 
     if (error) {
@@ -124,10 +127,17 @@ export function Seating() {
     setTables(data || []);
   };
 
-  const handleCreateLayout = async (layoutData: Partial<SeatingLayout>) => {
+  const handleCreateLayout = async (name: string, width: number, length: number) => {
+    if (!selectedVenue) return;
+
     const { data, error } = await supabase
       .from('seating_layouts')
-      .insert([{ ...layoutData, venue_id: selectedVenue }])
+      .insert({
+        name,
+        venue_id: selectedVenue,
+        width,
+        length
+      })
       .select()
       .single();
 
@@ -136,9 +146,38 @@ export function Seating() {
       return;
     }
 
-    setLayouts([...layouts, data]);
-    setSelectedLayout(data.id);
+    setLayouts(prev => [...prev, data]);
     setShowCreateLayoutModal(false);
+  };
+
+  const handleAddTable = async () => {
+    if (!selectedLayout || !selectedTemplate) return;
+
+    const template = templates.find(t => t.id === selectedTemplate);
+    if (!template) return;
+
+    const { data, error } = await supabase
+      .from('table_instances')
+      .insert({
+        name: template.name,
+        template_id: template.id,
+        layout_id: selectedLayout,
+        position_x: 0,
+        position_y: 0,
+        rotation: 0
+      })
+      .select(`
+        *,
+        template:table_templates (*)
+      `)
+      .single();
+
+    if (error) {
+      console.error('Error adding table:', error);
+      return;
+    }
+
+    setTables(prev => [...prev, data]);
   };
 
   const handleUpdateTable = async (tableId: string, updates: Partial<TableInstance>) => {
@@ -157,107 +196,86 @@ export function Seating() {
     ));
   };
 
-  const handleAddTable = async () => {
-    if (!selectedTemplate || !selectedLayout) return;
-
-    const template = templates.find(t => t.id === selectedTemplate);
-    if (!template) return;
-
-    const { data, error } = await supabase
-      .from('table_instances')
-      .insert([{
-        template_id: selectedTemplate,
-        layout_id: selectedLayout,
-        position_x: 0,
-        position_y: 0,
-        rotation: 0,
-        name: `Table ${tables.length + 1}`
-      }])
-      .select('*, template:table_templates(*)')
-      .single();
-
-    if (error) {
-      console.error('Error adding table:', error);
-      return;
-    }
-
-    setTables([...tables, data]);
-  };
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   return (
-    <div className="p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <VenueSelector
-            venues={venues}
-            selectedVenue={selectedVenue}
-            onSelect={setSelectedVenue}
-          />
-          {selectedVenue && (
-            <>
+    <div className="container mx-auto p-4">
+      <div className="space-y-4">
+        <VenueSelector
+          venues={venues}
+          selectedVenue={selectedVenue}
+          onSelect={setSelectedVenue}
+        />
+
+        {selectedVenue && (
+          <div className="flex justify-between items-center">
+            <div className="flex-1 mr-4">
+              <label htmlFor="layout" className="block text-sm font-medium text-gray-700">
+                Select Layout
+              </label>
               <select
-                className="border rounded p-2"
+                id="layout"
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                 value={selectedLayout}
                 onChange={(e) => setSelectedLayout(e.target.value)}
               >
-                <option value="">Select Layout</option>
-                {layouts.map(layout => (
+                <option value="">Select a layout</option>
+                {layouts.map((layout) => (
                   <option key={layout.id} value={layout.id}>
                     {layout.name}
                   </option>
                 ))}
               </select>
+            </div>
+            <button
+              onClick={() => setShowCreateLayoutModal(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Add Layout
+            </button>
+          </div>
+        )}
+
+        {selectedLayout && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <div className="flex-1 mr-4">
+                <label htmlFor="template" className="block text-sm font-medium text-gray-700">
+                  Select Table Template
+                </label>
+                <select
+                  id="template"
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  value={selectedTemplate}
+                  onChange={(e) => setSelectedTemplate(e.target.value)}
+                >
+                  <option value="">Select a template</option>
+                  {templates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name} ({template.seats} seats)
+                    </option>
+                  ))}
+                </select>
+              </div>
               <button
-                className="bg-emerald-500 text-white px-4 py-2 rounded flex items-center"
-                onClick={() => setShowCreateLayoutModal(true)}
+                onClick={handleAddTable}
+                disabled={!selectedTemplate}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
               >
-                <Plus className="w-4 h-4 mr-2" />
-                New Layout
+                <TableIcon className="h-5 w-5 mr-2" />
+                Add Table
               </button>
-            </>
-          )}
-        </div>
+            </div>
+
+            <TableEditor
+              tables={tables}
+              setTables={setTables}
+              scale={scale}
+              layout={layouts.find(l => l.id === selectedLayout)}
+              onUpdateTable={handleUpdateTable}
+            />
+          </div>
+        )}
       </div>
-
-      {selectedLayout && (
-        <div className="mb-4 flex items-center space-x-4">
-          <select
-            className="border rounded p-2"
-            value={selectedTemplate}
-            onChange={(e) => setSelectedTemplate(e.target.value)}
-          >
-            <option value="">Select Table Template</option>
-            {templates.map(template => (
-              <option key={template.id} value={template.id}>
-                {template.name} ({template.shape}, {template.seats} seats)
-              </option>
-            ))}
-          </select>
-          <button
-            className="bg-emerald-500 text-white px-4 py-2 rounded flex items-center"
-            onClick={handleAddTable}
-            disabled={!selectedTemplate}
-          >
-            <TableIcon className="w-4 h-4 mr-2" />
-            Add Table
-          </button>
-        </div>
-      )}
-
-      {selectedLayout && (
-        <div className="border rounded-lg p-4 bg-white">
-          <TableEditor
-            tables={tables}
-            scale={scale}
-            onUpdateTable={handleUpdateTable}
-            layout={layouts.find(l => l.id === selectedLayout)}
-          />
-        </div>
-      )}
 
       {showCreateLayoutModal && (
         <CreateLayoutModal
