@@ -2,46 +2,63 @@ import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Plus } from 'lucide-react';
 
-interface Venue {
+interface Room {
   id: string;
   name: string;
-  address?: string;
+  length: number; // in feet
+  width: number; // in feet
 }
 
-interface VenueSelectorProps {
-  venues: Venue[];
-  selectedVenue: string;
-  onSelect: (venueId: string) => void;
+interface RoomSelectorProps {
+  rooms: Room[];
+  selectedRoom: string;
+  onSelect: (roomId: string) => void;
 }
 
-export const VenueSelector: React.FC<VenueSelectorProps> = ({
-  venues,
-  selectedVenue,
+export const RoomSelector: React.FC<RoomSelectorProps> = ({
+  rooms,
+  selectedRoom,
   onSelect
 }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newVenueName, setNewVenueName] = useState('');
-  const [newVenueAddress, setNewVenueAddress] = useState('');
+  const [newRoomName, setNewRoomName] = useState('');
+  const [newRoomLength, setNewRoomLength] = useState('');
+  const [newRoomWidth, setNewRoomWidth] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const handleCreateVenue = async (e: React.FormEvent) => {
+  const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
+    // Validate dimensions
+    const length = parseFloat(newRoomLength);
+    const width = parseFloat(newRoomWidth);
+    
+    if (isNaN(length) || length <= 0 || isNaN(width) || width <= 0) {
+      setError('Please enter valid dimensions (greater than 0)');
+      return;
+    }
+
     try {
-      const { error } = await supabase
-        .from('venues')
+      const { error: insertError } = await supabase
+        .from('venue_rooms')
         .insert({
-          name: newVenueName,
-          address: newVenueAddress
-        })
-        .select()
-        .single();
+          name: newRoomName,
+          length,
+          width
+        });
 
-      if (error) throw error;
+      if (insertError) {
+        console.error('Error creating room:', insertError);
+        setError(insertError.message);
+        return;
+      }
 
-      setNewVenueName('');
-      setNewVenueAddress('');
-      setShowCreateForm(false);
+      // Refresh the page to show the new room
+      window.location.reload();
     } catch (err) {
-      console.error('Error creating venue:', err);
+      console.error('Error creating room:', err);
+      setError('Failed to create room. Please try again.');
     }
   };
 
@@ -50,13 +67,13 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
       <div className="flex items-center space-x-4">
         <select
           className="border rounded p-2"
-          value={selectedVenue}
+          value={selectedRoom}
           onChange={(e) => onSelect(e.target.value)}
         >
-          <option value="">Select Venue</option>
-          {venues.map(venue => (
-            <option key={venue.id} value={venue.id}>
-              {venue.name}
+          <option value="">Select Room</option>
+          {rooms.map(room => (
+            <option key={room.id} value={room.id}>
+              {room.name} ({room.length}' × {room.width}')
             </option>
           ))}
         </select>
@@ -65,40 +82,65 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
           className="bg-emerald-500 text-white px-4 py-2 rounded flex items-center"
         >
           <Plus className="w-4 h-4 mr-2" />
-          New Venue
+          New Room
         </button>
       </div>
 
       {showCreateForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg p-6 max-w-lg w-full">
-            <h2 className="text-xl font-bold mb-4">Create New Venue</h2>
-            <form onSubmit={handleCreateVenue}>
+            <h2 className="text-xl font-bold mb-4">Create New Room</h2>
+            <form onSubmit={handleCreateRoom}>
               <div className="space-y-4">
                 <div>
-                  <label className="block mb-1">Venue Name</label>
+                  <label className="block mb-1">Room Name</label>
                   <input
                     type="text"
-                    value={newVenueName}
-                    onChange={(e) => setNewVenueName(e.target.value)}
+                    value={newRoomName}
+                    onChange={(e) => setNewRoomName(e.target.value)}
                     className="w-full p-2 border rounded"
                     required
                   />
                 </div>
-                <div>
-                  <label className="block mb-1">Address (Optional)</label>
-                  <input
-                    type="text"
-                    value={newVenueAddress}
-                    onChange={(e) => setNewVenueAddress(e.target.value)}
-                    className="w-full p-2 border rounded"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block mb-1">Length (feet)</label>
+                    <input
+                      type="number"
+                      value={newRoomLength}
+                      onChange={(e) => setNewRoomLength(e.target.value)}
+                      className="w-full p-2 border rounded"
+                      min="1"
+                      step="0.1"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-1">Width (feet)</label>
+                    <input
+                      type="number"
+                      value={newRoomWidth}
+                      onChange={(e) => setNewRoomWidth(e.target.value)}
+                      className="w-full p-2 border rounded"
+                      min="1"
+                      step="0.1"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
+              {error && (
+                <div className="mt-2 text-red-500 text-sm">
+                  {error}
+                </div>
+              )}
               <div className="flex justify-end gap-2 mt-4">
                 <button
                   type="button"
-                  onClick={() => setShowCreateForm(false)}
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setError(null);
+                  }}
                   className="px-4 py-2 text-gray-600 hover:text-gray-800"
                 >
                   Cancel
@@ -107,7 +149,7 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
                   type="submit"
                   className="px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600"
                 >
-                  Create Venue
+                  Create Room
                 </button>
               </div>
             </form>
@@ -118,4 +160,4 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
   );
 };
 
-export default VenueSelector;
+export default RoomSelector;
