@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS table_templates (
     width numeric not null,
     length numeric not null,
     seats integer not null,
-    is_premium boolean default false,
     created_at timestamptz default now(),
     updated_at timestamptz default now()
 );
@@ -22,16 +21,16 @@ CREATE POLICY "Allow public read access"
 
 -- Insert default templates
 INSERT INTO table_templates 
-    (name, shape, width, length, seats, is_premium)
+    (name, shape, width, length, seats)
 VALUES 
-    ('Round Table (8)', 'round', 5, 5, 8, false),
-    ('Round Table (10)', 'round', 6, 6, 10, false),
-    ('Round Table (12)', 'round', 7, 7, 12, false),
-    ('Rectangular Table (8)', 'rectangular', 4, 8, 8, false),
-    ('Rectangular Table (10)', 'rectangular', 4, 10, 10, false),
-    ('Square Table (4)', 'square', 4, 4, 4, false),
-    ('Square Table (8)', 'square', 6, 6, 8, false),
-    ('Oval Table (12)', 'oval', 5, 12, 12, true),
-    ('Head Table (16)', 'rectangular', 4, 16, 16, true),
-    ('Sweetheart Table', 'rectangular', 3, 4, 2, true)
+    ('Round Table (8)', 'round', 5, 5, 8),
+    ('Round Table (10)', 'round', 6, 6, 10),
+    ('Round Table (12)', 'round', 7, 7, 12),
+    ('Rectangular Table (8)', 'rectangular', 4, 8, 8),
+    ('Rectangular Table (10)', 'rectangular', 4, 10, 10),
+    ('Square Table (4)', 'square', 4, 4, 4),
+    ('Square Table (8)', 'square', 6, 6, 8),
+    ('Oval Table (12)', 'oval', 5, 12, 12),
+    ('Head Table (16)', 'rectangular', 4, 16, 16),
+    ('Sweetheart Table', 'rectangular', 3, 4, 2)
 ON CONFLICT (id) DO NOTHING;
