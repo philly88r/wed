@@ -177,9 +177,10 @@ export function Seating() {
     const scaleY = maxHeight / room.width;
 
     // Use the smaller scale to ensure room fits in both dimensions
-    // Round down to nearest multiple of 5 for cleaner numbers
-    // Multiply by 0.98 to leave just a tiny bit of breathing room
-    return Math.floor(Math.min(scaleX, scaleY) * 0.98 / 5) * 5;
+    // Round down to nearest multiple of 10 for cleaner numbers
+    // Base scale is now 30 pixels per foot instead of previous smaller value
+    const baseScale = Math.floor(Math.min(scaleX, scaleY) * 0.98 / 10) * 10;
+    return Math.max(baseScale, 30); // Minimum of 30 pixels per foot
   };
 
   useEffect(() => {
