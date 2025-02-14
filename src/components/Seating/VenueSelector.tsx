@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Plus } from 'lucide-react';
 
+type RoomType = 'ceremony' | 'reception' | 'cocktail' | 'other';
+
 interface Room {
   id: string;
   name: string;
   length: number;
   width: number;
+  room_type: RoomType;
 }
 
 interface VenueSelectorProps {
@@ -26,6 +29,7 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomLength, setNewRoomLength] = useState('');
   const [newRoomWidth, setNewRoomWidth] = useState('');
+  const [newRoomType, setNewRoomType] = useState<RoomType>('reception');
   const [error, setError] = useState<string | null>(null);
 
   const handleCreateRoom = async (e: React.FormEvent) => {
@@ -42,13 +46,14 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
     }
 
     try {
-      console.log('Creating room with:', { name: newRoomName, length, width });
+      console.log('Creating room with:', { name: newRoomName, length, width, room_type: newRoomType });
       const { data, error: insertError } = await supabase
         .from('venue_rooms')
         .insert({
           name: newRoomName,
           length,
-          width
+          width,
+          room_type: newRoomType
         })
         .select()
         .single();
@@ -66,6 +71,7 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
         setNewRoomName('');
         setNewRoomLength('');
         setNewRoomWidth('');
+        setNewRoomType('reception');
       }
     } catch (err) {
       console.error('Error creating room:', err);
@@ -84,7 +90,7 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
           <option value="">Select Room</option>
           {rooms.map(room => (
             <option key={room.id} value={room.id}>
-              {room.name} ({room.length}' × {room.width}')
+              {room.name} ({room.length}' × {room.width}') - {room.room_type}
             </option>
           ))}
         </select>
@@ -112,6 +118,20 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
                     className="w-full p-2 border rounded"
                     required
                   />
+                </div>
+                <div>
+                  <label className="block mb-1">Room Type</label>
+                  <select
+                    value={newRoomType}
+                    onChange={(e) => setNewRoomType(e.target.value as RoomType)}
+                    className="w-full p-2 border rounded"
+                    required
+                  >
+                    <option value="ceremony">Ceremony</option>
+                    <option value="reception">Reception</option>
+                    <option value="cocktail">Cocktail</option>
+                    <option value="other">Other</option>
+                  </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
