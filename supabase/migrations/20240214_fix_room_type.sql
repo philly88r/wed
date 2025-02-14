@@ -11,7 +11,7 @@ ALTER COLUMN room_type DROP NOT NULL;
 
 -- Set default room_type for existing rows
 UPDATE venue_rooms 
-SET room_type = 'other'
+SET room_type = 'RECEPTION'
 WHERE room_type IS NULL;
 
 -- Make room_type not null if it isn't already
