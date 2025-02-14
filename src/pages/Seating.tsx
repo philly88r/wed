@@ -168,9 +168,9 @@ export function Seating() {
   };
 
   const calculateScale = (room: Room) => {
-    // Get window dimensions, leaving some margin
-    const maxWidth = window.innerWidth - 100; // 50px margin on each side
-    const maxHeight = window.innerHeight - 200; // 100px margin on top and bottom
+    // Get window dimensions with minimal margins
+    const maxWidth = window.innerWidth - 24; // 12px margin on each side
+    const maxHeight = window.innerHeight - 80; // 40px margin on top and bottom
 
     // Calculate scales that would fit the room in each dimension
     const scaleX = maxWidth / room.length;
@@ -178,7 +178,8 @@ export function Seating() {
 
     // Use the smaller scale to ensure room fits in both dimensions
     // Round down to nearest multiple of 5 for cleaner numbers
-    return Math.floor(Math.min(scaleX, scaleY) / 5) * 5;
+    // Multiply by 0.98 to leave just a tiny bit of breathing room
+    return Math.floor(Math.min(scaleX, scaleY) * 0.98 / 5) * 5;
   };
 
   useEffect(() => {

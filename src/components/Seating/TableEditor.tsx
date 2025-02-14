@@ -111,7 +111,8 @@ const DraggableTable: React.FC<{
   table: TableInstance;
   scale: number;
   onMouseDown: (e: React.MouseEvent) => void;
-}> = ({ table, scale, onMouseDown }) => {
+  onRotate: (amount: number) => void;
+}> = ({ table, scale, onMouseDown, onRotate }) => {
   return (
     <div
       style={{
@@ -120,11 +121,35 @@ const DraggableTable: React.FC<{
         top: table.position_y * scale,
         cursor: 'move',
         userSelect: 'none',
-        transform: `rotate(${table.rotation}deg)`,
       }}
-      onMouseDown={onMouseDown}
     >
-      <TableShape table={table} scale={scale} />
+      <div style={{ position: 'relative' }}>
+        <div
+          style={{
+            transform: `rotate(${table.rotation}deg)`,
+          }}
+        >
+          <TableShape table={table} scale={scale} />
+        </div>
+        
+        {/* Rotation controls */}
+        <div className="absolute top-0 right-0 -mr-8 space-y-1">
+          <button
+            className="p-1 bg-white border border-gray-300 rounded shadow hover:bg-gray-50"
+            onClick={() => onRotate(-45)}
+            title="Rotate left"
+          >
+            ↺
+          </button>
+          <button
+            className="p-1 bg-white border border-gray-300 rounded shadow hover:bg-gray-50"
+            onClick={() => onRotate(45)}
+            title="Rotate right"
+          >
+            ↻
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
@@ -149,6 +174,23 @@ export const TableEditor: React.FC<TableEditorProps> = ({
         y: e.clientY - table.position_y * scale
       };
     }
+  };
+
+  const handleRotate = (tableId: string, amount: number) => {
+    const table = tables.find(t => t.id === tableId);
+    if (!table) return;
+
+    const newRotation = (table.rotation + amount + 360) % 360;
+    
+    // Update table rotation
+    onUpdateTable(table.id, {
+      rotation: newRotation
+    });
+
+    // Update local state for immediate feedback
+    setTables(tables.map(t =>
+      t.id === table.id ? { ...t, rotation: newRotation } : t
+    ));
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -197,8 +239,9 @@ export const TableEditor: React.FC<TableEditorProps> = ({
     border: '2px solid #ccc',
     backgroundColor: '#f9fafb',
     overflow: 'hidden',
-    maxWidth: '100%',
-    maxHeight: 'calc(100vh - 200px)' // Leave space for header and margins
+    maxWidth: 'calc(100vw - 24px)', // 12px margin on each side
+    maxHeight: 'calc(100vh - 80px)', // 40px margin on top and bottom
+    margin: '12px auto' // Center horizontally with minimal top/bottom margin
   };
 
   return (
@@ -224,6 +267,7 @@ export const TableEditor: React.FC<TableEditorProps> = ({
             table={table}
             scale={scale}
             onMouseDown={(e) => handleMouseDown(e, table.id)}
+            onRotate={(amount) => handleRotate(table.id, amount)}
           />
         ))}
       </div>
