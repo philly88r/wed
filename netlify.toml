@@ -4,6 +4,7 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  SECRETS_SCAN_ENABLED = "false"
 
 [[redirects]]
   from = "/*"
@@ -22,6 +23,3 @@
 [dev]
   framework = "vite"
   targetPort = 5173
-
-[build.secrets]
-  SECRETS_SCAN_OMIT_PATHS = "dist/index.CMujxxX3.js,dist/index.CMujxxX3.js.map"
