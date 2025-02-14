@@ -110,7 +110,8 @@ const TableShape: React.FC<{
 const DraggableTable: React.FC<{
   table: TableInstance;
   scale: number;
-}> = ({ table, scale }) => {
+  onMouseDown: (e: React.MouseEvent) => void;
+}> = ({ table, scale, onMouseDown }) => {
   return (
     <div
       style={{
@@ -121,6 +122,7 @@ const DraggableTable: React.FC<{
         userSelect: 'none',
         transform: `rotate(${table.rotation}deg)`,
       }}
+      onMouseDown={onMouseDown}
     >
       <TableShape table={table} scale={scale} />
     </div>
@@ -219,6 +221,7 @@ export const TableEditor: React.FC<TableEditorProps> = ({
             key={table.id}
             table={table}
             scale={scale}
+            onMouseDown={(e) => handleMouseDown(e, table.id)}
           />
         ))}
       </div>

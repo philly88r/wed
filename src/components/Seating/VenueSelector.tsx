@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Plus } from 'lucide-react';
 
 // Update these values to match what's in your database
-type RoomType = 'RECEPTION' | 'CEREMONY' | 'COCKTAIL' | 'DINING';
+type RoomType = 'reception' | 'ceremony' | 'dining';
 
 interface Room {
   id: string;
@@ -30,7 +30,7 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomLength, setNewRoomLength] = useState('');
   const [newRoomWidth, setNewRoomWidth] = useState('');
-  const [newRoomType, setNewRoomType] = useState<RoomType>('RECEPTION');
+  const [newRoomType, setNewRoomType] = useState<RoomType>('reception');
   const [error, setError] = useState<string | null>(null);
 
   const handleCreateRoom = async (e: React.FormEvent) => {
@@ -72,7 +72,7 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
         setNewRoomName('');
         setNewRoomLength('');
         setNewRoomWidth('');
-        setNewRoomType('RECEPTION');
+        setNewRoomType('reception');
       }
     } catch (err) {
       console.error('Error creating room:', err);
@@ -128,10 +128,9 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
                     className="w-full p-2 border rounded"
                     required
                   >
-                    <option value="RECEPTION">Reception</option>
-                    <option value="CEREMONY">Ceremony</option>
-                    <option value="COCKTAIL">Cocktail</option>
-                    <option value="DINING">Dining</option>
+                    <option value="reception">Reception</option>
+                    <option value="ceremony">Ceremony</option>
+                    <option value="dining">Dining</option>
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
