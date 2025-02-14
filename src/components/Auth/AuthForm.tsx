@@ -3,39 +3,46 @@ import { supabase } from '../../lib/supabase';
 
 type AuthMode = 'sign-in' | 'sign-up';
 
+const validateEmail = (email: string): boolean => {
+  const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return re.test(email);
+};
+
 export const AuthForm: React.FC = () => {
-  const [mode, setMode] = useState<AuthMode>('sign-in');
+  const [mode, setMode] = useState<AuthMode>('sign-up');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const validateEmail = (email: string) => {
-    return email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
-  };
-
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (mode === 'sign-up') {
-        if (!validateEmail(email)) {
-          setError('Please enter a valid email address');
-          setLoading(false);
-          return;
-        }
-
-        if (password.length < 6) {
-          setError('Password must be at least 6 characters');
-          setLoading(false);
-          return;
-        }
-
+        console.log('Attempting signup with:', { email });
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: {
+              email
+            }
+          }
         });
         
         if (signUpError) {
@@ -44,10 +51,12 @@ export const AuthForm: React.FC = () => {
         }
         
         console.log('Signup successful:', data);
+        setError('Please check your email for the confirmation link.');
       } else {
+        console.log('Attempting signin with:', { email });
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email,
-          password,
+          password
         });
         
         if (signInError) {
@@ -110,7 +119,7 @@ export const AuthForm: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50"
             >
               {loading ? 'Loading...' : mode === 'sign-in' ? 'Sign in' : 'Sign up'}
             </button>
