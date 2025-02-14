@@ -42,8 +42,9 @@ const TableShape: React.FC<{
   scale: number;
   style?: React.CSSProperties;
 }> = ({ table, scale, style }) => {
-  const width = table.template.width * scale;
-  const length = table.template.length * scale;
+  // Increase base size by 50%
+  const width = table.template.width * scale * 1.5;
+  const length = table.template.length * scale * 1.5;
   
   if (table.template.shape === 'round') {
     return (
@@ -57,11 +58,10 @@ const TableShape: React.FC<{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          transform: `rotate(${table.rotation}deg)`,
           ...style
         }}
       >
-        <span className="text-sm font-medium">{table.name}</span>
+        <span className="text-lg font-medium">{table.name}</span>
       </div>
     );
   }
@@ -78,11 +78,10 @@ const TableShape: React.FC<{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          transform: `rotate(${table.rotation}deg)`,
           ...style
         }}
       >
-        <span className="text-sm font-medium">{table.name}</span>
+        <span className="text-lg font-medium">{table.name}</span>
       </div>
     );
   }
@@ -98,11 +97,10 @@ const TableShape: React.FC<{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        transform: `rotate(${table.rotation}deg)`,
         ...style
       }}
     >
-      <span className="text-sm font-medium">{table.name}</span>
+      <span className="text-lg font-medium">{table.name}</span>
     </div>
   );
 };
@@ -113,6 +111,9 @@ const DraggableTable: React.FC<{
   onMouseDown: (e: React.MouseEvent) => void;
   onRotate: (amount: number) => void;
 }> = ({ table, scale, onMouseDown, onRotate }) => {
+  // Increase base size by 50%
+  const adjustedScale = scale * 1.5;
+  
   return (
     <div
       style={{
@@ -122,6 +123,7 @@ const DraggableTable: React.FC<{
         cursor: 'move',
         userSelect: 'none',
       }}
+      onMouseDown={onMouseDown}
     >
       <div style={{ position: 'relative' }}>
         <div
@@ -135,14 +137,14 @@ const DraggableTable: React.FC<{
         {/* Rotation controls */}
         <div className="absolute top-0 right-0 -mr-8 space-y-1">
           <button
-            className="p-1 bg-white border border-gray-300 rounded shadow hover:bg-gray-50"
+            className="p-1.5 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 text-lg"
             onClick={() => onRotate(-45)}
             title="Rotate left"
           >
             ↺
           </button>
           <button
-            className="p-1 bg-white border border-gray-300 rounded shadow hover:bg-gray-50"
+            className="p-1.5 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 text-lg"
             onClick={() => onRotate(45)}
             title="Rotate right"
           >
@@ -205,8 +207,8 @@ export const TableEditor: React.FC<TableEditorProps> = ({
     let newY = (e.clientY - initialPositionRef.current.y) / scale;
 
     // Constrain to room boundaries
-    newX = Math.max(0, Math.min(room.length - table.template.length, newX));
-    newY = Math.max(0, Math.min(room.width - table.template.width, newY));
+    newX = Math.max(0, Math.min(room.length - table.template.length * 1.5, newX));
+    newY = Math.max(0, Math.min(room.width - table.template.width * 1.5, newY));
 
     // Update table position
     onUpdateTable(table.id, {
