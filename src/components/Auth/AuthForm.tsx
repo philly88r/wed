@@ -10,6 +10,10 @@ export const AuthForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const validateEmail = (email: string) => {
+    return email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -17,19 +21,44 @@ export const AuthForm: React.FC = () => {
 
     try {
       if (mode === 'sign-up') {
-        const { error } = await supabase.auth.signUp({
+        if (!validateEmail(email)) {
+          setError('Please enter a valid email address');
+          setLoading(false);
+          return;
+        }
+
+        if (password.length < 6) {
+          setError('Password must be at least 6 characters');
+          setLoading(false);
+          return;
+        }
+
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
         });
-        if (error) throw error;
+        
+        if (signUpError) {
+          console.error('Signup error:', signUpError);
+          throw signUpError;
+        }
+        
+        console.log('Signup successful:', data);
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-        if (error) throw error;
+        
+        if (signInError) {
+          console.error('Signin error:', signInError);
+          throw signInError;
+        }
+        
+        console.log('Signin successful:', data);
       }
     } catch (err) {
+      console.error('Full error object:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
@@ -56,7 +85,7 @@ export const AuthForm: React.FC = () => {
             <div>
               <input
                 name="email"
-                type="text"
+                type="email"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 focus:z-10 sm:text-sm"
                 placeholder="Email address"
@@ -90,7 +119,10 @@ export const AuthForm: React.FC = () => {
 
         <div className="text-center">
           <button
-            onClick={() => setMode(mode === 'sign-in' ? 'sign-up' : 'sign-in')}
+            onClick={() => {
+              setMode(mode === 'sign-in' ? 'sign-up' : 'sign-in');
+              setError(null);
+            }}
             className="text-emerald-600 hover:text-emerald-500"
           >
             {mode === 'sign-in' ? 'Create an account' : 'Already have an account? Sign in'}
