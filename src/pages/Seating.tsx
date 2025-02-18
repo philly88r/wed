@@ -38,7 +38,7 @@ export function Seating() {
   const [selectedRoom, setSelectedRoom] = useState<string>('');
   const [tables, setTables] = useState<TableInstance[]>([]);
   const [templates, setTemplates] = useState<TableTemplate[]>([]);
-  const [scale, setScale] = useState(50); // 50 pixels per foot
+  const [scale, setScale] = useState(30); // Adjusted scale to fit the layout better
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
@@ -109,6 +109,59 @@ export function Seating() {
       setTables(data || []);
     } catch (err) {
       console.error('Error fetching tables:', err);
+    }
+  };
+
+  const createDefaultLayout = async (roomId: string) => {
+    setLoading(true);
+    try {
+      // Find the round table template
+      const roundTemplate = templates.find(t => t.shape === 'round');
+      if (!roundTemplate) {
+        console.error('No round table template found');
+        return;
+      }
+
+      // Create 15 tables in a 3x5 grid
+      const tablePositions = [];
+      const spacing = 12; // 12 feet between table centers
+      const startX = 20; // Starting X position
+      const startY = 25; // Starting Y position to leave room for the bar
+
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 3; col++) {
+          const tableNumber = row * 3 + col + 1;
+          tablePositions.push({
+            template_id: roundTemplate.id,
+            name: `Table ${tableNumber}`,
+            position_x: startX + col * spacing,
+            position_y: startY + row * spacing,
+            rotation: 0,
+            room_id: roomId
+          });
+        }
+      }
+
+      // Add special areas (these will be handled by UI overlays)
+      // Bar, DJ booth, and cake area positions are fixed in the room layout
+
+      // Insert all tables at once
+      const { data, error } = await supabase
+        .from('table_instances')
+        .insert(tablePositions)
+        .select();
+
+      if (error) {
+        console.error('Error creating default layout:', error);
+        return;
+      }
+
+      // Refresh the tables
+      fetchTables();
+    } catch (err) {
+      console.error('Error creating default layout:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -232,6 +285,13 @@ export function Seating() {
               >
                 <TableIcon className="h-5 w-5 mr-2" />
                 Add Table
+              </button>
+              <button
+                onClick={() => createDefaultLayout(selectedRoom)}
+                disabled={!selectedRoom}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+              >
+                Create Default Layout
               </button>
             </div>
 

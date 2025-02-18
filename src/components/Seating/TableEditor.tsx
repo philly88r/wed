@@ -168,6 +168,39 @@ const DraggableTable: React.FC<{
   );
 };
 
+const SpecialArea: React.FC<{
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  scale: number;
+  color: string;
+}> = ({ name, x, y, width, height, scale, color }) => {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: x * scale,
+        top: y * scale,
+        width: width * scale,
+        height: height * scale,
+        border: `2px solid ${color}`,
+        backgroundColor: `${color}33`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: Math.max(12, scale / 4),
+        color: color,
+        fontWeight: 'bold',
+        textTransform: 'uppercase'
+      }}
+    >
+      {name}
+    </div>
+  );
+};
+
 export const TableEditor: React.FC<TableEditorProps> = ({
   tables,
   setTables,
@@ -275,6 +308,35 @@ export const TableEditor: React.FC<TableEditorProps> = ({
         onMouseMove={handleMouseMove}
         className="mx-auto"
       >
+        {/* Special Areas */}
+        <SpecialArea
+          name="Bar"
+          x={10}
+          y={2}
+          width={30}
+          height={8}
+          scale={scale}
+          color="#2563EB"
+        />
+        <SpecialArea
+          name="DJ"
+          x={15}
+          y={15}
+          width={6}
+          height={6}
+          scale={scale}
+          color="#3B82F6"
+        />
+        <SpecialArea
+          name="Cake"
+          x={45}
+          y={45}
+          width={6}
+          height={6}
+          scale={scale}
+          color="#10B981"
+        />
+
         {tables.map(table => (
           <DraggableTable
             key={table.id}
