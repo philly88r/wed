@@ -5,11 +5,15 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    port: 3000,
+    strictPort: false, // Allow fallback ports
+    host: true, // Listen on all addresses
     watch: {
       usePolling: true,
     },
     hmr: {
-      overlay: true
+      overlay: true,
+      port: 3000
     }
   },
   build: {
