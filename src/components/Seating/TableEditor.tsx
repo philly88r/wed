@@ -113,7 +113,8 @@ const DraggableTable: React.FC<{
   scale: number;
   onMouseDown: (e: React.MouseEvent) => void;
   onRotate: (amount: number) => void;
-}> = ({ table, scale, onMouseDown, onRotate }) => {
+  selected: boolean;
+}> = ({ table, scale, onMouseDown, onRotate, selected }) => {
   const buttonSize = Math.max(24, scale / 3); // Scale button size with table size
   
   return (
@@ -124,6 +125,7 @@ const DraggableTable: React.FC<{
         top: table.position_y * scale,
         cursor: 'move',
         userSelect: 'none',
+        border: selected ? '2px solid #4B5563' : 'none'
       }}
       onMouseDown={onMouseDown}
     >
@@ -208,18 +210,38 @@ export const TableEditor: React.FC<TableEditorProps> = ({
   room,
   onUpdateTable
 }) => {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const draggedTableRef = useRef<string | null>(null);
-  const initialPositionRef = useRef<{ x: number, y: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+  // Fixed dimensions for all rooms (in pixels)
+  const FIXED_ROOM_WIDTH = 800;
+  const FIXED_ROOM_HEIGHT = 600;
+
+  // Calculate the scale factor based on room dimensions
+  const roomScaleFactor = Math.min(
+    FIXED_ROOM_WIDTH / (room.length || 1),
+    FIXED_ROOM_HEIGHT / (room.width || 1)
+  );
+
+  // Scale table dimensions based on room size
+  const getTableDimensions = (table: TableInstance) => {
+    const baseSize = table.template.width * roomScaleFactor;
+    return {
+      width: baseSize,
+      height: table.template.shape === 'round' ? baseSize : table.template.length * roomScaleFactor
+    };
+  };
 
   const handleMouseDown = (e: React.MouseEvent, tableId: string) => {
-    draggedTableRef.current = tableId;
+    setSelectedTable(tableId);
     const table = tables.find(t => t.id === tableId);
     if (table) {
-      initialPositionRef.current = {
+      setDragOffset({
         x: e.clientX - table.position_x * scale,
         y: e.clientY - table.position_y * scale
-      };
+      });
     }
   };
 
@@ -241,15 +263,15 @@ export const TableEditor: React.FC<TableEditorProps> = ({
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!draggedTableRef.current || !initialPositionRef.current || !editorRef.current) return;
+    if (!selectedTable || !containerRef.current) return;
 
-    const editorRect = editorRef.current.getBoundingClientRect();
-    const table = tables.find(t => t.id === draggedTableRef.current);
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const table = tables.find(t => t.id === selectedTable);
     if (!table) return;
 
     // Calculate new position in feet
-    let newX = (e.clientX - initialPositionRef.current.x) / scale;
-    let newY = (e.clientY - initialPositionRef.current.y) / scale;
+    let newX = (e.clientX - dragOffset.x) / scale;
+    let newY = (e.clientY - dragOffset.y) / scale;
 
     // Constrain to room boundaries
     newX = Math.max(0, Math.min(room.length - table.template.length, newX));
@@ -268,8 +290,7 @@ export const TableEditor: React.FC<TableEditorProps> = ({
   };
 
   const handleMouseUp = () => {
-    draggedTableRef.current = null;
-    initialPositionRef.current = null;
+    setSelectedTable(null);
   };
 
   useEffect(() => {
@@ -279,42 +300,28 @@ export const TableEditor: React.FC<TableEditorProps> = ({
     };
   }, []);
 
-  const roomStyle = {
-    width: room.length * scale,
-    height: room.width * scale,
-    position: 'relative' as const,
-    border: '2px solid #ccc',
-    backgroundColor: '#f9fafb',
-    overflow: 'hidden',
-    maxWidth: 'calc(100vw - 24px)', // 12px margin on each side
-    maxHeight: 'calc(100vh - 80px)', // 40px margin on top and bottom
-    margin: '12px auto' // Center horizontally with minimal top/bottom margin
-  };
-
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">
-          {room.name} ({room.length}' × {room.width}')
-        </h3>
-        <div className="text-sm text-gray-500">
-          Scale: 1' = {scale}px
-        </div>
-      </div>
-
+    <div className="relative w-full h-full">
       <div
-        ref={editorRef}
-        style={roomStyle}
+        ref={containerRef}
+        style={{
+          position: 'relative',
+          width: FIXED_ROOM_WIDTH,
+          height: FIXED_ROOM_HEIGHT,
+          border: '2px solid #000',
+          backgroundColor: '#fff',
+          overflow: 'hidden'
+        }}
         onMouseMove={handleMouseMove}
-        className="mx-auto"
+        onMouseUp={handleMouseUp}
       >
-        {/* Special Areas */}
+        {/* Special Areas - scaled according to room size */}
         <SpecialArea
           name="Bar"
           x={10}
           y={2}
-          width={30}
-          height={8}
+          width={30 * roomScaleFactor / scale}
+          height={8 * roomScaleFactor / scale}
           scale={scale}
           color="#2563EB"
         />
@@ -322,8 +329,8 @@ export const TableEditor: React.FC<TableEditorProps> = ({
           name="DJ"
           x={15}
           y={15}
-          width={6}
-          height={6}
+          width={6 * roomScaleFactor / scale}
+          height={6 * roomScaleFactor / scale}
           scale={scale}
           color="#3B82F6"
         />
@@ -331,21 +338,32 @@ export const TableEditor: React.FC<TableEditorProps> = ({
           name="Cake"
           x={45}
           y={45}
-          width={6}
-          height={6}
+          width={6 * roomScaleFactor / scale}
+          height={6 * roomScaleFactor / scale}
           scale={scale}
           color="#10B981"
         />
 
-        {tables.map(table => (
-          <DraggableTable
-            key={table.id}
-            table={table}
-            scale={scale}
-            onMouseDown={(e) => handleMouseDown(e, table.id)}
-            onRotate={(amount) => handleRotate(table.id, amount)}
-          />
-        ))}
+        {tables.map(table => {
+          const dimensions = getTableDimensions(table);
+          return (
+            <DraggableTable
+              key={table.id}
+              table={{
+                ...table,
+                template: {
+                  ...table.template,
+                  width: dimensions.width / scale,
+                  length: dimensions.height / scale
+                }
+              }}
+              scale={scale}
+              onMouseDown={(e) => handleMouseDown(e, table.id)}
+              onRotate={(angle) => handleRotate(table.id, angle)}
+              selected={selectedTable === table.id}
+            />
+          );
+        })}
       </div>
     </div>
   );

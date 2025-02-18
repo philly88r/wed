@@ -38,7 +38,6 @@ export function Seating() {
   const [selectedRoom, setSelectedRoom] = useState<string>('');
   const [tables, setTables] = useState<TableInstance[]>([]);
   const [templates, setTemplates] = useState<TableTemplate[]>([]);
-  const [scale, setScale] = useState(30); // Adjusted scale to fit the layout better
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
@@ -221,31 +220,16 @@ export function Seating() {
   };
 
   const calculateScale = (room: Room) => {
-    // Get window dimensions with minimal margins
-    const maxWidth = window.innerWidth - 24; // 12px margin on each side
-    const maxHeight = window.innerHeight - 80; // 40px margin on top and bottom
-
-    // Calculate scales that would fit the room in each dimension
-    const scaleX = maxWidth / room.length;
-    const scaleY = maxHeight / room.width;
-
-    // Use the smaller scale to ensure room fits in both dimensions
-    // Round down to nearest multiple of 10 for cleaner numbers
-    // Base scale is now 30 pixels per foot instead of previous smaller value
-    const baseScale = Math.floor(Math.min(scaleX, scaleY) * 0.98 / 10) * 10;
-    return Math.max(baseScale, 30); // Minimum of 30 pixels per foot
+    const FIXED_ROOM_WIDTH = 800; // pixels
+    const FIXED_ROOM_HEIGHT = 600; // pixels
+    return Math.min(
+      FIXED_ROOM_WIDTH / (room.length || 1),
+      FIXED_ROOM_HEIGHT / (room.width || 1)
+    );
   };
 
-  useEffect(() => {
-    if (selectedRoom) {
-      const room = rooms.find(r => r.id === selectedRoom);
-      if (room) {
-        setScale(calculateScale(room));
-      }
-    }
-  }, [selectedRoom, rooms]);
-
-  const selectedRoomData = selectedRoom ? rooms.find(r => r.id === selectedRoom) : null;
+  const selectedRoomData = rooms.find(r => r.id === selectedRoom);
+  const scale = selectedRoomData ? calculateScale(selectedRoomData) : 30;
 
   return (
     <div className="container mx-auto p-4">
