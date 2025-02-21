@@ -105,17 +105,17 @@ export default function VendorDirectory() {
     setLoading(true);
     let query = supabase
       .from('vendors')
-      .select(\`
+      .select(`
         *,
         locations:vendor_locations(city, state),
         images:vendor_images(image_url),
         tags:vendor_tags_junction(vendor_tags(name))
-      \`)
+      `)
       .eq('status', 'active')
       .range((page - 1) * itemsPerPage, page * itemsPerPage - 1);
 
     if (searchTerm) {
-      query = query.ilike('business_name', \`%\${searchTerm}%\`);
+      query = query.ilike('business_name', `%${searchTerm}%`);
     }
 
     if (selectedCategory) {
@@ -319,7 +319,7 @@ export default function VendorDirectory() {
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <LocationOnIcon sx={{ width: 20, mr: 0.5 }} color="action" />
                       <Typography variant="body2" color="text.secondary">
-                        {vendor.locations.map(loc => \`\${loc.city}, \${loc.state}\`).join(' | ')}
+                        {vendor.locations.map(loc => `${loc.city}, ${loc.state}`).join(' | ')}
                       </Typography>
                     </Box>
 

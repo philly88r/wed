@@ -97,7 +97,7 @@ export default function VendorDetail() {
   const fetchVendorDetails = async () => {
     const { data, error } = await supabase
       .from('vendors')
-      .select(\`
+      .select(`
         *,
         images:vendor_images(*),
         services:vendor_services(*),
@@ -109,7 +109,7 @@ export default function VendorDetail() {
           user:users(name, avatar_url)
         ),
         availability:vendor_availability(*)
-      \`)
+      `)
       .eq('id', id)
       .single();
 
@@ -164,8 +164,8 @@ export default function VendorDetail() {
 
             <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
               <Chip icon={<LocationOnIcon />} label={vendor.locations[0]?.city + ', ' + vendor.locations[0]?.state} />
-              <Chip label={\`Starting at $\${vendor.starting_price}\`} />
-              <Chip label={\`\${vendor.years_in_business} years in business\`} />
+              <Chip label={`Starting at $${vendor.starting_price}`} />
+              <Chip label={`${vendor.years_in_business} years in business`} />
             </Box>
           </Box>
 
@@ -195,7 +195,7 @@ export default function VendorDetail() {
                   </ListItemAvatar>
                   <ListItemText
                     primary={location.address_line1}
-                    secondary={\`\${location.city}, \${location.state} \${location.zip_code}\`}
+                    secondary={`${location.city}, ${location.state} ${location.zip_code}`}
                   />
                 </ListItem>
               ))}
@@ -327,7 +327,7 @@ export default function VendorDetail() {
                   <Button
                     variant="outlined"
                     startIcon={<InstagramIcon />}
-                    href={\`https://instagram.com/\${vendor.instagram_handle}\`}
+                    href={`https://instagram.com/${vendor.instagram_handle}`}
                     target="_blank"
                   >
                     Instagram
