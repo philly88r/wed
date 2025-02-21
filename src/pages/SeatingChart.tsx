@@ -17,7 +17,6 @@ import {
   MenuItem,
   Snackbar,
   Alert,
-  Tooltip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import TableRestaurantIcon from '@mui/icons-material/TableRestaurant';
@@ -25,7 +24,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { DragDropContext, Droppable, Draggable, DroppableProvided, DraggableProvided, DropResult } from 'react-beautiful-dnd';
+import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 
 interface TableGuest {
   id: string;
@@ -94,8 +93,16 @@ export default function SeatingChart() {
     }
   };
 
-  const handleDragEnd = (result: DropResult) => {
+  const handleDragEnd = (_result: DropResult) => {
     // Handle drag and drop logic here
+  };
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
   };
 
   const TableComponent = ({ table }: { table: Table }) => (
@@ -151,7 +158,9 @@ export default function SeatingChart() {
       onClose={handleMenuClose}
     >
       <MenuItem onClick={() => {
-        setEditingTable(tables.find(t => t.id === anchorEl?.getAttribute('data-table-id')));
+        const selectedTableId = anchorEl?.getAttribute('data-table-id');
+        const selectedTable = tables.find(t => t.id === selectedTableId);
+        setEditingTable(selectedTable || null);
         setIsEditDialogOpen(true);
         handleMenuClose();
       }}>
