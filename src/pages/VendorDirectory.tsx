@@ -24,6 +24,7 @@ import {
   Pagination,
   Slider,
   SelectChangeEvent,
+  Snackbar
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
@@ -69,7 +70,7 @@ export default function VendorDirectory() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedState, setSelectedState] = useState('');
@@ -79,6 +80,15 @@ export default function VendorDirectory() {
   const [totalPages, setTotalPages] = useState(1);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   const states = ['New York', 'New Jersey']; // Add more states as needed
   const itemsPerPage = 12;
@@ -234,6 +244,18 @@ export default function VendorDirectory() {
 
   const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
+  };
+
+  const showSnackbar = (message: string, severity: 'success' | 'error') => {
+    setSnackbar({
+      open: true,
+      message,
+      severity
+    });
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
   };
 
   const FilterDrawer = () => (
@@ -440,6 +462,18 @@ export default function VendorDirectory() {
       )}
 
       <FilterDrawer />
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
