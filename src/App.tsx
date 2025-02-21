@@ -1,19 +1,18 @@
 import { BrowserRouter as Router } from 'react-router-dom';
-import { ThemeProvider, CssBaseline, Box, Container } from '@mui/material';
+import { ThemeProvider, CssBaseline, Box, Container, Toolbar } from '@mui/material';
 import { theme } from './theme';
 import Navigation from './components/Navigation';
 import AppRoutes from './routes';
-import { drawerWidth } from './components/Navigation'; // Assuming drawerWidth is defined here
+import { drawerWidth } from './components/Navigation';
 
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <Box sx={{ 
-          minHeight: '100vh',
+        <Box sx={{
           display: 'flex',
-          flexDirection: 'column',
+          minHeight: '100vh',
           bgcolor: 'background.default'
         }}>
           <Navigation />
