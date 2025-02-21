@@ -1,39 +1,31 @@
-import { BrowserRouter as Router } from 'react-router-dom';
-import { ThemeProvider, CssBaseline, Box, Container, Toolbar } from '@mui/material';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider, CssBaseline } from '@mui/material';
 import { theme } from './theme';
-import Navigation from './components/Navigation';
+import Layout from './components/Layout';
+import ServiceMenu from './pages/ServiceMenu';
+import SeatingChart from './pages/SeatingChart';
 import AppRoutes from './routes';
-import { drawerWidth } from './components/Navigation';
+import Navigation from './components/Navigation';
+import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Router>
-        <Box sx={{
-          display: 'flex',
-          minHeight: '100vh',
-          bgcolor: 'background.default'
-        }}>
+    <AuthProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Router>
           <Navigation />
-          <Box
-            component="main"
-            sx={{
-              flexGrow: 1,
-              height: '100vh',
-              overflow: 'auto',
-              ml: { sm: `${drawerWidth}px` },
-              width: { sm: `calc(100% - ${drawerWidth}px)` },
-            }}
-          >
-            <Toolbar /> {/* This creates space for the AppBar */}
-            <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-              <AppRoutes />
-            </Container>
-          </Box>
-        </Box>
-      </Router>
-    </ThemeProvider>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<ServiceMenu />} />
+              <Route path="/seating-chart" element={<SeatingChart />} />
+              {/* Add other routes as they are implemented */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
+        </Router>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 
