@@ -1,5 +1,4 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import AuthForm from './components/Auth/AuthForm';
 import Dashboard from './pages/Dashboard';
 import Timeline from './pages/Timeline';
 import Guests from './pages/Guests';
@@ -21,8 +20,7 @@ import Music from './pages/Music';
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<AuthForm />} />
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/" element={<Dashboard />} />
       <Route path="/timeline" element={<Timeline />} />
       <Route path="/guests" element={<Guests />} />
       <Route path="/budget" element={<Budget />} />

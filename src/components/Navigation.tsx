@@ -37,7 +37,7 @@ export const drawerWidth = 240;
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
   { text: 'Guests', icon: <PeopleIcon />, path: '/guests' },
-  { text: 'Seating Chart', icon: <TableRestaurantIcon />, path: '/seating' },
+  { text: 'Seating Chart', icon: <TableRestaurantIcon />, path: '/seating-chart' },
   { text: 'Timeline', icon: <TimelineIcon />, path: '/timeline' },
   { text: 'Checklist', icon: <ChecklistIcon />, path: '/checklist' },
   { text: 'Budget', icon: <BudgetIcon />, path: '/budget' },
