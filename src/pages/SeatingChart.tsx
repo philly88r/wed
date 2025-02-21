@@ -50,30 +50,42 @@ export default function SeatingChart() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTables();
   }, []);
 
   const fetchTables = async () => {
-    const { data, error } = await supabase
-      .from('table_templates')
-      .select('*')
-      .order('created_at');
+    try {
+      setLoading(true);
+      setError(null);
+      const { data, error } = await supabase
+        .from('table_templates')
+        .select('*')
+        .order('created_at');
 
-    if (error) {
-      showSnackbar('Error loading tables', 'error');
-      return;
+      if (error) {
+        console.error('Error fetching tables:', error);
+        setError(error.message);
+        return;
+      }
+
+      const defaultTables = data.length === 0 ? [
+        { id: '1', name: 'Table 1', shape: 'round', seats: 8, guests: [], color: '#e3f2fd' },
+        { id: '2', name: 'Table 2', shape: 'round', seats: 8, guests: [], color: '#e8f5e9' },
+        { id: '3', name: 'Table 3', shape: 'round', seats: 8, guests: [], color: '#fff3e0' },
+        { id: '4', name: 'Table 4', shape: 'round', seats: 8, guests: [], color: '#f3e5f5' },
+      ] : data;
+
+      setTables(defaultTables);
+    } catch (err) {
+      console.error('Error:', err);
+      setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
     }
-
-    const defaultTables = data.length === 0 ? [
-      { id: '1', name: 'Table 1', shape: 'round', seats: 8, guests: [], color: '#e3f2fd' },
-      { id: '2', name: 'Table 2', shape: 'round', seats: 8, guests: [], color: '#e8f5e9' },
-      { id: '3', name: 'Table 3', shape: 'round', seats: 8, guests: [], color: '#fff3e0' },
-      { id: '4', name: 'Table 4', shape: 'round', seats: 8, guests: [], color: '#f3e5f5' },
-    ] : data;
-
-    setTables(defaultTables);
   };
 
   const handleDragEnd = async (result: DropResult) => {
@@ -225,6 +237,20 @@ export default function SeatingChart() {
             Add Table
           </Button>
         </Box>
+
+        {loading && (
+          <Typography>Loading tables...</Typography>
+        )}
+
+        {error && (
+          <Typography color="error" gutterBottom>
+            {error}
+          </Typography>
+        )}
+
+        {!loading && !error && tables.length === 0 && (
+          <Typography>No tables created yet. Click "Add Table" to get started.</Typography>
+        )}
 
         <Grid container spacing={3}>
           {tables.map(table => (
