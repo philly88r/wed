@@ -19,7 +19,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { supabase } from '../supabase';
+import { supabase } from '../lib/supabase';
 import GuestList from '../components/SeatingChart/GuestList';
 
 interface Table {
