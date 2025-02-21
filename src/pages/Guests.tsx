@@ -39,7 +39,7 @@ const relationshipGroups = [
   'Other'
 ];
 
-export function Guests() {
+export default function Guests() {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
   const [showForm, setShowForm] = useState(false);

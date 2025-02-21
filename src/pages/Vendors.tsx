@@ -49,7 +49,7 @@ const statusLabels = {
   'declined': 'Declined'
 };
 
-export function Vendors() {
+export default function Vendors() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
