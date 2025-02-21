@@ -454,6 +454,22 @@ export default function Dashboard() {
           </div>
         </Link>
       </div>
+
+      {/* Overall Comments Section */}
+      <div className="mt-4">
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Overall Wedding Planning Notes</h2>
+          </div>
+          <div className="text-sm text-gray-500 mb-2">
+            Use this section for general notes, ideas, and discussions about the overall wedding planning.
+          </div>
+          <CommentSystem 
+            section="overall" 
+            title="General Planning Discussion"
+          />
+        </div>
+      </div>
     </div>
   );
 }

@@ -11,6 +11,8 @@ import {
   Collapse,
   Avatar,
   Divider,
+  Alert,
+  Snackbar,
 } from '@mui/material';
 import {
   Send as SendIcon,
@@ -46,6 +48,7 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
   const [newComment, setNewComment] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -76,7 +79,13 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
     try {
       const { data, error } = await supabase
         .from('comments')
-        .select('*, profiles(full_name, avatar_url)')
+        .select(`
+          *,
+          profiles:users(
+            full_name,
+            avatar_url
+          )
+        `)
         .eq('section', section)
         .order('created_at', { ascending: true });
 
@@ -84,13 +93,17 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
       setComments(data || []);
     } catch (error) {
       console.error('Error fetching comments:', error);
+      setError('Failed to load comments');
     }
   };
 
   const handleSubmit = async (parentId: string | null = null) => {
-    if (!user) return;
+    if (!user) {
+      setError('You must be logged in to comment');
+      return;
+    }
 
-    const commentContent = parentId ? newComment : newComment.trim();
+    const commentContent = newComment.trim();
     if (!commentContent) return;
 
     try {
@@ -108,6 +121,7 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
       await fetchComments();
     } catch (error) {
       console.error('Error adding comment:', error);
+      setError('Failed to add comment');
     }
   };
 
@@ -128,6 +142,7 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
       await fetchComments();
     } catch (error) {
       console.error('Error resolving comment:', error);
+      setError('Failed to resolve comment');
     }
   };
 
@@ -151,10 +166,10 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
         >
           <Stack direction="row" spacing={2} alignItems="flex-start">
             <Avatar
-              src={comment.profiles.avatar_url}
-              alt={comment.profiles.full_name}
+              src={comment.profiles?.avatar_url}
+              alt={comment.profiles?.full_name || 'User'}
             >
-              {comment.profiles.full_name[0]}
+              {comment.profiles?.full_name?.[0] || 'U'}
             </Avatar>
             <Box sx={{ flexGrow: 1 }}>
               <Stack
@@ -164,7 +179,7 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
                 mb={1}
               >
                 <Typography variant="subtitle2">
-                  {comment.profiles.full_name}
+                  {comment.profiles?.full_name || 'Unknown User'}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {new Date(comment.created_at).toLocaleDateString()}
@@ -286,6 +301,17 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
             ))}
         </Box>
       </Collapse>
+
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setError(null)} severity="error">
+          {error}
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 }
