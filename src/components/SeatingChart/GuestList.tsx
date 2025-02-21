@@ -1,19 +1,16 @@
 import { useState } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   TextField,
   Button,
   List,
   ListItem,
   ListItemText,
-  Divider,
   Tabs,
   Tab,
   IconButton,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import { Draggable } from 'react-beautiful-dnd';
 

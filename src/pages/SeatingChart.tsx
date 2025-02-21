@@ -10,8 +10,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Tabs,
-  Tab,
   Chip,
   IconButton,
   Snackbar,
@@ -58,7 +56,6 @@ export default function SeatingChart() {
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [newTableName, setNewTableName] = useState('');
-  const [tabValue, setTabValue] = useState(0);
   const [snackbar, setSnackbar] = useState<SnackbarState>({
     open: false,
     message: '',
