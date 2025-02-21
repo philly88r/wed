@@ -30,6 +30,7 @@ import VendorsIcon from '@mui/icons-material/Store';
 import TasksIcon from '@mui/icons-material/Assignment';
 import PhotosIcon from '@mui/icons-material/PhotoLibrary';
 import MusicIcon from '@mui/icons-material/MusicNote';
+import PriceCheckIcon from '@mui/icons-material/PriceCheck';
 
 export const drawerWidth = 240;
 
@@ -45,6 +46,8 @@ const menuItems = [
   { text: 'Photos', icon: <PhotosIcon />, path: '/photos' },
   { text: 'Music', icon: <MusicIcon />, path: '/music' },
   { text: 'Videos', icon: <VideoLibraryIcon />, path: '/videos' },
+  { text: 'Table Layout', icon: <TableRestaurantIcon />, path: '/table-layout' },
+  { text: 'Pricing', icon: <PriceCheckIcon />, path: '/pricing' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 
