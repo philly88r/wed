@@ -1,14 +1,12 @@
 -- Create comments table
 CREATE TABLE IF NOT EXISTS comments (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    section VARCHAR(100) NOT NULL,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    section TEXT NOT NULL,
     content TEXT NOT NULL,
-    created_by UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    commenter_name TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT timezone('utc', NOW()) NOT NULL,
     resolved BOOLEAN DEFAULT false,
     resolved_at TIMESTAMPTZ,
-    resolved_by UUID REFERENCES auth.users(id),
     parent_id UUID REFERENCES comments(id) ON DELETE CASCADE,
     position JSONB -- For storing x,y coordinates if needed for positioning
 );
@@ -16,22 +14,17 @@ CREATE TABLE IF NOT EXISTS comments (
 -- Enable RLS
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 
--- Create policy to allow read access to all authenticated users
-CREATE POLICY "Enable read access for authenticated users" ON comments
+-- Create policy to allow anyone to read comments
+CREATE POLICY "Anyone can read comments" ON comments
     FOR SELECT
-    TO authenticated
     USING (true);
 
--- Create policy to allow insert for authenticated users
-CREATE POLICY "Enable insert for authenticated users" ON comments
+-- Create policy to allow anyone to insert comments
+CREATE POLICY "Anyone can insert comments" ON comments
     FOR INSERT
-    TO authenticated
     WITH CHECK (true);
 
--- Create policy to allow update for comment creator or admin
-CREATE POLICY "Enable update for comment creator or admin" ON comments
+-- Create policy to allow anyone to update comments (for resolving)
+CREATE POLICY "Anyone can update comments" ON comments
     FOR UPDATE
-    TO authenticated
-    USING (auth.uid() = created_by OR auth.uid() IN (
-        SELECT user_id FROM user_roles WHERE role = 'admin'
-    ));
+    USING (true);

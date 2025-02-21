@@ -22,20 +22,15 @@ import {
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../hooks/useAuth';
 
 interface Comment {
   id: string;
   section: string;
   content: string;
-  created_by: string;
+  commenter_name: string;
   created_at: string;
   resolved: boolean;
   parent_id: string | null;
-  profiles: {
-    full_name: string;
-    avatar_url: string;
-  };
 }
 
 interface CommentSystemProps {
@@ -46,10 +41,10 @@ interface CommentSystemProps {
 export default function CommentSystem({ section, title }: CommentSystemProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
+  const [commenterName, setCommenterName] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
 
   useEffect(() => {
     fetchComments();
@@ -79,13 +74,7 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
     try {
       const { data, error } = await supabase
         .from('comments')
-        .select(`
-          *,
-          profiles:users(
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .eq('section', section)
         .order('created_at', { ascending: true });
 
@@ -98,19 +87,24 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
   };
 
   const handleSubmit = async (parentId: string | null = null) => {
-    if (!user) {
-      setError('You must be logged in to comment');
+    const commentContent = newComment.trim();
+    const name = commenterName.trim();
+
+    if (!commentContent) {
+      setError('Please enter a comment');
       return;
     }
 
-    const commentContent = newComment.trim();
-    if (!commentContent) return;
+    if (!name) {
+      setError('Please enter your name');
+      return;
+    }
 
     try {
       const { error } = await supabase.from('comments').insert({
         section,
         content: commentContent,
-        created_by: user.id,
+        commenter_name: name,
         parent_id: parentId,
       });
 
@@ -126,15 +120,12 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
   };
 
   const handleResolve = async (commentId: string) => {
-    if (!user) return;
-
     try {
       const { error } = await supabase
         .from('comments')
         .update({
           resolved: true,
           resolved_at: new Date().toISOString(),
-          resolved_by: user.id,
         })
         .eq('id', commentId);
 
@@ -165,11 +156,8 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
           variant="outlined"
         >
           <Stack direction="row" spacing={2} alignItems="flex-start">
-            <Avatar
-              src={comment.profiles?.avatar_url}
-              alt={comment.profiles?.full_name || 'User'}
-            >
-              {comment.profiles?.full_name?.[0] || 'U'}
+            <Avatar>
+              {comment.commenter_name[0].toUpperCase()}
             </Avatar>
             <Box sx={{ flexGrow: 1 }}>
               <Stack
@@ -179,7 +167,7 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
                 mb={1}
               >
                 <Typography variant="subtitle2">
-                  {comment.profiles?.full_name || 'Unknown User'}
+                  {comment.commenter_name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {new Date(comment.created_at).toLocaleDateString()}
@@ -224,23 +212,31 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
             <TextField
               fullWidth
               size="small"
+              label="Your Name"
+              value={commenterName}
+              onChange={(e) => setCommenterName(e.target.value)}
+              sx={{ mb: 1 }}
+            />
+            <TextField
+              fullWidth
+              size="small"
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Write a reply..."
               multiline
               rows={2}
-              InputProps={{
-                endAdornment: (
-                  <IconButton
-                    size="small"
-                    onClick={() => handleSubmit(comment.id)}
-                    disabled={!newComment.trim()}
-                  >
-                    <SendIcon />
-                  </IconButton>
-                ),
-              }}
             />
+            <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>
+              <Button
+                variant="contained"
+                size="small"
+                endIcon={<SendIcon />}
+                onClick={() => handleSubmit(comment.id)}
+                disabled={!newComment.trim() || !commenterName.trim()}
+              >
+                Reply
+              </Button>
+            </Box>
           </Box>
         )}
       </Box>
@@ -269,6 +265,14 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
           <TextField
             fullWidth
             size="small"
+            label="Your Name"
+            value={commenterName}
+            onChange={(e) => setCommenterName(e.target.value)}
+            sx={{ mb: 1 }}
+          />
+          <TextField
+            fullWidth
+            size="small"
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="Add a comment..."
@@ -281,7 +285,7 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
               size="small"
               endIcon={<SendIcon />}
               onClick={() => handleSubmit(null)}
-              disabled={!newComment.trim()}
+              disabled={!newComment.trim() || !commenterName.trim()}
             >
               Comment
             </Button>
