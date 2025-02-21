@@ -1,62 +1,44 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
 import {
+  Container,
   Box,
-  Button,
   Typography,
+  Button,
   Paper,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
-  Container,
-  Chip,
-  Menu,
-  MenuItem,
-  Snackbar,
-  Alert,
   Tabs,
   Tab,
-  Grid,
+  Chip,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
-
-interface Guest {
-  id: string;
-  name: string;
-}
-
-interface TableGuest {
-  id: string;
-  name: string;
-  table_id: string;
-}
-
-interface TableAssignment {
-  id: string;
-  guest_id: string;
-  table_id: string;
-  guest: Guest;
-}
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { supabase } from '../lib/supabaseClient';
+import GuestList from '../components/SeatingChart/GuestList';
 
 interface Table {
   id: string;
   name: string;
   seats: number;
-  shape: string;
+  shape?: string;
   color?: string;
-  guests?: TableGuest[];
   position: {
     x: number;
     y: number;
   };
+  guests?: Guest[];
+}
+
+interface Guest {
+  id: string;
+  name: string;
+  table_id?: string;
 }
 
 interface SnackbarState {
@@ -65,39 +47,12 @@ interface SnackbarState {
   severity: 'success' | 'error' | 'info' | 'warning';
 }
 
-interface GuestListProps {
-  guests: Guest[];
-  onAddGuest: () => void;
-}
-
-function GuestList({ guests, onAddGuest }: GuestListProps) {
-  return (
-    <Box sx={{ height: '100%', overflow: 'auto' }}>
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Guest List
-      </Typography>
-      <Button variant="contained" onClick={onAddGuest}>
-        Add Guest
-      </Button>
-      <Box sx={{ mt: 2 }}>
-        {guests.map((guest) => (
-          <Typography key={guest.id} variant="body1" sx={{ mb: 1 }}>
-            {guest.name}
-          </Typography>
-        ))}
-      </Box>
-    </Box>
-  );
-}
-
 export default function SeatingChart() {
   const [tables, setTables] = useState<Table[]>([]);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [newTableName, setNewTableName] = useState('');
-  const [newTableSeats, setNewTableSeats] = useState('8');
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useState(1);
   const [snackbar, setSnackbar] = useState<SnackbarState>({
     open: false,
     message: '',
@@ -112,39 +67,13 @@ export default function SeatingChart() {
 
   const fetchTables = async () => {
     try {
-      const { data: tablesData, error: tablesError } = await supabase
+      const { data, error } = await supabase
         .from('seating_tables')
         .select('*');
 
-      if (tablesError) throw tablesError;
+      if (error) throw error;
 
-      const { data: assignmentsData, error: assignmentsError } = await supabase
-        .from('table_assignments')
-        .select('*, guest:guests(*)');
-
-      if (assignmentsError) throw assignmentsError;
-
-      const guestsByTable = (assignmentsData as TableAssignment[]).reduce<Record<string, TableGuest[]>>((acc, assignment) => {
-        const guest: TableGuest = {
-          id: assignment.guest.id,
-          name: assignment.guest.name,
-          table_id: assignment.table_id
-        };
-        
-        if (!acc[assignment.table_id]) {
-          acc[assignment.table_id] = [];
-        }
-        acc[assignment.table_id].push(guest);
-        return acc;
-      }, {});
-
-      const tablesWithGuests = tablesData.map(table => ({
-        ...table,
-        guests: guestsByTable[table.id] || [],
-        position: table.position || { x: 0, y: 0 }
-      }));
-
-      setTables(tablesWithGuests);
+      setTables(data || []);
     } catch (error) {
       console.error('Error fetching tables:', error);
       setSnackbar({
@@ -163,7 +92,7 @@ export default function SeatingChart() {
 
       if (error) throw error;
 
-      setGuests(data);
+      setGuests(data || []);
     } catch (error) {
       console.error('Error fetching guests:', error);
       setSnackbar({
@@ -178,21 +107,20 @@ export default function SeatingChart() {
     try {
       const { data, error } = await supabase
         .from('seating_tables')
-        .insert([{
-          name: newTableName || 'New Table',
-          seats: parseInt(newTableSeats) || 8,
-          shape: 'circle',
-          position: { x: 0, y: 0 }
-        }])
+        .insert([
+          {
+            name: newTableName,
+            seats: 8,
+            position: { x: 100, y: 100 }
+          }
+        ])
         .select()
         .single();
 
       if (error) throw error;
 
-      setTables([...tables, { ...data, guests: [] }]);
+      setTables([...tables, data]);
       setEditDialogOpen(false);
-      setNewTableName('');
-      setNewTableSeats('8');
       setSnackbar({
         open: true,
         message: 'Table added successfully',
@@ -208,64 +136,11 @@ export default function SeatingChart() {
     }
   };
 
-  const handleDragEnd = async (result: DropResult) => {
-    if (!result.destination) return;
-
-    try {
-      const sourceTable = tables.find(t => t.id === result.source.droppableId);
-      const destTable = tables.find(t => t.id === result.destination?.droppableId);
-      
-      if (!sourceTable || !destTable) return;
-
-      const guest = sourceTable.guests?.find(g => g.id === result.draggableId);
-      if (!guest) return;
-
-      const { error } = await supabase
-        .from('table_assignments')
-        .update({ table_id: destTable.id })
-        .eq('guest_id', guest.id);
-
-      if (error) throw error;
-
-      const newTables = tables.map(table => {
-        if (table.id === sourceTable.id) {
-          return {
-            ...table,
-            guests: table.guests?.filter(g => g.id !== guest.id)
-          };
-        }
-        if (table.id === destTable.id) {
-          return {
-            ...table,
-            guests: [...(table.guests || []), { ...guest, table_id: destTable.id }]
-          };
-        }
-        return table;
-      });
-
-      setTables(newTables);
-      setSnackbar({
-        open: true,
-        message: 'Guest moved successfully',
-        severity: 'success'
-      });
-    } catch (error) {
-      console.error('Error moving guest:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to move guest',
-        severity: 'error'
-      });
-    }
-  };
-
-  const handleAddGuest = async () => {
+  const handleAddGuest = async (name: string) => {
     try {
       const { data, error } = await supabase
         .from('guests')
-        .insert([{
-          name: 'New Guest'
-        }])
+        .insert([{ name }])
         .select()
         .single();
 
@@ -287,13 +162,48 @@ export default function SeatingChart() {
     }
   };
 
+  const handleDragEnd = async (result: any) => {
+    if (!result.destination) return;
+
+    const sourceId = result.source.droppableId;
+    const destId = result.destination.droppableId;
+    const guestId = result.draggableId;
+
+    try {
+      const { error } = await supabase
+        .from('guests')
+        .update({ table_id: destId })
+        .eq('id', guestId);
+
+      if (error) throw error;
+
+      // Update local state
+      const updatedGuests = guests.map(guest => 
+        guest.id === guestId ? { ...guest, table_id: destId } : guest
+      );
+      setGuests(updatedGuests);
+
+      setSnackbar({
+        open: true,
+        message: 'Guest assigned successfully',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error assigning guest:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to assign guest',
+        severity: 'error'
+      });
+    }
+  };
+
   return (
     <Container maxWidth={false} sx={{ p: 3 }}>
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-          <Tab label="Wedding" />
-          <Tab label="Chart" />
-          <Tab label="List" />
+          <Tab label="Dashboard" value={0} />
+          <Tab label="Seating Chart" value={1} />
         </Tabs>
       </Box>
 
@@ -406,46 +316,40 @@ export default function SeatingChart() {
               </DragDropContext>
             </Paper>
           </Box>
+
+          <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
+            <DialogTitle>
+              {selectedTable ? 'Edit Table' : 'Add New Table'}
+            </DialogTitle>
+            <DialogContent>
+              <TextField
+                autoFocus
+                margin="dense"
+                label="Table Name"
+                fullWidth
+                value={newTableName}
+                onChange={(e) => setNewTableName(e.target.value)}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleAddTable} variant="contained">
+                {selectedTable ? 'Save' : 'Add'}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          <Snackbar
+            open={snackbar.open}
+            autoHideDuration={6000}
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
+          >
+            <Alert severity={snackbar.severity}>
+              {snackbar.message}
+            </Alert>
+          </Snackbar>
         </>
       )}
-
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
-        <DialogTitle>{selectedTable ? 'Edit Table' : 'Add Table'}</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Table Name"
-            fullWidth
-            value={newTableName}
-            onChange={(e) => setNewTableName(e.target.value)}
-          />
-          <TextField
-            margin="dense"
-            label="Number of Seats"
-            type="number"
-            fullWidth
-            value={newTableSeats}
-            onChange={(e) => setNewTableSeats(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleAddTable} variant="contained">
-            {selectedTable ? 'Save' : 'Add'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-      >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </Container>
   );
 }
