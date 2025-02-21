@@ -3,23 +3,20 @@ import { ThemeProvider, CssBaseline } from '@mui/material';
 import { theme } from './theme';
 import ServiceMenu from './pages/ServiceMenu';
 import SeatingChart from './pages/SeatingChart';
-import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
   return (
-    <AuthProvider>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Router>
-          <Routes>
-            <Route path="/" element={<ServiceMenu />} />
-            <Route path="/seating-chart" element={<SeatingChart />} />
-            {/* Add other routes as they are implemented */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Router>
-      </ThemeProvider>
-    </AuthProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Router>
+        <Routes>
+          <Route path="/" element={<ServiceMenu />} />
+          <Route path="/seating-chart" element={<SeatingChart />} />
+          {/* Add other routes as they are implemented */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 
