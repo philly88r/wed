@@ -13,6 +13,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import CommentSystem from '../components/Comments/CommentSystem';
 
 interface DashboardData {
   weddingDate?: string;
@@ -129,6 +130,134 @@ export default function Dashboard() {
 
   const daysUntilWedding = getDaysUntilWedding();
 
+  const sections = [
+    {
+      id: 'budget',
+      title: 'Budget',
+      content: (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Budget</p>
+              <p className="mt-1 text-xl font-semibold text-gray-900">
+                ${data.spentBudget.toLocaleString()}
+                <span className="text-sm font-normal text-gray-500">
+                  /${data.totalBudget.toLocaleString()}
+                </span>
+              </p>
+            </div>
+            <DollarSign className="w-8 h-8 text-rose-600" />
+          </div>
+          <div className="mt-4">
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-rose-600 h-2 rounded-full"
+                style={{
+                  width: `${
+                    data.totalBudget
+                      ? (data.spentBudget / data.totalBudget) * 100
+                      : 0
+                  }%`
+                }}
+              />
+            </div>
+          </div>
+          <CommentSystem section="budget" title="Budget Comments" />
+        </div>
+      ),
+    },
+    {
+      id: 'guest-list',
+      title: 'Guest List',
+      content: (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Guest List</p>
+              <p className="mt-1 text-xl font-semibold text-gray-900">
+                {data.confirmedGuests}
+                <span className="text-sm font-normal text-gray-500">
+                  /{data.totalGuests} confirmed
+                </span>
+              </p>
+            </div>
+            <Users className="w-8 h-8 text-rose-600" />
+          </div>
+          <div className="mt-4 flex space-x-4 text-sm">
+            <span className="text-emerald-600">{data.confirmedGuests} confirmed</span>
+            <span className="text-rose-600">{data.declinedGuests} declined</span>
+            <span className="text-amber-600">{data.pendingGuests} pending</span>
+          </div>
+          <CommentSystem section="guest-list" title="Guest List Comments" />
+        </div>
+      ),
+    },
+    {
+      id: 'tasks',
+      title: 'Tasks',
+      content: (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Tasks</p>
+              <p className="mt-1 text-xl font-semibold text-gray-900">
+                {data.completedTasks}
+                <span className="text-sm font-normal text-gray-500">
+                  /{data.totalTasks} completed
+                </span>
+              </p>
+            </div>
+            <CheckSquare className="w-8 h-8 text-rose-600" />
+          </div>
+          <div className="mt-4">
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-rose-600 h-2 rounded-full"
+                style={{
+                  width: `${
+                    data.totalTasks
+                      ? (data.completedTasks / data.totalTasks) * 100
+                      : 0
+                  }%`
+                }}
+              />
+            </div>
+          </div>
+          <CommentSystem section="tasks" title="Task Comments" />
+        </div>
+      ),
+    },
+    {
+      id: 'vendors',
+      title: 'Vendors',
+      content: (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Vendors</p>
+              <p className="mt-1 text-xl font-semibold text-gray-900">
+                {data.recentVendors.length} recent updates
+              </p>
+            </div>
+            <Truck className="w-8 h-8 text-rose-600" />
+          </div>
+          <div className="mt-4 text-sm text-gray-500">
+            {data.recentVendors.length > 0
+              ? `Last updated ${new Date(
+                  Math.max(
+                    ...data.recentVendors.map(v =>
+                      parseInt(v.id)
+                    )
+                  )
+                ).toLocaleDateString()}`
+              : 'No vendors added yet'}
+          </div>
+          <CommentSystem section="vendors" title="Vendor Comments" />
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Wedding Countdown */}
@@ -165,106 +294,9 @@ export default function Dashboard() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Budget</p>
-              <p className="mt-1 text-xl font-semibold text-gray-900">
-                ${data.spentBudget.toLocaleString()}
-                <span className="text-sm font-normal text-gray-500">
-                  /${data.totalBudget.toLocaleString()}
-                </span>
-              </p>
-            </div>
-            <DollarSign className="w-8 h-8 text-rose-600" />
-          </div>
-          <div className="mt-4">
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-rose-600 h-2 rounded-full"
-                style={{
-                  width: `${
-                    data.totalBudget
-                      ? (data.spentBudget / data.totalBudget) * 100
-                      : 0
-                  }%`
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Guest List</p>
-              <p className="mt-1 text-xl font-semibold text-gray-900">
-                {data.confirmedGuests}
-                <span className="text-sm font-normal text-gray-500">
-                  /{data.totalGuests} confirmed
-                </span>
-              </p>
-            </div>
-            <Users className="w-8 h-8 text-rose-600" />
-          </div>
-          <div className="mt-4 flex space-x-4 text-sm">
-            <span className="text-emerald-600">{data.confirmedGuests} confirmed</span>
-            <span className="text-rose-600">{data.declinedGuests} declined</span>
-            <span className="text-amber-600">{data.pendingGuests} pending</span>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Tasks</p>
-              <p className="mt-1 text-xl font-semibold text-gray-900">
-                {data.completedTasks}
-                <span className="text-sm font-normal text-gray-500">
-                  /{data.totalTasks} completed
-                </span>
-              </p>
-            </div>
-            <CheckSquare className="w-8 h-8 text-rose-600" />
-          </div>
-          <div className="mt-4">
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-rose-600 h-2 rounded-full"
-                style={{
-                  width: `${
-                    data.totalTasks
-                      ? (data.completedTasks / data.totalTasks) * 100
-                      : 0
-                  }%`
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Vendors</p>
-              <p className="mt-1 text-xl font-semibold text-gray-900">
-                {data.recentVendors.length} recent updates
-              </p>
-            </div>
-            <Truck className="w-8 h-8 text-rose-600" />
-          </div>
-          <div className="mt-4 text-sm text-gray-500">
-            {data.recentVendors.length > 0
-              ? `Last updated ${new Date(
-                  Math.max(
-                    ...data.recentVendors.map(v =>
-                      parseInt(v.id)
-                    )
-                  )
-                ).toLocaleDateString()}`
-              : 'No vendors added yet'}
-          </div>
-        </div>
+        {sections.map((section) => (
+          <div key={section.id}>{section.content}</div>
+        ))}
       </div>
 
       {/* Upcoming Events & Tasks */}
