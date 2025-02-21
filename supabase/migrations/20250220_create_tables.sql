@@ -32,3 +32,16 @@ CREATE TABLE IF NOT EXISTS table_assignments (
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(table_id, guest_id)
 );
+
+-- Create comments table for discussions
+CREATE TABLE IF NOT EXISTS comments (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    section VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    commenter_name TEXT NOT NULL,
+    parent_id UUID REFERENCES comments(id) ON DELETE CASCADE,
+    resolved BOOLEAN DEFAULT FALSE,
+    resolved_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
