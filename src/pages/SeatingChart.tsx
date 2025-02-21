@@ -17,12 +17,16 @@ import {
   MenuItem,
   Snackbar,
   Alert,
+  Tabs,
+  Tab,
+  Grid,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { DragDropContext, DropResult } from 'react-beautiful-dnd';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 
 interface Guest {
   id: string;
@@ -52,8 +56,6 @@ interface Table {
   position: {
     x: number;
     y: number;
-    width: number;
-    height: number;
   };
 }
 
@@ -63,20 +65,49 @@ interface SnackbarState {
   severity: 'success' | 'error' | 'info' | 'warning';
 }
 
+interface GuestListProps {
+  guests: Guest[];
+  onAddGuest: () => void;
+}
+
+function GuestList({ guests, onAddGuest }: GuestListProps) {
+  return (
+    <Box sx={{ height: '100%', overflow: 'auto' }}>
+      <Typography variant="h6" sx={{ mb: 2 }}>
+        Guest List
+      </Typography>
+      <Button variant="contained" onClick={onAddGuest}>
+        Add Guest
+      </Button>
+      <Box sx={{ mt: 2 }}>
+        {guests.map((guest) => (
+          <Typography key={guest.id} variant="body1" sx={{ mb: 1 }}>
+            {guest.name}
+          </Typography>
+        ))}
+      </Box>
+    </Box>
+  );
+}
+
 export default function SeatingChart() {
   const [tables, setTables] = useState<Table[]>([]);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [newTableName, setNewTableName] = useState('');
+  const [newTableSeats, setNewTableSeats] = useState('8');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [tabValue, setTabValue] = useState(0);
   const [snackbar, setSnackbar] = useState<SnackbarState>({
     open: false,
     message: '',
     severity: 'success',
   });
+  const [guests, setGuests] = useState<Guest[]>([]);
 
   useEffect(() => {
     fetchTables();
+    fetchGuests();
   }, []);
 
   const fetchTables = async () => {
@@ -93,7 +124,6 @@ export default function SeatingChart() {
 
       if (assignmentsError) throw assignmentsError;
 
-      // Convert assignments to TableGuest format and group by table
       const guestsByTable = (assignmentsData as TableAssignment[]).reduce<Record<string, TableGuest[]>>((acc, assignment) => {
         const guest: TableGuest = {
           id: assignment.guest.id,
@@ -108,10 +138,10 @@ export default function SeatingChart() {
         return acc;
       }, {});
 
-      // Combine tables with their guests
       const tablesWithGuests = tablesData.map(table => ({
         ...table,
-        guests: guestsByTable[table.id] || []
+        guests: guestsByTable[table.id] || [],
+        position: table.position || { x: 0, y: 0 }
       }));
 
       setTables(tablesWithGuests);
@@ -121,6 +151,59 @@ export default function SeatingChart() {
         open: true,
         message: 'Failed to load tables',
         severity: 'error',
+      });
+    }
+  };
+
+  const fetchGuests = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('guests')
+        .select('*');
+
+      if (error) throw error;
+
+      setGuests(data);
+    } catch (error) {
+      console.error('Error fetching guests:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to load guests',
+        severity: 'error',
+      });
+    }
+  };
+
+  const handleAddTable = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('seating_tables')
+        .insert([{
+          name: newTableName || 'New Table',
+          seats: parseInt(newTableSeats) || 8,
+          shape: 'circle',
+          position: { x: 0, y: 0 }
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setTables([...tables, { ...data, guests: [] }]);
+      setEditDialogOpen(false);
+      setNewTableName('');
+      setNewTableSeats('8');
+      setSnackbar({
+        open: true,
+        message: 'Table added successfully',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error adding table:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to add table',
+        severity: 'error'
       });
     }
   };
@@ -137,7 +220,6 @@ export default function SeatingChart() {
       const guest = sourceTable.guests?.find(g => g.id === result.draggableId);
       if (!guest) return;
 
-      // Update the assignment in the database
       const { error } = await supabase
         .from('table_assignments')
         .update({ table_id: destTable.id })
@@ -145,7 +227,6 @@ export default function SeatingChart() {
 
       if (error) throw error;
 
-      // Update local state
       const newTables = tables.map(table => {
         if (table.id === sourceTable.id) {
           return {
@@ -178,241 +259,193 @@ export default function SeatingChart() {
     }
   };
 
-  const handleAssignmentDelete = async (guest: TableGuest) => {
+  const handleAddGuest = async () => {
     try {
-      const { error } = await supabase
-        .from('table_assignments')
-        .delete()
-        .eq('guest_id', guest.id);
+      const { data, error } = await supabase
+        .from('guests')
+        .insert([{
+          name: 'New Guest'
+        }])
+        .select()
+        .single();
 
       if (error) throw error;
 
-      // Update local state
-      const newTables = tables.map(table => ({
-        ...table,
-        guests: table.guests?.filter(g => g.id !== guest.id)
-      }));
-
-      setTables(newTables);
+      setGuests([...guests, data]);
       setSnackbar({
         open: true,
-        message: 'Guest removed from table',
+        message: 'Guest added successfully',
         severity: 'success'
       });
     } catch (error) {
-      console.error('Error removing guest:', error);
+      console.error('Error adding guest:', error);
       setSnackbar({
         open: true,
-        message: 'Failed to remove guest',
+        message: 'Failed to add guest',
         severity: 'error'
       });
     }
-  };
-
-  const handleTableClick = (event: React.MouseEvent<HTMLElement>, table: Table) => {
-    setSelectedTable(table);
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleEditClick = () => {
-    if (selectedTable) {
-      setNewTableName(selectedTable.name);
-      setEditDialogOpen(true);
-    }
-    handleClose();
-  };
-
-  const handleDeleteClick = async () => {
-    if (!selectedTable) return;
-
-    try {
-      const { error } = await supabase
-        .from('seating_tables')
-        .delete()
-        .eq('id', selectedTable.id);
-
-      if (error) throw error;
-
-      setTables(tables.filter(t => t.id !== selectedTable.id));
-      setSnackbar({
-        open: true,
-        message: 'Table deleted successfully',
-        severity: 'success'
-      });
-    } catch (error) {
-      console.error('Error deleting table:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to delete table',
-        severity: 'error'
-      });
-    }
-    handleClose();
   };
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ my: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-          <Typography variant="h4">Seating Chart</Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => {
-              setSelectedTable(null);
-              setNewTableName('');
-              setEditDialogOpen(true);
-            }}
-          >
-            Add Table
-          </Button>
-        </Box>
+    <Container maxWidth={false} sx={{ p: 3 }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+          <Tab label="Wedding" />
+          <Tab label="Chart" />
+          <Tab label="List" />
+        </Tabs>
+      </Box>
 
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 3 }}>
-            {tables.map((table) => (
-              <Paper
-                key={table.id}
-                sx={{
-                  p: 2,
-                  minHeight: 200,
-                  backgroundColor: table.color || '#fff',
-                  position: 'relative',
+      {tabValue === 1 && (
+        <>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+            <Typography variant="h5">Seating Chart</Typography>
+            <Box>
+              <Button
+                variant="outlined"
+                startIcon={<PictureAsPdfIcon />}
+                sx={{ mr: 2 }}
+              >
+                PDF
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => {
+                  setSelectedTable(null);
+                  setNewTableName('');
+                  setEditDialogOpen(true);
                 }}
               >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="h6">{table.name}</Typography>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => handleTableClick(e, table)}
-                  >
-                    <MoreVertIcon />
-                  </IconButton>
-                </Box>
+                Add Table
+              </Button>
+            </Box>
+          </Box>
 
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {table.seats} seats
-                  </Typography>
-                </Box>
+          <Box sx={{ display: 'flex', gap: 3, height: 'calc(100vh - 200px)' }}>
+            <Box sx={{ width: 300 }}>
+              <GuestList
+                guests={guests}
+                onAddGuest={handleAddGuest}
+              />
+            </Box>
 
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {table.guests?.map((guest) => (
-                    <Chip
-                      key={guest.id}
-                      label={guest.name}
-                      onDelete={() => handleAssignmentDelete(guest)}
-                      size="small"
-                    />
+            <Paper 
+              sx={{ 
+                p: 4, 
+                flexGrow: 1,
+                backgroundColor: '#f5f5f5',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+            >
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <Box sx={{ position: 'relative', height: '100%' }}>
+                  {tables.map((table) => (
+                    <Droppable key={table.id} droppableId={table.id}>
+                      {(provided) => (
+                        <Box
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          sx={{
+                            position: 'absolute',
+                            left: table.position.x,
+                            top: table.position.y,
+                          }}
+                        >
+                          <Paper
+                            sx={{
+                              width: 120,
+                              height: 120,
+                              borderRadius: '50%',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'move',
+                              backgroundColor: table.color || '#fff',
+                              '&:hover': {
+                                boxShadow: 3,
+                              },
+                            }}
+                          >
+                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                              {table.name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {table.seats} seats
+                            </Typography>
+                            <Box sx={{ mt: 1 }}>
+                              {table.guests?.map((guest, index) => (
+                                <Draggable
+                                  key={guest.id}
+                                  draggableId={guest.id}
+                                  index={index}
+                                >
+                                  {(provided) => (
+                                    <Chip
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      {...provided.dragHandleProps}
+                                      label={guest.name}
+                                      size="small"
+                                      sx={{ m: 0.5 }}
+                                    />
+                                  )}
+                                </Draggable>
+                              ))}
+                            </Box>
+                            {provided.placeholder}
+                          </Paper>
+                        </Box>
+                      )}
+                    </Droppable>
                   ))}
                 </Box>
-              </Paper>
-            ))}
+              </DragDropContext>
+            </Paper>
           </Box>
-        </DragDropContext>
+        </>
+      )}
 
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleClose}
-        >
-          <MenuItem onClick={handleEditClick}>
-            <EditIcon sx={{ mr: 1 }} />
-            Edit
-          </MenuItem>
-          <MenuItem onClick={handleDeleteClick}>
-            <DeleteIcon sx={{ mr: 1 }} />
-            Delete
-          </MenuItem>
-        </Menu>
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
+        <DialogTitle>{selectedTable ? 'Edit Table' : 'Add Table'}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Table Name"
+            fullWidth
+            value={newTableName}
+            onChange={(e) => setNewTableName(e.target.value)}
+          />
+          <TextField
+            margin="dense"
+            label="Number of Seats"
+            type="number"
+            fullWidth
+            value={newTableSeats}
+            onChange={(e) => setNewTableSeats(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleAddTable} variant="contained">
+            {selectedTable ? 'Save' : 'Add'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-        <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
-          <DialogTitle>
-            {selectedTable ? 'Edit Table' : 'Add Table'}
-          </DialogTitle>
-          <DialogContent>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Table Name"
-              fullWidth
-              value={newTableName}
-              onChange={(e) => setNewTableName(e.target.value)}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={async () => {
-              try {
-                if (selectedTable) {
-                  // Update existing table
-                  const { error } = await supabase
-                    .from('seating_tables')
-                    .update({ name: newTableName })
-                    .eq('id', selectedTable.id);
-
-                  if (error) throw error;
-
-                  setTables(tables.map(t => 
-                    t.id === selectedTable.id 
-                      ? { ...t, name: newTableName }
-                      : t
-                  ));
-                } else {
-                  // Create new table
-                  const { data, error } = await supabase
-                    .from('seating_tables')
-                    .insert([{
-                      name: newTableName,
-                      seats: 8,
-                      shape: 'rectangle',
-                      position: { x: 0, y: 0, width: 200, height: 100 }
-                    }])
-                    .select();
-
-                  if (error) throw error;
-                  if (data) {
-                    setTables([...tables, data[0]]);
-                  }
-                }
-
-                setSnackbar({
-                  open: true,
-                  message: `Table ${selectedTable ? 'updated' : 'created'} successfully`,
-                  severity: 'success'
-                });
-                setEditDialogOpen(false);
-              } catch (error) {
-                console.error('Error saving table:', error);
-                setSnackbar({
-                  open: true,
-                  message: `Failed to ${selectedTable ? 'update' : 'create'} table`,
-                  severity: 'error'
-                });
-              }
-            }} color="primary">
-              Save
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={6000}
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-        >
-          <Alert
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
-            severity={snackbar.severity}
-          >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-      </Box>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
