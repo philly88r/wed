@@ -19,7 +19,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../supabase';
 import GuestList from '../components/SeatingChart/GuestList';
 
 interface Table {
@@ -165,7 +165,6 @@ export default function SeatingChart() {
   const handleDragEnd = async (result: any) => {
     if (!result.destination) return;
 
-    const sourceId = result.source.droppableId;
     const destId = result.destination.droppableId;
     const guestId = result.draggableId;
 
