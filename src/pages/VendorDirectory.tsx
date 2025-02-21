@@ -169,23 +169,50 @@ export default function VendorDirectory() {
   };
 
   const toggleFavorite = async (vendorId: string) => {
-    const isFavorite = await checkFavoriteStatus(vendorId);
-    const newFavorites = isFavorite
-      ? favorites.filter(id => id !== vendorId)
-      : [...favorites, vendorId];
-    setFavorites(newFavorites);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // Handle not logged in state
+        showSnackbar('Please log in to save favorites', 'error');
+        return;
+      }
 
-    // Save to user's favorites in database
-    const { error } = await supabase
-      .from('user_favorite_vendors')
-      .upsert({ 
-        user_id: supabase.auth.user()?.id,
-        vendor_id: vendorId,
-        created_at: new Date()
-      });
+      const isFavorite = await checkFavoriteStatus(vendorId);
+      
+      if (isFavorite) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('user_favorite_vendors')
+          .delete()
+          .eq('user_id', session.user.id)
+          .eq('vendor_id', vendorId);
 
-    if (error) {
-      console.error('Error saving favorite:', error);
+        if (error) throw error;
+      } else {
+        // Add to favorites
+        const { error } = await supabase
+          .from('user_favorite_vendors')
+          .insert({
+            user_id: session.user.id,
+            vendor_id: vendorId
+          });
+
+        if (error) throw error;
+      }
+
+      // Update local state
+      const newFavorites = isFavorite
+        ? favorites.filter(id => id !== vendorId)
+        : [...favorites, vendorId];
+      setFavorites(newFavorites);
+      
+      showSnackbar(
+        isFavorite ? 'Removed from favorites' : 'Added to favorites',
+        'success'
+      );
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      showSnackbar('Error updating favorites', 'error');
     }
   };
 
