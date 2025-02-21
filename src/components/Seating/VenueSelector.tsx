@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Plus } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
+import { analyzeFloorPlan } from '../../services/floorPlanService';
 
 // Update these values to match what's in your database
 type RoomType = 'reception' | 'ceremony' | 'dining';
@@ -11,6 +12,12 @@ interface Room {
   length: number;
   width: number;
   room_type: RoomType;
+  floor_plan_url?: string;
+  table_scale?: number;
+  ai_scale_found?: boolean;
+  ai_scale_text?: string;
+  ai_scale_value?: number;
+  ai_pixels_per_foot?: number;
 }
 
 interface VenueSelectorProps {
@@ -33,6 +40,10 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
   const [newRoomType, setNewRoomType] = useState<RoomType>('reception');
   const [error, setError] = useState<string | null>(null);
 
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -47,7 +58,6 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
     }
 
     try {
-      console.log('Creating room with:', { name: newRoomName, length, width, room_type: newRoomType });
       const { data, error: insertError } = await supabase
         .from('venue_rooms')
         .insert({
@@ -65,7 +75,6 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
         return;
       }
 
-      console.log('Created room:', data);
       if (data) {
         setRooms(prev => [...prev, data as Room]);
         setShowCreateForm(false);
@@ -80,6 +89,123 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
     }
   };
 
+  const handleUploadFloorPlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    if (!selectedFile || !newRoomName) {
+      setError('Please provide both a name and a floor plan');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Convert image to base64 for AI analysis
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const base64Image = e.target?.result as string;
+          const base64Content = base64Image.split(',')[1];
+
+          // Analyze floor plan with AI
+          const analysis = await analyzeFloorPlan(base64Content);
+          console.log('Floor plan analysis:', analysis);
+
+          // Upload to Supabase Storage
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('floor-plans')
+            .upload(`temp/${selectedFile.name}`, selectedFile, {
+              upsert: true,
+              cacheControl: '3600'
+            });
+
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+            throw uploadError;
+          }
+
+          // Get public URL for the uploaded file
+          const { data: { publicUrl } } = supabase.storage
+            .from('floor-plans')
+            .getPublicUrl(`temp/${selectedFile.name}`);
+
+          // Save room with floor plan and analysis results
+          const { data: room, error: roomError } = await supabase
+            .from('venue_rooms')
+            .insert({
+              name: newRoomName,
+              floor_plan_url: publicUrl,
+              length: analysis.dimensions.length || 0,
+              width: analysis.dimensions.width || 0,
+              table_scale: analysis.scale.pixelsPerFoot,
+              ai_scale_found: analysis.scale.found,
+              ai_scale_text: analysis.scale.text,
+              ai_scale_value: analysis.scale.value,
+              ai_pixels_per_foot: analysis.scale.pixelsPerFoot,
+              room_type: newRoomType
+            })
+            .select()
+            .single();
+
+          if (roomError) {
+            console.error('Insert error:', roomError);
+            throw roomError;
+          }
+
+          // Move the file to the permanent location
+          const { error: moveError } = await supabase.storage
+            .from('floor-plans')
+            .move(
+              `temp/${selectedFile.name}`, 
+              `${room.id}/${selectedFile.name}`
+            );
+
+          if (moveError) {
+            console.error('Move error:', moveError);
+            throw moveError;
+          }
+
+          // Update the room with the new URL
+          const finalUrl = supabase.storage
+            .from('floor-plans')
+            .getPublicUrl(`${room.id}/${selectedFile.name}`).data.publicUrl;
+
+          const { error: updateError } = await supabase
+            .from('venue_rooms')
+            .update({ floor_plan_url: finalUrl })
+            .eq('id', room.id);
+
+          if (updateError) {
+            console.error('Update error:', updateError);
+            throw updateError;
+          }
+
+          // Add the new room to the list
+          setRooms(prev => [...prev, { ...room, floor_plan_url: finalUrl }]);
+          
+          // Reset form
+          setShowUploadForm(false);
+          setNewRoomName('');
+          setSelectedFile(null);
+          setNewRoomType('reception');
+          
+        } catch (error) {
+          console.error('Error processing floor plan:', error);
+          setError('Failed to process floor plan. Please try again.');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      reader.readAsDataURL(selectedFile);
+    } catch (err) {
+      console.error('Error uploading floor plan:', err);
+      setError('Failed to upload floor plan. Please try again.');
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center space-x-4">
@@ -89,98 +215,167 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
           onChange={(e) => onSelect(e.target.value)}
         >
           <option value="">Select Room</option>
-          {rooms.map(room => (
+          {rooms.map((room) => (
             <option key={room.id} value={room.id}>
-              {room.name} ({room.length}' × {room.width}') - {room.room_type}
+              {room.name} ({room.length}' × {room.width}')
             </option>
           ))}
         </select>
         <button
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           onClick={() => setShowCreateForm(true)}
-          className="bg-emerald-500 text-white px-4 py-2 rounded flex items-center"
         >
-          <Plus className="w-4 h-4 mr-2" />
-          New Room
+          <Plus className="h-5 w-5" />
+          <span>New Room</span>
+        </button>
+        <button
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          onClick={() => setShowUploadForm(true)}
+        >
+          <Upload className="h-5 w-5" />
+          <span>Upload Floor Plan</span>
         </button>
       </div>
 
+      {/* Create Room Form */}
       {showCreateForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full">
-            <h2 className="text-xl font-bold mb-4">Create New Room</h2>
-            <form onSubmit={handleCreateRoom}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block mb-1">Room Name</label>
-                  <input
-                    type="text"
-                    value={newRoomName}
-                    onChange={(e) => setNewRoomName(e.target.value)}
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1">Room Type</label>
-                  <select
-                    value={newRoomType}
-                    onChange={(e) => setNewRoomType(e.target.value as RoomType)}
-                    className="w-full p-2 border rounded"
-                    required
-                  >
-                    <option value="reception">Reception</option>
-                    <option value="ceremony">Ceremony</option>
-                    <option value="dining">Dining</option>
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block mb-1">Length (feet)</label>
-                    <input
-                      type="number"
-                      value={newRoomLength}
-                      onChange={(e) => setNewRoomLength(e.target.value)}
-                      className="w-full p-2 border rounded"
-                      min="1"
-                      step="0.1"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block mb-1">Width (feet)</label>
-                    <input
-                      type="number"
-                      value={newRoomWidth}
-                      onChange={(e) => setNewRoomWidth(e.target.value)}
-                      className="w-full p-2 border rounded"
-                      min="1"
-                      step="0.1"
-                      required
-                    />
-                  </div>
-                </div>
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-xl font-semibold mb-4">Create New Room</h2>
+            <form onSubmit={handleCreateRoom} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Room Name</label>
+                <input
+                  type="text"
+                  value={newRoomName}
+                  onChange={(e) => setNewRoomName(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Length (feet)</label>
+                <input
+                  type="number"
+                  value={newRoomLength}
+                  onChange={(e) => setNewRoomLength(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Width (feet)</label>
+                <input
+                  type="number"
+                  value={newRoomWidth}
+                  onChange={(e) => setNewRoomWidth(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Room Type</label>
+                <select
+                  value={newRoomType}
+                  onChange={(e) => setNewRoomType(e.target.value as RoomType)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="reception">Reception</option>
+                  <option value="ceremony">Ceremony</option>
+                  <option value="dining">Dining</option>
+                </select>
               </div>
               {error && (
-                <div className="mt-2 text-red-500 text-sm">
-                  {error}
-                </div>
+                <div className="text-red-600 text-sm">{error}</div>
               )}
-              <div className="flex justify-end gap-2 mt-4">
+              <div className="flex justify-end space-x-3">
                 <button
                   type="button"
                   onClick={() => {
                     setShowCreateForm(false);
                     setError(null);
                   }}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-emerald-500 text-white rounded hover:bg-emerald-600"
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
-                  Create Room
+                  Create
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Floor Plan Form */}
+      {showUploadForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-xl font-semibold mb-4">Upload Floor Plan</h2>
+            <form onSubmit={handleUploadFloorPlan} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Room Name</label>
+                <input
+                  type="text"
+                  value={newRoomName}
+                  onChange={(e) => setNewRoomName(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Room Type</label>
+                <select
+                  value={newRoomType}
+                  onChange={(e) => setNewRoomType(e.target.value as RoomType)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="reception">Reception</option>
+                  <option value="ceremony">Ceremony</option>
+                  <option value="dining">Dining</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Floor Plan</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                  className="mt-1 block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-md file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700
+                    hover:file:bg-blue-100"
+                  required
+                />
+              </div>
+              {error && (
+                <div className="text-red-600 text-sm">{error}</div>
+              )}
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUploadForm(false);
+                    setError(null);
+                    setSelectedFile(null);
+                  }}
+                  className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-50"
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                  disabled={loading}
+                >
+                  {loading ? 'Processing...' : 'Upload'}
                 </button>
               </div>
             </form>
@@ -189,6 +384,6 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
       )}
     </div>
   );
-};
+}
 
 export default VenueSelector;

@@ -27,14 +27,26 @@ interface Room {
   name: string;
   length: number;
   width: number;
+  floor_plan_url?: string;
+  table_scale?: number;
 }
 
 interface TableEditorProps {
   tables: TableInstance[];
   setTables: (tables: TableInstance[]) => void;
-  scale: number; // pixels per foot
   room: Room;
   onUpdateTable: (tableId: string, updates: Partial<TableInstance>) => void;
+  onDeleteTable: (tableId: string) => void;
+}
+
+interface SpecialAreaData {
+  id: string;
+  name: string;
+  position_x: number;
+  position_y: number;
+  width: number;
+  height: number;
+  color: string;
 }
 
 const TableShape: React.FC<{
@@ -42,7 +54,6 @@ const TableShape: React.FC<{
   scale: number;
   style?: React.CSSProperties;
 }> = ({ table, scale, style }) => {
-  // Use exact scale - no artificial multiplier
   const width = table.template.width * scale;
   const length = table.template.length * scale;
   
@@ -58,7 +69,7 @@ const TableShape: React.FC<{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: Math.max(12, scale / 4), // Scale font size with table size
+          fontSize: Math.max(12, scale / 4),
           ...style
         }}
       >
@@ -67,28 +78,6 @@ const TableShape: React.FC<{
     );
   }
 
-  if (table.template.shape === 'oval') {
-    return (
-      <div
-        style={{
-          width: length,
-          height: width,
-          borderRadius: '50%',
-          border: '2px solid #4B5563',
-          backgroundColor: '#F3F4F6',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: Math.max(12, scale / 4), // Scale font size with table size
-          ...style
-        }}
-      >
-        <span className="font-medium">{table.name}</span>
-      </div>
-    );
-  }
-
-  // Rectangle or Square
   return (
     <div
       style={{
@@ -99,7 +88,7 @@ const TableShape: React.FC<{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: Math.max(12, scale / 4), // Scale font size with table size
+        fontSize: Math.max(12, scale / 4),
         ...style
       }}
     >
@@ -115,255 +104,285 @@ const DraggableTable: React.FC<{
   onRotate: (amount: number) => void;
   selected: boolean;
 }> = ({ table, scale, onMouseDown, onRotate, selected }) => {
-  const buttonSize = Math.max(24, scale / 3); // Scale button size with table size
+  const buttonSize = Math.max(24, scale / 3);
   
   return (
     <div
       style={{
         position: 'absolute',
-        left: table.position_x * scale,
-        top: table.position_y * scale,
+        left: `${table.position_x * scale}px`,
+        top: `${table.position_y * scale}px`,
+        transform: `rotate(${table.rotation}deg)`,
         cursor: 'move',
         userSelect: 'none',
-        border: selected ? '2px solid #4B5563' : 'none'
+        outline: selected ? '2px solid #4B5563' : 'none',
+        outlineOffset: '2px',
+        zIndex: selected ? 10 : 1
       }}
       onMouseDown={onMouseDown}
     >
-      <div style={{ position: 'relative' }}>
-        <div
-          style={{
-            transform: `rotate(${table.rotation}deg)`,
-          }}
-        >
-          <TableShape table={table} scale={scale} />
-        </div>
-        
-        {/* Rotation controls */}
-        <div className="absolute top-0 right-0 -mr-8 space-y-1">
-          <button
-            style={{
-              width: buttonSize,
-              height: buttonSize,
-              fontSize: Math.max(14, scale / 5),
-            }}
-            className="bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 flex items-center justify-center"
-            onClick={() => onRotate(-45)}
-            title="Rotate left"
-          >
-            ↺
-          </button>
-          <button
-            style={{
-              width: buttonSize,
-              height: buttonSize,
-              fontSize: Math.max(14, scale / 5),
-            }}
-            className="bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 flex items-center justify-center"
-            onClick={() => onRotate(45)}
-            title="Rotate right"
-          >
-            ↻
-          </button>
-        </div>
-      </div>
+      <TableShape table={table} scale={scale} />
+      <button
+        className="absolute -top-2 -right-2 bg-white rounded-full shadow-md hover:bg-gray-100"
+        style={{ width: buttonSize, height: buttonSize }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onRotate(45);
+        }}
+      >
+        ↻
+      </button>
     </div>
   );
 };
 
-const SpecialArea: React.FC<{
-  name: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+const DraggableSpecialArea: React.FC<{
+  area: SpecialAreaData;
   scale: number;
-  color: string;
-}> = ({ name, x, y, width, height, scale, color }) => {
+  onMouseDown: (e: React.MouseEvent) => void;
+  selected: boolean;
+}> = ({ area, scale, onMouseDown, selected }) => {
   return (
     <div
       style={{
         position: 'absolute',
-        left: x * scale,
-        top: y * scale,
-        width: width * scale,
-        height: height * scale,
-        border: `2px solid ${color}`,
-        backgroundColor: `${color}33`,
+        left: area.position_x * scale,
+        top: area.position_y * scale,
+        width: area.width * scale,
+        height: area.height * scale,
+        border: `2px solid ${area.color}`,
+        backgroundColor: `${area.color}33`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: Math.max(12, scale / 4),
-        color: color,
+        color: area.color,
         fontWeight: 'bold',
-        textTransform: 'uppercase'
+        textTransform: 'uppercase',
+        cursor: 'move',
+        outline: selected ? `2px solid #4B5563` : 'none',
+        outlineOffset: '2px'
       }}
+      onMouseDown={onMouseDown}
     >
-      {name}
+      {area.name}
     </div>
   );
 };
 
 export const TableEditor: React.FC<TableEditorProps> = ({
-  tables,
-  setTables,
-  scale,
   room,
-  onUpdateTable
+  tables,
+  onUpdateTable,
+  onDeleteTable,
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const [tableStart, setTableStart] = useState<{ x: number; y: number } | null>(null);
+  const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
+  const [floorPlanImage, setFloorPlanImage] = useState<HTMLImageElement | null>(null);
 
-  // Fixed dimensions for all rooms (in pixels)
-  const FIXED_ROOM_WIDTH = 800;
-  const FIXED_ROOM_HEIGHT = 600;
+  // Use the AI-calculated scale if available, otherwise use 76.8 pixels per foot
+  const scale = room.table_scale || 76.8; // pixels per foot
 
-  // Calculate the scale factor based on room dimensions
-  const roomScaleFactor = Math.min(
-    FIXED_ROOM_WIDTH / (room.length || 1),
-    FIXED_ROOM_HEIGHT / (room.width || 1)
-  );
+  useEffect(() => {
+    // Load floor plan image once
+    if (room.floor_plan_url && !floorPlanImage) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = room.floor_plan_url;
+      img.onload = () => {
+        setFloorPlanImage(img);
+        setImageSize({ width: img.width, height: img.height });
+        
+        // Update room scale if not set
+        if (!room.table_scale) {
+          console.log('Setting default scale to 76.8 pixels per foot');
+          supabase
+            .from('rooms')
+            .update({ table_scale: 76.8 })
+            .eq('id', room.id)
+            .then(({ error }) => {
+              if (error) {
+                console.error('Error updating room scale:', error);
+              }
+            });
+        }
+      };
+      img.onerror = (e) => {
+        console.error('Error loading floor plan image:', e);
+      };
+    }
+  }, [room.floor_plan_url]);
 
-  // Scale table dimensions based on room size
-  const getTableDimensions = (table: TableInstance) => {
-    const baseSize = table.template.width * roomScaleFactor;
-    return {
-      width: baseSize,
-      height: table.template.shape === 'round' ? baseSize : table.template.length * roomScaleFactor
-    };
+  useEffect(() => {
+    console.log('TableEditor state:', {
+      room,
+      tables,
+      scale,
+      imageSize,
+      selectedTable
+    });
+    drawCanvas();
+  }, [room, tables, scale, selectedTable, floorPlanImage]);
+
+  const drawCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      console.error('Canvas ref is null');
+      return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      console.error('Could not get canvas context');
+      return;
+    }
+
+    // Set canvas size
+    if (floorPlanImage) {
+      canvas.width = floorPlanImage.width;
+      canvas.height = floorPlanImage.height;
+    } else {
+      canvas.width = room.length * scale;
+      canvas.height = room.width * scale;
+    }
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw floor plan if available
+    if (floorPlanImage) {
+      ctx.drawImage(floorPlanImage, 0, 0);
+    }
+
+    // Draw tables
+    tables.forEach(table => {
+      drawTable(ctx, table);
+    });
   };
 
-  const handleMouseDown = (e: React.MouseEvent, tableId: string) => {
-    setSelectedTable(tableId);
-    const table = tables.find(t => t.id === tableId);
-    if (table) {
-      setDragOffset({
-        x: e.clientX - table.position_x * scale,
-        y: e.clientY - table.position_y * scale
-      });
+  const drawTable = (ctx: CanvasRenderingContext2D, table: TableInstance) => {
+    if (!scale) {
+      console.error('Scale is 0 or undefined');
+      return;
+    }
+
+    console.log('Drawing table:', {
+      table,
+      scale,
+      dimensions: {
+        width: table.template.width * scale,
+        length: table.template.length * scale
+      }
+    });
+
+    ctx.save();
+    
+    // Calculate scaled position
+    const x = table.position_x * scale;
+    const y = table.position_y * scale;
+    
+    // Move to table position
+    ctx.translate(x, y);
+    ctx.rotate((table.rotation * Math.PI) / 180);
+
+    // Calculate table dimensions
+    const tableWidth = table.template.width * scale;
+    const tableLength = table.template.length * scale;
+
+    // Draw table
+    ctx.beginPath();
+    if (table.template.shape === 'round') {
+      ctx.arc(0, 0, tableWidth / 2, 0, 2 * Math.PI);
+    } else {
+      ctx.rect(
+        -tableLength / 2,
+        -tableWidth / 2,
+        tableLength,
+        tableWidth
+      );
+    }
+
+    // Fill and stroke
+    ctx.fillStyle = table.id === selectedTable ? '#e5e7eb' : '#f3f4f6';
+    ctx.fill();
+    ctx.strokeStyle = table.id === selectedTable ? '#2563eb' : '#000000';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Add table name
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(table.name, 0, 0);
+    
+    ctx.restore();
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas || !scale) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / scale;
+    const y = (e.clientY - rect.top) / scale;
+
+    // Find clicked table
+    const clickedTable = tables.find(table => {
+      const dx = x - table.position_x;
+      const dy = y - table.position_y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      return distance * scale <= (table.template.width * scale) / 2;
+    });
+
+    if (clickedTable) {
+      setSelectedTable(clickedTable.id);
+      setDragStart({ x: e.clientX, y: e.clientY });
+      setTableStart({ x: clickedTable.position_x, y: clickedTable.position_y });
+    } else {
+      setSelectedTable(null);
     }
   };
 
-  const handleRotate = (tableId: string, amount: number) => {
-    const table = tables.find(t => t.id === tableId);
-    if (!table) return;
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!dragStart || !tableStart || !selectedTable || !scale) return;
 
-    const newRotation = (table.rotation + amount + 360) % 360;
-    
-    // Update table rotation
-    onUpdateTable(table.id, {
-      rotation: newRotation
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const dx = (e.clientX - dragStart.x) / scale;
+    const dy = (e.clientY - dragStart.y) / scale;
+
+    onUpdateTable(selectedTable, {
+      position_x: tableStart.x + dx,
+      position_y: tableStart.y + dy
     });
-
-    // Update local state for immediate feedback
-    setTables(tables.map(t =>
-      t.id === table.id ? { ...t, rotation: newRotation } : t
-    ));
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!selectedTable || !containerRef.current) return;
-
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const table = tables.find(t => t.id === selectedTable);
-    if (!table) return;
-
-    // Calculate new position in feet
-    let newX = (e.clientX - dragOffset.x) / scale;
-    let newY = (e.clientY - dragOffset.y) / scale;
-
-    // Constrain to room boundaries
-    newX = Math.max(0, Math.min(room.length - table.template.length, newX));
-    newY = Math.max(0, Math.min(room.width - table.template.width, newY));
-
-    // Update table position
-    onUpdateTable(table.id, {
-      position_x: newX,
-      position_y: newY
-    });
-
-    // Update local state for smooth dragging
-    setTables(tables.map(t =>
-      t.id === table.id ? { ...t, position_x: newX, position_y: newY } : t
-    ));
   };
 
   const handleMouseUp = () => {
-    setSelectedTable(null);
+    setDragStart(null);
+    setTableStart(null);
   };
 
-  useEffect(() => {
-    document.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, []);
-
   return (
-    <div className="relative w-full h-full">
-      <div
-        ref={containerRef}
-        style={{
-          position: 'relative',
-          width: FIXED_ROOM_WIDTH,
-          height: FIXED_ROOM_HEIGHT,
-          border: '2px solid #000',
-          backgroundColor: '#fff',
-          overflow: 'hidden'
-        }}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-      >
-        {/* Special Areas - scaled according to room size */}
-        <SpecialArea
-          name="Bar"
-          x={10}
-          y={2}
-          width={30 * roomScaleFactor / scale}
-          height={8 * roomScaleFactor / scale}
-          scale={scale}
-          color="#2563EB"
-        />
-        <SpecialArea
-          name="DJ"
-          x={15}
-          y={15}
-          width={6 * roomScaleFactor / scale}
-          height={6 * roomScaleFactor / scale}
-          scale={scale}
-          color="#3B82F6"
-        />
-        <SpecialArea
-          name="Cake"
-          x={45}
-          y={45}
-          width={6 * roomScaleFactor / scale}
-          height={6 * roomScaleFactor / scale}
-          scale={scale}
-          color="#10B981"
-        />
-
-        {tables.map(table => {
-          const dimensions = getTableDimensions(table);
-          return (
-            <DraggableTable
-              key={table.id}
-              table={{
-                ...table,
-                template: {
-                  ...table.template,
-                  width: dimensions.width / scale,
-                  length: dimensions.height / scale
-                }
-              }}
-              scale={scale}
-              onMouseDown={(e) => handleMouseDown(e, table.id)}
-              onRotate={(angle) => handleRotate(table.id, angle)}
-              selected={selectedTable === table.id}
-            />
-          );
-        })}
+    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
+        <h3 className="text-lg font-medium text-gray-900">Table Layout</h3>
+        <p className="text-sm text-gray-500">Scale: {scale} pixels per foot</p>
+      </div>
+      <div className="p-4">
+        <div className="relative w-full h-[600px] border border-gray-200 rounded">
+          <canvas 
+            ref={canvasRef}
+            className="absolute inset-0 w-full h-full object-contain"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          />
+        </div>
       </div>
     </div>
   );
