@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Users, Mail, Phone, MapPin, Filter, Download, Upload, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import ChairIcon from '@mui/icons-material/Chair';
 
 interface Guest {
   id: string;
@@ -214,7 +215,7 @@ export function Guests() {
             onClick={() => navigate('/seating')}
             className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
-            <Chair className="w-4 h-4" />
+            <ChairIcon sx={{ width: 16, height: 16 }} />
             Seating Layout
           </button>
           <button
