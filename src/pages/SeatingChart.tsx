@@ -13,11 +13,16 @@ import {
   Tabs,
   Tab,
   Chip,
+  IconButton,
   Snackbar,
   Alert,
+  Tooltip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import TableRestaurantIcon from '@mui/icons-material/TableRestaurant';
+import SettingsIcon from '@mui/icons-material/Settings';
+import SearchIcon from '@mui/icons-material/Search';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { supabase } from '../lib/supabase';
 import GuestList from '../components/SeatingChart/GuestList';
@@ -39,6 +44,7 @@ interface Guest {
   id: string;
   name: string;
   table_id?: string;
+  status?: 'pending' | 'confirmed' | 'declined';
 }
 
 interface SnackbarState {
@@ -52,13 +58,14 @@ export default function SeatingChart() {
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [newTableName, setNewTableName] = useState('');
-  const [tabValue, setTabValue] = useState(1);
+  const [tabValue, setTabValue] = useState(0);
   const [snackbar, setSnackbar] = useState<SnackbarState>({
     open: false,
     message: '',
     severity: 'success',
   });
   const [guests, setGuests] = useState<Guest[]>([]);
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     fetchTables();
@@ -109,8 +116,9 @@ export default function SeatingChart() {
         .from('seating_tables')
         .insert([
           {
-            name: newTableName,
+            name: newTableName || 'Table',
             seats: 8,
+            shape: 'circle',
             position: { x: 100, y: 100 }
           }
         ])
@@ -140,7 +148,10 @@ export default function SeatingChart() {
     try {
       const { data, error } = await supabase
         .from('guests')
-        .insert([{ name }])
+        .insert([{ 
+          name,
+          status: 'pending'
+        }])
         .select()
         .single();
 
@@ -176,7 +187,6 @@ export default function SeatingChart() {
 
       if (error) throw error;
 
-      // Update local state
       const updatedGuests = guests.map(guest => 
         guest.id === guestId ? { ...guest, table_id: destId } : guest
       );
@@ -197,158 +207,177 @@ export default function SeatingChart() {
     }
   };
 
+  const filteredGuests = guests.filter(guest => {
+    if (filter === 'all') return true;
+    return guest.status === filter;
+  });
+
   return (
     <Container maxWidth={false} sx={{ p: 3 }}>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-          <Tab label="Dashboard" value={0} />
-          <Tab label="Seating Chart" value={1} />
-        </Tabs>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h5">Seating Chart</Typography>
+        <Box>
+          <Tooltip title="Hide">
+            <IconButton sx={{ mr: 1 }}>
+              <SearchIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Settings">
+            <IconButton sx={{ mr: 1 }}>
+              <SettingsIcon />
+            </IconButton>
+          </Tooltip>
+          <Button
+            variant="outlined"
+            startIcon={<PictureAsPdfIcon />}
+            sx={{ mr: 2 }}
+          >
+            PDF
+          </Button>
+        </Box>
       </Box>
 
-      {tabValue === 1 && (
-        <>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-            <Typography variant="h5">Seating Chart</Typography>
-            <Box>
-              <Button
-                variant="outlined"
-                startIcon={<PictureAsPdfIcon />}
-                sx={{ mr: 2 }}
-              >
-                PDF
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => {
+      <Box sx={{ display: 'flex', gap: 3, height: 'calc(100vh - 200px)' }}>
+        <Paper sx={{ width: 300, p: 2 }}>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              Add table
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+              <Tooltip title="Add rectangular table">
+                <IconButton>
+                  <TableRestaurantIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Add circular table">
+                <IconButton onClick={() => {
                   setSelectedTable(null);
                   setNewTableName('');
                   setEditDialogOpen(true);
-                }}
-              >
-                Add Table
-              </Button>
+                }}>
+                  <AddIcon />
+                </IconButton>
+              </Tooltip>
             </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 3, height: 'calc(100vh - 200px)' }}>
-            <Box sx={{ width: 300 }}>
-              <GuestList
-                guests={guests}
-                onAddGuest={handleAddGuest}
-              />
-            </Box>
+          <GuestList
+            guests={filteredGuests}
+            onAddGuest={handleAddGuest}
+            filter={filter}
+            onFilterChange={setFilter}
+          />
+        </Paper>
 
-            <Paper 
-              sx={{ 
-                p: 4, 
-                flexGrow: 1,
-                backgroundColor: '#f5f5f5',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-            >
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <Box sx={{ position: 'relative', height: '100%' }}>
-                  {tables.map((table) => (
-                    <Droppable key={table.id} droppableId={table.id}>
-                      {(provided) => (
-                        <Box
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          sx={{
-                            position: 'absolute',
-                            left: table.position.x,
-                            top: table.position.y,
-                          }}
-                        >
-                          <Paper
-                            sx={{
-                              width: 120,
-                              height: 120,
-                              borderRadius: '50%',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: 'move',
-                              backgroundColor: table.color || '#fff',
-                              '&:hover': {
-                                boxShadow: 3,
-                              },
-                            }}
-                          >
-                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                              {table.name}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {table.seats} seats
-                            </Typography>
-                            <Box sx={{ mt: 1 }}>
-                              {table.guests?.map((guest, index) => (
-                                <Draggable
-                                  key={guest.id}
-                                  draggableId={guest.id}
-                                  index={index}
-                                >
-                                  {(provided) => (
-                                    <Chip
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      {...provided.dragHandleProps}
-                                      label={guest.name}
-                                      size="small"
-                                      sx={{ m: 0.5 }}
-                                    />
-                                  )}
-                                </Draggable>
-                              ))}
-                            </Box>
-                            {provided.placeholder}
-                          </Paper>
+        <Paper 
+          sx={{ 
+            p: 4, 
+            flexGrow: 1,
+            backgroundColor: '#f5f5f5',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Box sx={{ position: 'relative', height: '100%' }}>
+              {tables.map((table) => (
+                <Droppable key={table.id} droppableId={table.id}>
+                  {(provided) => (
+                    <Box
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      sx={{
+                        position: 'absolute',
+                        left: table.position.x,
+                        top: table.position.y,
+                      }}
+                    >
+                      <Paper
+                        sx={{
+                          width: 120,
+                          height: 120,
+                          borderRadius: '50%',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'move',
+                          backgroundColor: table.color || '#fff',
+                          '&:hover': {
+                            boxShadow: 3,
+                          },
+                        }}
+                      >
+                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                          {table.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {table.seats} seats
+                        </Typography>
+                        <Box sx={{ mt: 1 }}>
+                          {guests
+                            .filter(g => g.table_id === table.id)
+                            .map((guest, index) => (
+                              <Draggable
+                                key={guest.id}
+                                draggableId={guest.id}
+                                index={index}
+                              >
+                                {(provided) => (
+                                  <Chip
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    label={guest.name}
+                                    size="small"
+                                    sx={{ m: 0.5 }}
+                                  />
+                                )}
+                              </Draggable>
+                            ))}
                         </Box>
-                      )}
-                    </Droppable>
-                  ))}
-                </Box>
-              </DragDropContext>
-            </Paper>
-          </Box>
+                        {provided.placeholder}
+                      </Paper>
+                    </Box>
+                  )}
+                </Droppable>
+              ))}
+            </Box>
+          </DragDropContext>
+        </Paper>
+      </Box>
 
-          <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
-            <DialogTitle>
-              {selectedTable ? 'Edit Table' : 'Add New Table'}
-            </DialogTitle>
-            <DialogContent>
-              <TextField
-                autoFocus
-                margin="dense"
-                label="Table Name"
-                fullWidth
-                value={newTableName}
-                onChange={(e) => setNewTableName(e.target.value)}
-              />
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleAddTable} variant="contained">
-                {selectedTable ? 'Save' : 'Add'}
-              </Button>
-            </DialogActions>
-          </Dialog>
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
+        <DialogTitle>
+          {selectedTable ? 'Edit Table' : 'Add New Table'}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Table Name"
+            fullWidth
+            value={newTableName}
+            onChange={(e) => setNewTableName(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleAddTable} variant="contained">
+            {selectedTable ? 'Save' : 'Add'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-          <Snackbar
-            open={snackbar.open}
-            autoHideDuration={6000}
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
-          >
-            <Alert severity={snackbar.severity}>
-              {snackbar.message}
-            </Alert>
-          </Snackbar>
-        </>
-      )}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert severity={snackbar.severity}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

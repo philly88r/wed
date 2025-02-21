@@ -9,24 +9,32 @@ import {
   ListItem,
   ListItemText,
   Divider,
+  Tabs,
+  Tab,
+  IconButton,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
 import { Draggable } from 'react-beautiful-dnd';
 
 interface Guest {
   id: string;
   name: string;
   table_id?: string;
+  status?: 'pending' | 'confirmed' | 'declined';
 }
 
 interface GuestListProps {
   guests: Guest[];
   onAddGuest: (name: string) => void;
+  filter: string;
+  onFilterChange: (filter: string) => void;
 }
 
-export default function GuestList({ guests, onAddGuest }: GuestListProps) {
+export default function GuestList({ guests, onAddGuest, filter, onFilterChange }: GuestListProps) {
   const [newGuestName, setNewGuestName] = useState('');
-  const [filter, setFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
 
   const handleAddGuest = () => {
     if (newGuestName.trim()) {
@@ -36,26 +44,17 @@ export default function GuestList({ guests, onAddGuest }: GuestListProps) {
   };
 
   const filteredGuests = guests.filter(guest => 
-    guest.name.toLowerCase().includes(filter.toLowerCase())
+    guest.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <Paper sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Typography variant="h6" gutterBottom>
-        Guests
-      </Typography>
-      
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ mb: 2 }}>
-        <TextField
-          fullWidth
-          size="small"
-          placeholder="Search guests..."
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          sx={{ mb: 1 }}
-        />
+        <Typography variant="h6" gutterBottom>
+          Guests
+        </Typography>
         
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
           <TextField
             fullWidth
             size="small"
@@ -70,16 +69,38 @@ export default function GuestList({ guests, onAddGuest }: GuestListProps) {
           />
           <Button
             variant="contained"
-            startIcon={<AddIcon />}
             onClick={handleAddGuest}
             disabled={!newGuestName.trim()}
           >
-            Add
+            Add guest
           </Button>
         </Box>
-      </Box>
 
-      <Divider />
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Tabs 
+            value={filter} 
+            onChange={(_, value) => onFilterChange(value)}
+            sx={{ flexGrow: 1 }}
+          >
+            <Tab label="All" value="all" />
+            <Tab label="Pending" value="pending" />
+          </Tabs>
+          <IconButton onClick={() => setShowSearch(!showSearch)}>
+            <SearchIcon />
+          </IconButton>
+        </Box>
+
+        {showSearch && (
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search guests..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+        )}
+      </Box>
 
       <List sx={{ 
         flexGrow: 1, 
@@ -89,31 +110,57 @@ export default function GuestList({ guests, onAddGuest }: GuestListProps) {
           py: 0.5,
         }
       }}>
-        {filteredGuests.map((guest, index) => (
-          <Draggable key={guest.id} draggableId={guest.id} index={index}>
-            {(provided) => (
-              <ListItem
-                ref={provided.innerRef}
-                {...provided.draggableProps}
-                {...provided.dragHandleProps}
-                sx={{
-                  bgcolor: 'background.paper',
-                  '&:hover': {
-                    bgcolor: 'action.hover',
-                  },
-                }}
-              >
-                <ListItemText 
-                  primary={guest.name}
-                  primaryTypographyProps={{
-                    sx: { fontWeight: guest.table_id ? 'normal' : 'bold' }
+        {filteredGuests.length === 0 ? (
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            color: 'text.secondary'
+          }}>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              No guests found
+            </Typography>
+            <Typography variant="body2">
+              Add guests to your Guest List then
+            </Typography>
+            <Typography variant="body2">
+              click and drag each to a table.
+            </Typography>
+          </Box>
+        ) : (
+          filteredGuests.map((guest, index) => (
+            <Draggable key={guest.id} draggableId={guest.id} index={index}>
+              {(provided) => (
+                <ListItem
+                  ref={provided.innerRef}
+                  {...provided.draggableProps}
+                  {...provided.dragHandleProps}
+                  sx={{
+                    bgcolor: 'background.paper',
+                    borderRadius: 1,
+                    mb: 0.5,
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    },
                   }}
-                />
-              </ListItem>
-            )}
-          </Draggable>
-        ))}
+                >
+                  <ListItemText 
+                    primary={guest.name}
+                    primaryTypographyProps={{
+                      sx: { 
+                        fontWeight: guest.table_id ? 'normal' : 'bold',
+                        color: guest.status === 'pending' ? 'text.secondary' : 'text.primary'
+                      }
+                    }}
+                  />
+                </ListItem>
+              )}
+            </Draggable>
+          ))
+        )}
       </List>
-    </Paper>
+    </Box>
   );
 }
