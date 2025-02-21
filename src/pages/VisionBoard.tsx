@@ -21,7 +21,7 @@ const categories = [
   'Other'
 ];
 
-export function VisionBoard() {
+export default function VisionBoard() {
   const [images, setImages] = useState<InspirationImage[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');

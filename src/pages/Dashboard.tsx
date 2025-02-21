@@ -44,7 +44,7 @@ interface DashboardData {
   }>;
 }
 
-export function Dashboard() {
+export default function Dashboard() {
   const [data, setData] = useState<DashboardData>({
     totalBudget: 0,
     spentBudget: 0,

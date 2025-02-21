@@ -39,7 +39,7 @@ const priorityLabels = {
   low: 'Low Priority'
 };
 
-export function Checklist() {
+export default function Checklist() {
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);

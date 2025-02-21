@@ -11,13 +11,13 @@ import {
   ListItemText,
   Toolbar,
   Typography,
-  Button,
   useTheme,
   useMediaQuery,
   Avatar,
   Menu,
   MenuItem,
   Divider,
+  ListItemButton,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -81,31 +81,31 @@ export default function Navigation() {
       <Divider />
       <List>
         {menuItems.map((item) => (
-          <ListItem
-            button
-            key={item.text}
-            onClick={() => {
-              navigate(item.path);
-              if (isMobile) setMobileOpen(false);
-            }}
-            selected={location.pathname === item.path}
-            sx={{
-              borderRadius: 2,
-              mx: 1,
-              mb: 0.5,
-              '&.Mui-selected': {
-                bgcolor: 'primary.light',
-                color: 'primary.contrastText',
-                '& .MuiListItemIcon-root': {
-                  color: 'inherit',
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton
+              onClick={() => {
+                navigate(item.path);
+                if (isMobile) setMobileOpen(false);
+              }}
+              selected={location.pathname === item.path}
+              sx={{
+                borderRadius: 2,
+                mx: 1,
+                mb: 0.5,
+                '&.Mui-selected': {
+                  bgcolor: 'primary.light',
+                  color: 'primary.contrastText',
+                  '& .MuiListItemIcon-root': {
+                    color: 'inherit',
+                  },
                 },
-              },
-            }}
-          >
-            <ListItemIcon sx={{ color: location.pathname === item.path ? 'inherit' : 'primary.main' }}>
-              {item.icon}
-            </ListItemIcon>
-            <ListItemText primary={item.text} />
+              }}
+            >
+              <ListItemIcon sx={{ color: location.pathname === item.path ? 'inherit' : 'primary.main' }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
           </ListItem>
         ))}
       </List>

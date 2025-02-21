@@ -12,19 +12,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  ListItemSecondaryAction,
+  Grid,
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Event as EventIcon,
-  CheckCircle as CheckCircleIcon,
-  RadioButtonUnchecked as UncheckedIcon,
-  ChevronRight as ChevronRightIcon,
-} from '@mui/icons-material';
+import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
 
@@ -46,7 +36,9 @@ export default function Timeline() {
     title: '',
     due_date: '',
     category: '',
-    status: 'todo' as const,
+    cost: '',
+    link: '',
+    action_text: '',
   });
 
   useEffect(() => {
@@ -55,7 +47,7 @@ export default function Timeline() {
 
   const fetchTasks = async () => {
     const { data, error } = await supabase
-      .from('timeline_tasks')
+      .from('timeline')
       .select('*')
       .order('due_date', { ascending: true });
 
@@ -67,10 +59,26 @@ export default function Timeline() {
     setTasks(data || []);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewTask((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   const handleAddTask = async () => {
-    const { error } = await supabase
-      .from('timeline_tasks')
-      .insert([newTask]);
+    const { error } = await supabase.from('timeline').insert([
+      {
+        title: newTask.title,
+        due_date: newTask.due_date,
+        category: newTask.category,
+        cost: newTask.cost ? parseFloat(newTask.cost) : null,
+        link: newTask.link || null,
+        action_text: newTask.action_text || null,
+        status: 'todo',
+      },
+    ]);
 
     if (error) {
       console.error('Error adding task:', error);
@@ -82,17 +90,18 @@ export default function Timeline() {
       title: '',
       due_date: '',
       category: '',
-      status: 'todo',
+      cost: '',
+      link: '',
+      action_text: '',
     });
     fetchTasks();
   };
 
-  const handleToggleStatus = async (taskId: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'todo' ? 'completed' : 'todo';
+  const handleToggleStatus = async (task: TimelineTask) => {
     const { error } = await supabase
-      .from('timeline_tasks')
-      .update({ status: newStatus })
-      .eq('id', taskId);
+      .from('timeline')
+      .update({ status: task.status === 'todo' ? 'completed' : 'todo' })
+      .eq('id', task.id);
 
     if (error) {
       console.error('Error updating task:', error);
@@ -102,31 +111,22 @@ export default function Timeline() {
     fetchTasks();
   };
 
-  const getOverdueTasks = () => {
-    const today = new Date();
-    return tasks.filter(task => {
-      const dueDate = new Date(task.due_date);
-      return dueDate < today && task.status === 'todo';
-    });
-  };
+  const handleDeleteTask = async (id: string) => {
+    const { error } = await supabase.from('timeline').delete().eq('id', id);
 
-  const groupTasksByDate = () => {
-    const groups: { [key: string]: TimelineTask[] } = {};
-    tasks.forEach(task => {
-      const date = task.due_date.split('T')[0];
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      groups[date].push(task);
-    });
-    return groups;
+    if (error) {
+      console.error('Error deleting task:', error);
+      return;
+    }
+
+    fetchTasks();
   };
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
         <Typography variant="h4" component="h1">
-          Wedding Timeline
+          Timeline
         </Typography>
         <Button
           variant="contained"
@@ -137,162 +137,122 @@ export default function Timeline() {
         </Button>
       </Box>
 
-      {/* Overdue Tasks Section */}
-      {getOverdueTasks().length > 0 && (
-        <Paper sx={{ mb: 4, p: 2, bgcolor: '#fff5f5' }}>
-          <Typography variant="h6" color="error" gutterBottom>
-            Overdue
-          </Typography>
-          <List>
-            {getOverdueTasks().map(task => (
-              <ListItem
-                key={task.id}
-                sx={{
-                  bgcolor: 'white',
-                  borderRadius: 1,
-                  mb: 1,
-                  '&:last-child': { mb: 0 },
-                }}
+      <Grid container spacing={3}>
+        {tasks.map((task) => (
+          <Grid item xs={12} key={task.id}>
+            <Paper
+              sx={{
+                p: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                bgcolor: task.status === 'completed' ? 'action.hover' : 'background.paper',
+              }}
+            >
+              <IconButton
+                onClick={() => handleToggleStatus(task)}
+                color={task.status === 'completed' ? 'primary' : 'default'}
               >
-                <ListItemIcon>
-                  <IconButton
-                    onClick={() => handleToggleStatus(task.id, task.status)}
-                    color="primary"
-                  >
-                    {task.status === 'completed' ? <CheckCircleIcon /> : <UncheckedIcon />}
-                  </IconButton>
-                </ListItemIcon>
-                <ListItemText
-                  primary={task.title}
-                  secondary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Chip
-                        label={task.category}
-                        size="small"
-                        sx={{ bgcolor: '#f0f0f0' }}
-                      />
-                      {task.cost && (
-                        <Chip
-                          label={`$${task.cost}`}
-                          size="small"
-                          sx={{ bgcolor: '#e8f5e9' }}
-                        />
-                      )}
-                    </Box>
-                  }
-                />
-                {task.link && (
-                  <ListItemSecondaryAction>
-                    <Button
-                      endIcon={<ChevronRightIcon />}
-                      href={task.link}
-                      target="_blank"
-                      sx={{ textTransform: 'none' }}
-                    >
-                      {task.action_text || 'Open'}
-                    </Button>
-                  </ListItemSecondaryAction>
-                )}
-              </ListItem>
-            ))}
-          </List>
-        </Paper>
-      )}
+                {task.status === 'completed' ? <EditIcon /> : <AddIcon />}
+              </IconButton>
 
-      {/* Timeline Section */}
-      {Object.entries(groupTasksByDate()).map(([date, dateTasks]) => (
-        <Paper key={date} sx={{ mb: 4, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            {format(new Date(date), 'MMMM d')}
-          </Typography>
-          <List>
-            {dateTasks.map(task => (
-              <ListItem
-                key={task.id}
-                sx={{
-                  bgcolor: '#f8f9fa',
-                  borderRadius: 1,
-                  mb: 1,
-                  '&:last-child': { mb: 0 },
-                }}
+              <Box sx={{ flexGrow: 1 }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    textDecoration: task.status === 'completed' ? 'line-through' : 'none',
+                  }}
+                >
+                  {task.title}
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                  <Chip
+                    label={format(new Date(task.due_date), 'MMM d, yyyy')}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                  />
+                  <Chip label={task.category} size="small" />
+                  {task.cost && (
+                    <Chip
+                      label={`$${task.cost.toLocaleString()}`}
+                      size="small"
+                      color="secondary"
+                    />
+                  )}
+                </Box>
+              </Box>
+
+              <IconButton
+                onClick={() => handleDeleteTask(task.id)}
+                color="error"
+                size="small"
               >
-                <ListItemIcon>
-                  <IconButton
-                    onClick={() => handleToggleStatus(task.id, task.status)}
-                    color="primary"
-                  >
-                    {task.status === 'completed' ? <CheckCircleIcon /> : <UncheckedIcon />}
-                  </IconButton>
-                </ListItemIcon>
-                <ListItemText
-                  primary={task.title}
-                  secondary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Chip
-                        label={task.category}
-                        size="small"
-                        sx={{ bgcolor: 'white' }}
-                      />
-                      {task.cost && (
-                        <Chip
-                          label={`$${task.cost}`}
-                          size="small"
-                          sx={{ bgcolor: '#e8f5e9' }}
-                        />
-                      )}
-                    </Box>
-                  }
-                />
-                {task.link && (
-                  <ListItemSecondaryAction>
-                    <Button
-                      endIcon={<ChevronRightIcon />}
-                      href={task.link}
-                      target="_blank"
-                      sx={{ textTransform: 'none' }}
-                    >
-                      {task.action_text || 'Open'}
-                    </Button>
-                  </ListItemSecondaryAction>
-                )}
-              </ListItem>
-            ))}
-          </List>
-        </Paper>
-      ))}
+                <DeleteIcon />
+              </IconButton>
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
 
-      {/* Add Task Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Add New Task</DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Task Title"
-            fullWidth
-            value={newTask.title}
-            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-          />
-          <TextField
-            margin="dense"
-            label="Due Date"
-            type="date"
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-            value={newTask.due_date}
-            onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
-          />
-          <TextField
-            margin="dense"
-            label="Category"
-            fullWidth
-            value={newTask.category}
-            onChange={(e) => setNewTask({ ...newTask, category: e.target.value })}
-          />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              label="Title"
+              name="title"
+              value={newTask.title}
+              onChange={handleInputChange}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Due Date"
+              name="due_date"
+              type="date"
+              value={newTask.due_date}
+              onChange={handleInputChange}
+              fullWidth
+              required
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="Category"
+              name="category"
+              value={newTask.category}
+              onChange={handleInputChange}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Cost"
+              name="cost"
+              type="number"
+              value={newTask.cost}
+              onChange={handleInputChange}
+              fullWidth
+              InputProps={{ startAdornment: '$' }}
+            />
+            <TextField
+              label="Link"
+              name="link"
+              value={newTask.link}
+              onChange={handleInputChange}
+              fullWidth
+            />
+            <TextField
+              label="Action Text"
+              name="action_text"
+              value={newTask.action_text}
+              onChange={handleInputChange}
+              fullWidth
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={handleAddTask} variant="contained">
+          <Button onClick={handleAddTask} variant="contained" color="primary">
             Add Task
           </Button>
         </DialogActions>

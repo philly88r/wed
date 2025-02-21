@@ -24,7 +24,7 @@ interface AllExpenses {
   [key: string]: CategoryExpenses;
 }
 
-export function Budget() {
+export default function Budget() {
   const [totalBudget, setTotalBudget] = useState(50000);
   const [expenses, setExpenses] = useState<AllExpenses>({});
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);

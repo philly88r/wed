@@ -5,9 +5,9 @@ import Timeline from './pages/Timeline';
 import Guests from './pages/Guests';
 import Budget from './pages/Budget';
 import Checklist from './pages/Checklist';
-import VendorDirectory from './pages/VendorDirectory';
+import Vendors from './pages/Vendors';
 import VendorDetail from './pages/VendorDetail';
-import SeatingChart from './pages/SeatingChart';
+import Seating from './pages/Seating';
 import Videos from './pages/Videos';
 import VisionBoard from './pages/VisionBoard';
 import Profile from './pages/Profile';
@@ -22,9 +22,9 @@ export default function AppRoutes() {
       <Route path="/guests" element={<Guests />} />
       <Route path="/budget" element={<Budget />} />
       <Route path="/checklist" element={<Checklist />} />
-      <Route path="/vendors" element={<VendorDirectory />} />
+      <Route path="/vendors" element={<Vendors />} />
       <Route path="/vendors/:id" element={<VendorDetail />} />
-      <Route path="/seating" element={<SeatingChart />} />
+      <Route path="/seating" element={<Seating />} />
       <Route path="/videos" element={<Videos />} />
       <Route path="/vision-board" element={<VisionBoard />} />
       <Route path="/profile" element={<Profile />} />
