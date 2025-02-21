@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import {
@@ -26,7 +26,6 @@ import {
   Alert,
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import InstagramIcon from '@mui/icons-material/Instagram';
@@ -123,6 +122,10 @@ export default function VendorDetail() {
     setLoading(false);
   };
 
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
@@ -169,7 +172,7 @@ export default function VendorDetail() {
             </Box>
           </Box>
 
-          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+          <Tabs value={tabValue} onChange={handleTabChange}>
             <Tab label="About" />
             <Tab label="Services" />
             <Tab label="Photos" />

@@ -1,10 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { 
-  Box, Button, Container, Grid, Paper, Typography, IconButton,
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, Select, MenuItem, FormControl, InputLabel,
-  Chip, Tooltip, Snackbar, Alert, Menu
+import {
+  Box,
+  Container,
+  Grid,
+  Paper,
+  Typography,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Chip,
+  Menu,
+  MenuItem,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import TableRestaurantIcon from '@mui/icons-material/TableRestaurant';
@@ -12,7 +24,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable, DroppableProvided, DraggableProvided, DropResult } from 'react-beautiful-dnd';
 
 interface TableGuest {
   id: string;
@@ -79,7 +91,7 @@ export default function SeatingChart() {
     setAvailableGuests(data || []);
   };
 
-  const handleDragEnd = async (result: any) => {
+  const handleDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
 
     const { source, destination } = result;
@@ -106,6 +118,11 @@ export default function SeatingChart() {
     showSnackbar('Guest moved successfully', 'success');
   };
 
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedTable(null);
+  };
+
   const showSnackbar = (message: string, severity: 'success' | 'error') => {
     setSnackbar({ open: true, message, severity });
   };
@@ -116,14 +133,9 @@ export default function SeatingChart() {
       setSelectedTable(table);
     };
 
-    const handleMenuClose = () => {
-      setAnchorEl(null);
-      setSelectedTable(null);
-    };
-
     return (
       <Droppable droppableId={table.id}>
-        {(provided) => (
+        {(provided: DroppableProvided) => (
           <Paper 
             elevation={3}
             sx={{
@@ -150,7 +162,7 @@ export default function SeatingChart() {
             <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
               {table.guests.map((guest, index) => (
                 <Draggable key={guest.id} draggableId={guest.id} index={index}>
-                  {(provided) => (
+                  {(provided: DraggableProvided) => (
                     <Chip
                       label={guest.name}
                       sx={{ m: 0.5 }}

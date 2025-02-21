@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   Box,
@@ -18,14 +18,9 @@ import {
   Button,
   IconButton,
   Drawer,
-  List,
-  ListItem,
-  ListItemText,
-  Slider,
-  Pagination,
+  InputAdornment,
   Alert,
   CircularProgress,
-  InputAdornment,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
@@ -51,6 +46,9 @@ interface Vendor {
   locations: VendorLocation[];
   images: { image_url: string }[];
   tags: { name: string }[];
+  instagram_handle?: string;
+  facebook_url?: string;
+  website_url?: string;
 }
 
 interface VendorLocation {
@@ -169,6 +167,26 @@ export default function VendorDirectory() {
     }
   };
 
+  const handleSelectChange = (e: React.ChangeEvent<{ value: unknown }>) => {
+    setSelectedCategory(e.target.value as string);
+  };
+
+  const handleStateChange = (e: React.ChangeEvent<{ value: unknown }>) => {
+    setSelectedState(e.target.value as string);
+  };
+
+  const handleSliderChange = (_: Event, newValue: number | number[]) => {
+    setPriceRange(newValue as number[]);
+  };
+
+  const handleRatingChange = (_: Event, newValue: number | null) => {
+    setRating(newValue || 0);
+  };
+
+  const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
+    setPage(value);
+  };
+
   const FilterDrawer = () => (
     <Drawer
       anchor="right"
@@ -184,7 +202,7 @@ export default function VendorDirectory() {
           <InputLabel>Category</InputLabel>
           <Select
             value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
+            onChange={handleSelectChange}
           >
             <MenuItem value="">All Categories</MenuItem>
             {categories.map((category) => (
@@ -199,7 +217,7 @@ export default function VendorDirectory() {
           <InputLabel>State</InputLabel>
           <Select
             value={selectedState}
-            onChange={(e) => setSelectedState(e.target.value)}
+            onChange={handleStateChange}
           >
             <MenuItem value="">All States</MenuItem>
             {states.map((state) => (
@@ -214,7 +232,7 @@ export default function VendorDirectory() {
           <Typography gutterBottom>Price Range</Typography>
           <Slider
             value={priceRange}
-            onChange={(_, newValue) => setPriceRange(newValue as number[])}
+            onChange={handleSliderChange}
             valueLabelDisplay="auto"
             min={0}
             max={10000}
@@ -229,7 +247,7 @@ export default function VendorDirectory() {
           <Typography gutterBottom>Minimum Rating</Typography>
           <Rating
             value={rating}
-            onChange={(_, newValue) => setRating(newValue || 0)}
+            onChange={handleRatingChange}
           />
         </Box>
       </Box>
@@ -365,7 +383,7 @@ export default function VendorDirectory() {
             <Pagination
               count={totalPages}
               page={page}
-              onChange={(_, value) => setPage(value)}
+              onChange={handlePageChange}
               color="primary"
             />
           </Box>
