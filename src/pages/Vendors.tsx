@@ -13,10 +13,9 @@ import {
   Chip,
   Rating,
   InputAdornment,
-  Divider,
   Stack,
 } from '@mui/material';
-import { Search, Phone, Mail, Globe, MapPin, DollarSign } from 'lucide-react';
+import { Search, Phone, Mail, Globe, MapPin } from 'lucide-react';
 
 interface Vendor {
   id: string;

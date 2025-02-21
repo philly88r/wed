@@ -2,27 +2,20 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import {
   Box,
-  Container,
-  Grid,
-  Paper,
+  Button,
   Typography,
+  Paper,
   IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
-  Chip,
-  Menu,
-  MenuItem,
-  Snackbar,
-  Alert,
+  TextField,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import TableRestaurantIcon from '@mui/icons-material/TableRestaurant';
-import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import EditIcon from '@mui/icons-material/Edit';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 
@@ -32,15 +25,27 @@ interface TableGuest {
   table_id: string;
 }
 
+interface TableAssignment {
+  id: string;
+  guest_id: string;
+  table_id: string;
+  guests: {
+    id: string;
+    name: string;
+  };
+}
+
 interface Table {
   id: string;
   name: string;
-  shape: 'round' | 'rectangular' | 'square' | 'oval';
   seats: number;
-  guests: TableGuest[];
-  color?: string;
-  notes?: string;
-  position: { x: number; y: number; width: number; height: number };
+  shape: string;
+  position: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
 }
 
 export default function SeatingChart() {
