@@ -30,6 +30,7 @@ import {
   EventSeat as SeatingIcon,
   VideoLibrary as VideosIcon,
   Collections as VisionBoardIcon,
+  LocalOffer as PricingIcon,
 } from '@mui/icons-material';
 import { supabase } from '../../lib/supabase';
 
@@ -43,6 +44,7 @@ const menuItems = [
   { text: 'Seating', icon: <SeatingIcon />, path: '/seating' },
   { text: 'Videos', icon: <VideosIcon />, path: '/videos' },
   { text: 'Vision Board', icon: <VisionBoardIcon />, path: '/vision-board' },
+  { text: 'Pricing', icon: <PricingIcon />, path: '/pricing' },
 ];
 
 export default function Navigation() {

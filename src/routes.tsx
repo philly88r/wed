@@ -12,6 +12,7 @@ import Videos from './pages/Videos';
 import VisionBoard from './pages/VisionBoard';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
+import Pricing from './pages/Pricing';
 
 export default function AppRoutes() {
   return (
@@ -29,6 +30,7 @@ export default function AppRoutes() {
       <Route path="/vision-board" element={<VisionBoard />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/settings" element={<Settings />} />
+      <Route path="/pricing" element={<Pricing />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
