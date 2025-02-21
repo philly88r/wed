@@ -9,11 +9,9 @@ import {
   Box,
   useTheme,
   Typography,
-  Tooltip,
 } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import AccountCircle from '@mui/icons-material/AccountCircle';
-import GitHubIcon from '@mui/icons-material/GitHub';
 import { useNavigate } from 'react-router-dom';
 
 export default function Header() {
@@ -41,10 +39,6 @@ export default function Header() {
     navigate('/login');
   };
 
-  const handleGitHubClick = () => {
-    window.open('https://github.com/philly88r/wed', '_blank');
-  };
-
   return (
     <AppBar 
       position="fixed" 
@@ -55,26 +49,7 @@ export default function Header() {
         borderBottom: `1px solid ${theme.palette.divider}`,
       }}
     >
-      <Toolbar sx={{ justifyContent: 'space-between' }}>
-        {/* Left side - GitHub icon */}
-        <Box>
-          <Tooltip title="View on GitHub" arrow>
-            <IconButton
-              size="large"
-              onClick={handleGitHubClick}
-              sx={{ 
-                color: theme.palette.text.primary,
-                '&:hover': {
-                  color: theme.palette.primary.main,
-                }
-              }}
-            >
-              <GitHubIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-
-        {/* Right side - Cart and Profile */}
+      <Toolbar sx={{ justifyContent: 'flex-end' }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <IconButton
             size="large"
