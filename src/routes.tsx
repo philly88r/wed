@@ -7,7 +7,8 @@ import Budget from './pages/Budget';
 import Checklist from './pages/Checklist';
 import Vendors from './pages/Vendors';
 import VendorDetail from './pages/VendorDetail';
-import Seating from './pages/Seating';
+import TableLayout from './pages/TableLayout';
+import SeatingChart from './pages/SeatingChart';
 import Videos from './pages/Videos';
 import VisionBoard from './pages/VisionBoard';
 import Profile from './pages/Profile';
@@ -25,7 +26,8 @@ export default function AppRoutes() {
       <Route path="/checklist" element={<Checklist />} />
       <Route path="/vendors" element={<Vendors />} />
       <Route path="/vendors/:id" element={<VendorDetail />} />
-      <Route path="/seating" element={<Seating />} />
+      <Route path="/table-layout" element={<TableLayout />} />
+      <Route path="/seating-chart" element={<SeatingChart />} />
       <Route path="/videos" element={<Videos />} />
       <Route path="/vision-board" element={<VisionBoard />} />
       <Route path="/profile" element={<Profile />} />

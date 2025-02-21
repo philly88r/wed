@@ -36,7 +36,7 @@ interface TableInstance {
   created_by: string;
 }
 
-export function Seating() {
+export default function TableLayout() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<string>('');
   const [tables, setTables] = useState<TableInstance[]>([]);
@@ -286,5 +286,3 @@ export function Seating() {
     </div>
   );
 }
-
-export default Seating;
