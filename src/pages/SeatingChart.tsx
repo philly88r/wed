@@ -19,7 +19,6 @@ import {
   Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import TableRestaurantIcon from '@mui/icons-material/TableRestaurant';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -35,7 +34,7 @@ interface TableAssignment {
   id: string;
   guest_id: string;
   table_id: string;
-  guests: {
+  guest: {
     id: string;
     name: string;
   };
@@ -97,30 +96,85 @@ export default function SeatingChart() {
   };
 
   const handleDragEnd = async (result: DropResult) => {
-    // ... rest of the code remains the same
+    if (!result.destination) return;
+
+    try {
+      const sourceTable = tables.find(t => t.id === result.source.droppableId);
+      const destTable = tables.find(t => t.id === result.destination?.droppableId);
+      
+      if (!sourceTable || !destTable) return;
+
+      const guest = sourceTable.guests?.find(g => g.id === result.draggableId);
+      if (!guest) return;
+
+      // Update the assignment in the database
+      const { error } = await supabase
+        .from('table_assignments')
+        .update({ table_id: destTable.id })
+        .eq('guest_id', guest.id);
+
+      if (error) throw error;
+
+      // Update local state
+      const newTables = tables.map(table => {
+        if (table.id === sourceTable.id) {
+          return {
+            ...table,
+            guests: table.guests?.filter(g => g.id !== guest.id)
+          };
+        }
+        if (table.id === destTable.id) {
+          return {
+            ...table,
+            guests: [...(table.guests || []), guest]
+          };
+        }
+        return table;
+      });
+
+      setTables(newTables);
+      setSnackbar({
+        open: true,
+        message: 'Guest moved successfully',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error moving guest:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to move guest',
+        severity: 'error'
+      });
+    }
   };
 
-  const handleAssignmentDelete = async (assignment: TableAssignment) => {
+  const handleAssignmentDelete = async (guest: TableGuest) => {
     try {
       const { error } = await supabase
         .from('table_assignments')
         .delete()
-        .eq('id', assignment.id);
+        .eq('guest_id', guest.id);
 
       if (error) throw error;
 
-      await fetchTables();
+      // Update local state
+      const newTables = tables.map(table => ({
+        ...table,
+        guests: table.guests?.filter(g => g.id !== guest.id)
+      }));
+
+      setTables(newTables);
       setSnackbar({
         open: true,
         message: 'Guest removed from table',
-        severity: 'success',
+        severity: 'success'
       });
     } catch (error) {
-      console.error('Error deleting assignment:', error);
+      console.error('Error removing guest:', error);
       setSnackbar({
         open: true,
         message: 'Failed to remove guest',
-        severity: 'error',
+        severity: 'error'
       });
     }
   };
@@ -132,7 +186,6 @@ export default function SeatingChart() {
 
   const handleClose = () => {
     setAnchorEl(null);
-    setSelectedTable(null);
   };
 
   const handleEditClick = () => {
@@ -144,147 +197,192 @@ export default function SeatingChart() {
   };
 
   const handleDeleteClick = async () => {
-    if (selectedTable) {
-      try {
-        const { error } = await supabase
-          .from('seating_tables')
-          .delete()
-          .eq('id', selectedTable.id);
+    if (!selectedTable) return;
 
-        if (error) throw error;
+    try {
+      const { error } = await supabase
+        .from('seating_tables')
+        .delete()
+        .eq('id', selectedTable.id);
 
-        await fetchTables();
-        setSnackbar({
-          open: true,
-          message: 'Table deleted successfully',
-          severity: 'success',
-        });
-      } catch (error) {
-        console.error('Error deleting table:', error);
-        setSnackbar({
-          open: true,
-          message: 'Failed to delete table',
-          severity: 'error',
-        });
-      }
+      if (error) throw error;
+
+      setTables(tables.filter(t => t.id !== selectedTable.id));
+      setSnackbar({
+        open: true,
+        message: 'Table deleted successfully',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error deleting table:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to delete table',
+        severity: 'error'
+      });
     }
     handleClose();
   };
 
   return (
     <Container maxWidth="lg">
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          Seating Chart
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            setSelectedTable(null);
-            setNewTableName('');
-            setEditDialogOpen(true);
-          }}
-        >
-          Add Table
-        </Button>
-      </Box>
-
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-          {tables.map((table) => (
-            <Paper
-              key={table.id}
-              sx={{
-                p: 2,
-                width: 280,
-                backgroundColor: table.color || '#fff',
-                position: 'relative',
-              }}
-            >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="h6">{table.name}</Typography>
-                <IconButton
-                  size="small"
-                  onClick={(e) => handleTableClick(e, table)}
-                >
-                  <MoreVertIcon />
-                </IconButton>
-              </Box>
-
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  {table.seats} seats
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {table.guests?.map((guest) => (
-                  <Chip
-                    key={guest.id}
-                    label={guest.name}
-                    onDelete={() => handleAssignmentDelete(guest)}
-                    size="small"
-                  />
-                ))}
-              </Box>
-            </Paper>
-          ))}
-        </Box>
-      </DragDropContext>
-
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleClose}
-      >
-        <MenuItem onClick={handleEditClick}>
-          <EditIcon sx={{ mr: 1 }} />
-          Edit
-        </MenuItem>
-        <MenuItem onClick={handleDeleteClick}>
-          <DeleteIcon sx={{ mr: 1 }} />
-          Delete
-        </MenuItem>
-      </Menu>
-
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
-        <DialogTitle>
-          {selectedTable ? 'Edit Table' : 'Add Table'}
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Table Name"
-            fullWidth
-            value={newTableName}
-            onChange={(e) => setNewTableName(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button onClick={() => {
-            // Handle save
-            setEditDialogOpen(false);
-          }} color="primary">
-            Save
+      <Box sx={{ my: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+          <Typography variant="h4">Seating Chart</Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => {
+              setSelectedTable(null);
+              setNewTableName('');
+              setEditDialogOpen(true);
+            }}
+          >
+            Add Table
           </Button>
-        </DialogActions>
-      </Dialog>
+        </Box>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 3 }}>
+            {tables.map((table) => (
+              <Paper
+                key={table.id}
+                sx={{
+                  p: 2,
+                  minHeight: 200,
+                  backgroundColor: table.color || '#fff',
+                  position: 'relative',
+                }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                  <Typography variant="h6">{table.name}</Typography>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleTableClick(e, table)}
+                  >
+                    <MoreVertIcon />
+                  </IconButton>
+                </Box>
+
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {table.seats} seats
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {table.guests?.map((guest) => (
+                    <Chip
+                      key={guest.id}
+                      label={guest.name}
+                      onDelete={() => handleAssignmentDelete(guest)}
+                      size="small"
+                    />
+                  ))}
+                </Box>
+              </Paper>
+            ))}
+          </Box>
+        </DragDropContext>
+
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleClose}
         >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+          <MenuItem onClick={handleEditClick}>
+            <EditIcon sx={{ mr: 1 }} />
+            Edit
+          </MenuItem>
+          <MenuItem onClick={handleDeleteClick}>
+            <DeleteIcon sx={{ mr: 1 }} />
+            Delete
+          </MenuItem>
+        </Menu>
+
+        <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
+          <DialogTitle>
+            {selectedTable ? 'Edit Table' : 'Add Table'}
+          </DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Table Name"
+              fullWidth
+              value={newTableName}
+              onChange={(e) => setNewTableName(e.target.value)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={async () => {
+              try {
+                if (selectedTable) {
+                  // Update existing table
+                  const { error } = await supabase
+                    .from('seating_tables')
+                    .update({ name: newTableName })
+                    .eq('id', selectedTable.id);
+
+                  if (error) throw error;
+
+                  setTables(tables.map(t => 
+                    t.id === selectedTable.id 
+                      ? { ...t, name: newTableName }
+                      : t
+                  ));
+                } else {
+                  // Create new table
+                  const { data, error } = await supabase
+                    .from('seating_tables')
+                    .insert([{
+                      name: newTableName,
+                      seats: 8,
+                      shape: 'rectangle',
+                      position: { x: 0, y: 0, width: 200, height: 100 }
+                    }])
+                    .select();
+
+                  if (error) throw error;
+                  if (data) {
+                    setTables([...tables, data[0]]);
+                  }
+                }
+
+                setSnackbar({
+                  open: true,
+                  message: `Table ${selectedTable ? 'updated' : 'created'} successfully`,
+                  severity: 'success'
+                });
+                setEditDialogOpen(false);
+              } catch (error) {
+                console.error('Error saving table:', error);
+                setSnackbar({
+                  open: true,
+                  message: `Failed to ${selectedTable ? 'update' : 'create'} table`,
+                  severity: 'error'
+                });
+              }
+            }} color="primary">
+              Save
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+        >
+          <Alert
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            severity={snackbar.severity}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </Box>
     </Container>
   );
 }
