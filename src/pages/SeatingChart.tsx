@@ -24,6 +24,11 @@ import EditIcon from '@mui/icons-material/Edit';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 
+interface Guest {
+  id: string;
+  name: string;
+}
+
 interface TableGuest {
   id: string;
   name: string;
@@ -34,10 +39,7 @@ interface TableAssignment {
   id: string;
   guest_id: string;
   table_id: string;
-  guest: {
-    id: string;
-    name: string;
-  };
+  guest: Guest;
 }
 
 interface Table {
@@ -79,12 +81,40 @@ export default function SeatingChart() {
 
   const fetchTables = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: tablesData, error: tablesError } = await supabase
         .from('seating_tables')
-        .select('*, table_assignments(*, guests(*))');
+        .select('*');
 
-      if (error) throw error;
-      setTables(data || []);
+      if (tablesError) throw tablesError;
+
+      const { data: assignmentsData, error: assignmentsError } = await supabase
+        .from('table_assignments')
+        .select('*, guest:guests(*)');
+
+      if (assignmentsError) throw assignmentsError;
+
+      // Convert assignments to TableGuest format and group by table
+      const guestsByTable = (assignmentsData as TableAssignment[]).reduce<Record<string, TableGuest[]>>((acc, assignment) => {
+        const guest: TableGuest = {
+          id: assignment.guest.id,
+          name: assignment.guest.name,
+          table_id: assignment.table_id
+        };
+        
+        if (!acc[assignment.table_id]) {
+          acc[assignment.table_id] = [];
+        }
+        acc[assignment.table_id].push(guest);
+        return acc;
+      }, {});
+
+      // Combine tables with their guests
+      const tablesWithGuests = tablesData.map(table => ({
+        ...table,
+        guests: guestsByTable[table.id] || []
+      }));
+
+      setTables(tablesWithGuests);
     } catch (error) {
       console.error('Error fetching tables:', error);
       setSnackbar({
@@ -126,7 +156,7 @@ export default function SeatingChart() {
         if (table.id === destTable.id) {
           return {
             ...table,
-            guests: [...(table.guests || []), guest]
+            guests: [...(table.guests || []), { ...guest, table_id: destTable.id }]
           };
         }
         return table;

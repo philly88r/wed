@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
 import {
   Box,
   Paper,
   Typography,
   TextField,
-  Button,
   IconButton,
+  Tooltip,
+  Stack,
+  Button,
   Collapse,
   Avatar,
-  Stack,
-  Tooltip,
   Divider,
 } from '@mui/material';
 import {
@@ -20,6 +19,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
+import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 
 interface Comment {
@@ -73,18 +73,18 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
   }, [section]);
 
   const fetchComments = async () => {
-    const { data, error } = await supabase
-      .from('comments')
-      .select('*, profiles(full_name, avatar_url)')
-      .eq('section', section)
-      .order('created_at', { ascending: true });
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .select('*, profiles(full_name, avatar_url)')
+        .eq('section', section)
+        .order('created_at', { ascending: true });
 
-    if (error) {
+      if (error) throw error;
+      setComments(data || []);
+    } catch (error) {
       console.error('Error fetching comments:', error);
-      return;
     }
-
-    setComments(data || []);
   };
 
   const handleSubmit = async (parentId: string | null = null) => {
@@ -93,35 +93,40 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
     const commentContent = parentId ? newComment : newComment.trim();
     if (!commentContent) return;
 
-    const { error } = await supabase.from('comments').insert({
-      section,
-      content: commentContent,
-      created_by: user.id,
-      parent_id: parentId,
-    });
+    try {
+      const { error } = await supabase.from('comments').insert({
+        section,
+        content: commentContent,
+        created_by: user.id,
+        parent_id: parentId,
+      });
 
-    if (error) {
+      if (error) throw error;
+
+      setNewComment('');
+      setReplyTo(null);
+      await fetchComments();
+    } catch (error) {
       console.error('Error adding comment:', error);
-      return;
     }
-
-    setNewComment('');
-    setReplyTo(null);
   };
 
   const handleResolve = async (commentId: string) => {
     if (!user) return;
 
-    const { error } = await supabase
-      .from('comments')
-      .update({
-        resolved: true,
-        resolved_at: new Date().toISOString(),
-        resolved_by: user.id,
-      })
-      .eq('id', commentId);
+    try {
+      const { error } = await supabase
+        .from('comments')
+        .update({
+          resolved: true,
+          resolved_at: new Date().toISOString(),
+          resolved_by: user.id,
+        })
+        .eq('id', commentId);
 
-    if (error) {
+      if (error) throw error;
+      await fetchComments();
+    } catch (error) {
       console.error('Error resolving comment:', error);
     }
   };
