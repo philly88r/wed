@@ -150,8 +150,27 @@ export default function VendorDirectory() {
     setLoading(false);
   };
 
+  const checkFavoriteStatus = async (vendorId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data: favorite } = await supabase
+        .from('user_favorite_vendors')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('vendor_id', vendorId)
+        .single();
+
+      return !!favorite;
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+    }
+  };
+
   const toggleFavorite = async (vendorId: string) => {
-    const newFavorites = favorites.includes(vendorId)
+    const isFavorite = await checkFavoriteStatus(vendorId);
+    const newFavorites = isFavorite
       ? favorites.filter(id => id !== vendorId)
       : [...favorites, vendorId];
     setFavorites(newFavorites);
