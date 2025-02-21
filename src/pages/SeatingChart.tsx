@@ -17,6 +17,7 @@ import {
   MenuItem,
   Snackbar,
   Alert,
+  Tooltip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import TableRestaurantIcon from '@mui/icons-material/TableRestaurant';
@@ -46,14 +47,12 @@ export default function SeatingChart() {
   const [tables, setTables] = useState<Table[]>([]);
   const [editingTable, setEditingTable] = useState<Table | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [availableGuests, setAvailableGuests] = useState<TableGuest[]>([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
 
   useEffect(() => {
     fetchTables();
-    fetchAvailableGuests();
   }, []);
 
   const fetchTables = async () => {
@@ -75,20 +74,6 @@ export default function SeatingChart() {
     ] : data;
 
     setTables(defaultTables);
-  };
-
-  const fetchAvailableGuests = async () => {
-    const { data, error } = await supabase
-      .from('guests')
-      .select('*')
-      .is('table_id', null);
-
-    if (error) {
-      showSnackbar('Error loading guests', 'error');
-      return;
-    }
-
-    setAvailableGuests(data || []);
   };
 
   const handleDragEnd = async (result: DropResult) => {

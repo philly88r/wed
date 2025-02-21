@@ -89,6 +89,96 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const imageData = e.target?.result as string;
+      
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('floor-plans')
+        .upload(`temp/${file.name}`, file);
+
+      if (error) {
+        console.error('Error uploading image:', error);
+        return;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('floor-plans')
+        .getPublicUrl(data.path);
+
+      // Analyze floor plan with AI
+      const analysis = await analyzeFloorPlan(imageData);
+      console.log('Floor plan analysis:', analysis);
+
+      // Save room with floor plan and analysis results
+      const { data: room, error: roomError } = await supabase
+        .from('venue_rooms')
+        .insert({
+          name: newRoomName,
+          floor_plan_url: publicUrl,
+          length: analysis.dimensions.length || 0,
+          width: analysis.dimensions.width || 0,
+          table_scale: analysis.scale.pixelsPerFoot,
+          ai_scale_found: analysis.scale.found,
+          ai_scale_text: analysis.scale.text,
+          ai_scale_value: analysis.scale.value,
+          ai_pixels_per_foot: analysis.scale.pixelsPerFoot,
+          room_type: newRoomType
+        })
+        .select()
+        .single();
+
+      if (roomError) {
+        console.error('Insert error:', roomError);
+        throw roomError;
+      }
+
+      // Move the file to the permanent location
+      const { error: moveError } = await supabase.storage
+        .from('floor-plans')
+        .move(
+          `temp/${file.name}`, 
+          `${room.id}/${file.name}`
+        );
+
+      if (moveError) {
+        console.error('Move error:', moveError);
+        throw moveError;
+      }
+
+      // Update the room with the new URL
+      const finalUrl = supabase.storage
+        .from('floor-plans')
+        .getPublicUrl(`${room.id}/${file.name}`).data.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from('venue_rooms')
+        .update({ floor_plan_url: finalUrl })
+        .eq('id', room.id);
+
+      if (updateError) {
+        console.error('Update error:', updateError);
+        throw updateError;
+      }
+
+      // Add the new room to the list
+      setRooms(prev => [...prev, { ...room, floor_plan_url: finalUrl }]);
+      
+      // Reset form
+      setShowUploadForm(false);
+      setNewRoomName('');
+      setSelectedFile(null);
+      setNewRoomType('reception');
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleUploadFloorPlan = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -101,104 +191,7 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
     }
 
     try {
-      // Convert image to base64 for AI analysis
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const base64Image = e.target?.result as string;
-          const base64Content = base64Image.split(',')[1];
-
-          // Analyze floor plan with AI
-          const analysis = await analyzeFloorPlan(base64Content);
-          console.log('Floor plan analysis:', analysis);
-
-          // Upload to Supabase Storage
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('floor-plans')
-            .upload(`temp/${selectedFile.name}`, selectedFile, {
-              upsert: true,
-              cacheControl: '3600'
-            });
-
-          if (uploadError) {
-            console.error('Upload error:', uploadError);
-            throw uploadError;
-          }
-
-          // Get public URL for the uploaded file
-          const { data: { publicUrl } } = supabase.storage
-            .from('floor-plans')
-            .getPublicUrl(`temp/${selectedFile.name}`);
-
-          // Save room with floor plan and analysis results
-          const { data: room, error: roomError } = await supabase
-            .from('venue_rooms')
-            .insert({
-              name: newRoomName,
-              floor_plan_url: publicUrl,
-              length: analysis.dimensions.length || 0,
-              width: analysis.dimensions.width || 0,
-              table_scale: analysis.scale.pixelsPerFoot,
-              ai_scale_found: analysis.scale.found,
-              ai_scale_text: analysis.scale.text,
-              ai_scale_value: analysis.scale.value,
-              ai_pixels_per_foot: analysis.scale.pixelsPerFoot,
-              room_type: newRoomType
-            })
-            .select()
-            .single();
-
-          if (roomError) {
-            console.error('Insert error:', roomError);
-            throw roomError;
-          }
-
-          // Move the file to the permanent location
-          const { error: moveError } = await supabase.storage
-            .from('floor-plans')
-            .move(
-              `temp/${selectedFile.name}`, 
-              `${room.id}/${selectedFile.name}`
-            );
-
-          if (moveError) {
-            console.error('Move error:', moveError);
-            throw moveError;
-          }
-
-          // Update the room with the new URL
-          const finalUrl = supabase.storage
-            .from('floor-plans')
-            .getPublicUrl(`${room.id}/${selectedFile.name}`).data.publicUrl;
-
-          const { error: updateError } = await supabase
-            .from('venue_rooms')
-            .update({ floor_plan_url: finalUrl })
-            .eq('id', room.id);
-
-          if (updateError) {
-            console.error('Update error:', updateError);
-            throw updateError;
-          }
-
-          // Add the new room to the list
-          setRooms(prev => [...prev, { ...room, floor_plan_url: finalUrl }]);
-          
-          // Reset form
-          setShowUploadForm(false);
-          setNewRoomName('');
-          setSelectedFile(null);
-          setNewRoomType('reception');
-          
-        } catch (error) {
-          console.error('Error processing floor plan:', error);
-          setError('Failed to process floor plan. Please try again.');
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      reader.readAsDataURL(selectedFile);
+      handleFileUpload(e as any);
     } catch (err) {
       console.error('Error uploading floor plan:', err);
       setError('Failed to upload floor plan. Please try again.');
@@ -344,7 +337,7 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                  onChange={handleFileUpload}
                   className="mt-1 block w-full text-sm text-gray-500
                     file:mr-4 file:py-2 file:px-4
                     file:rounded-md file:border-0

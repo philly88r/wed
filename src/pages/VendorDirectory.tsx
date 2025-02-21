@@ -21,6 +21,8 @@ import {
   InputAdornment,
   Alert,
   CircularProgress,
+  Pagination,
+  Slider,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
@@ -167,19 +169,19 @@ export default function VendorDirectory() {
     }
   };
 
-  const handleSelectChange = (e: React.ChangeEvent<{ value: unknown }>) => {
-    setSelectedCategory(e.target.value as string);
+  const handleSelectChange = (event: SelectChangeEvent<string>) => {
+    setSelectedCategory(event.target.value);
   };
 
-  const handleStateChange = (e: React.ChangeEvent<{ value: unknown }>) => {
-    setSelectedState(e.target.value as string);
+  const handleStateChange = (event: SelectChangeEvent<string>) => {
+    setSelectedState(event.target.value);
   };
 
   const handleSliderChange = (_: Event, newValue: number | number[]) => {
     setPriceRange(newValue as number[]);
   };
 
-  const handleRatingChange = (_: Event, newValue: number | null) => {
+  const handleRatingChange = (event: React.SyntheticEvent, newValue: number | null) => {
     setRating(newValue || 0);
   };
 

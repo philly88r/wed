@@ -87,7 +87,6 @@ export default function VendorDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tabValue, setTabValue] = useState(0);
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
 
   useEffect(() => {
     fetchVendorDetails();
