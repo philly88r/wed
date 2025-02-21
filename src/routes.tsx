@@ -14,6 +14,9 @@ import VisionBoard from './pages/VisionBoard';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import Pricing from './pages/Pricing';
+import Tasks from './pages/Tasks';
+import Photos from './pages/Photos';
+import Music from './pages/Music';
 
 export default function AppRoutes() {
   return (
@@ -33,6 +36,9 @@ export default function AppRoutes() {
       <Route path="/profile" element={<Profile />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/tasks" element={<Tasks />} />
+      <Route path="/photos" element={<Photos />} />
+      <Route path="/music" element={<Music />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );

@@ -1,30 +1,30 @@
 -- Create comments table
-CREATE TABLE IF NOT EXISTS comments (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    section TEXT NOT NULL,
-    content TEXT NOT NULL,
-    commenter_name TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT timezone('utc', NOW()) NOT NULL,
-    resolved BOOLEAN DEFAULT false,
-    resolved_at TIMESTAMPTZ,
-    parent_id UUID REFERENCES comments(id) ON DELETE CASCADE,
-    position JSONB -- For storing x,y coordinates if needed for positioning
+create table if not exists public.comments (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamptz default timezone('utc'::text, now()) not null,
+  section text not null,
+  content text not null,
+  commenter_name text not null,
+  parent_id uuid references public.comments(id) on delete set null,
+  resolved boolean default false,
+  resolved_at timestamptz,
+  position jsonb -- For storing x,y coordinates if needed for positioning
 );
 
 -- Enable RLS
-ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+alter table public.comments enable row level security;
 
 -- Create policy to allow anyone to read comments
-CREATE POLICY "Anyone can read comments" ON comments
-    FOR SELECT
-    USING (true);
+create policy "Anyone can read comments"
+  on public.comments for select
+  using (true);
 
 -- Create policy to allow anyone to insert comments
-CREATE POLICY "Anyone can insert comments" ON comments
-    FOR INSERT
-    WITH CHECK (true);
+create policy "Anyone can insert comments"
+  on public.comments for insert
+  with check (true);
 
 -- Create policy to allow anyone to update comments (for resolving)
-CREATE POLICY "Anyone can update comments" ON comments
-    FOR UPDATE
-    USING (true);
+create policy "Anyone can update comments"
+  on public.comments for update
+  using (true);

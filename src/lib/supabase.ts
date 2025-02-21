@@ -7,6 +7,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
+export interface Comment {
+  id: string;
+  created_at: string;
+  section: string;
+  content: string;
+  commenter_name: string;
+  parent_id: string | null;
+  resolved: boolean;
+  resolved_at: string | null;
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,

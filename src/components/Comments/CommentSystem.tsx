@@ -22,16 +22,7 @@ import {
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import { supabase } from '../../lib/supabase';
-
-interface Comment {
-  id: string;
-  section: string;
-  content: string;
-  commenter_name: string;
-  created_at: string;
-  resolved: boolean;
-  parent_id: string | null;
-}
+import type { Comment } from '../../lib/supabase';
 
 interface CommentSystemProps {
   section: string;
@@ -45,11 +36,12 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchComments();
     // Subscribe to realtime updates
-    const subscription = supabase
+    const channel = supabase
       .channel('comments')
       .on(
         'postgres_changes',
@@ -66,27 +58,36 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [section]);
 
   const fetchComments = async () => {
     try {
+      console.log('Fetching comments for section:', section);
+      
       const { data, error } = await supabase
         .from('comments')
         .select('*')
         .eq('section', section)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Fetched comments:', data);
       setComments(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching comments:', error);
-      setError('Failed to load comments');
+      setError(error.message || 'Failed to load comments');
     }
   };
 
   const handleSubmit = async (parentId: string | null = null) => {
+    if (isSubmitting) return;
+
     const commentContent = newComment.trim();
     const name = commenterName.trim();
 
@@ -100,22 +101,45 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
-      const { error } = await supabase.from('comments').insert({
+      console.log('Attempting to insert comment:', {
         section,
         content: commentContent,
         commenter_name: name,
-        parent_id: parentId,
+        parent_id: parentId
       });
 
-      if (error) throw error;
+      const { data, error } = await supabase
+        .from('comments')
+        .insert([{
+          section: section,
+          content: commentContent,
+          commenter_name: name,
+          parent_id: parentId
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Successfully inserted comment:', data);
 
       setNewComment('');
+      setCommenterName('');
       setReplyTo(null);
+      
+      // Fetch comments after successful insert
       await fetchComments();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding comment:', error);
-      setError('Failed to add comment');
+      setError(error.message || 'Failed to add comment. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -123,17 +147,14 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
     try {
       const { error } = await supabase
         .from('comments')
-        .update({
-          resolved: true,
-          resolved_at: new Date().toISOString(),
-        })
+        .update({ resolved: true, resolved_at: new Date().toISOString() })
         .eq('id', commentId);
 
       if (error) throw error;
       await fetchComments();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error resolving comment:', error);
-      setError('Failed to resolve comment');
+      setError(error.message || 'Failed to resolve comment');
     }
   };
 
@@ -232,9 +253,9 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
                 size="small"
                 endIcon={<SendIcon />}
                 onClick={() => handleSubmit(comment.id)}
-                disabled={!newComment.trim() || !commenterName.trim()}
+                disabled={isSubmitting || !newComment.trim() || !commenterName.trim()}
               >
-                Reply
+                {isSubmitting ? 'Sending...' : 'Reply'}
               </Button>
             </Box>
           </Box>
@@ -285,9 +306,9 @@ export default function CommentSystem({ section, title }: CommentSystemProps) {
               size="small"
               endIcon={<SendIcon />}
               onClick={() => handleSubmit(null)}
-              disabled={!newComment.trim() || !commenterName.trim()}
+              disabled={isSubmitting || !newComment.trim() || !commenterName.trim()}
             >
-              Comment
+              {isSubmitting ? 'Sending...' : 'Comment'}
             </Button>
           </Box>
         </Box>

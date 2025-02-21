@@ -24,6 +24,12 @@ import TableRestaurantIcon from '@mui/icons-material/TableRestaurant';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import SettingsIcon from '@mui/icons-material/Settings';
+import ChecklistIcon from '@mui/icons-material/CheckBox';
+import BudgetIcon from '@mui/icons-material/AttachMoney';
+import VendorsIcon from '@mui/icons-material/Store';
+import TasksIcon from '@mui/icons-material/Assignment';
+import PhotosIcon from '@mui/icons-material/PhotoLibrary';
+import MusicIcon from '@mui/icons-material/MusicNote';
 
 export const drawerWidth = 240;
 
@@ -32,6 +38,12 @@ const menuItems = [
   { text: 'Guests', icon: <PeopleIcon />, path: '/guests' },
   { text: 'Seating Chart', icon: <TableRestaurantIcon />, path: '/seating' },
   { text: 'Timeline', icon: <TimelineIcon />, path: '/timeline' },
+  { text: 'Checklist', icon: <ChecklistIcon />, path: '/checklist' },
+  { text: 'Budget', icon: <BudgetIcon />, path: '/budget' },
+  { text: 'Vendors', icon: <VendorsIcon />, path: '/vendors' },
+  { text: 'Tasks', icon: <TasksIcon />, path: '/tasks' },
+  { text: 'Photos', icon: <PhotosIcon />, path: '/photos' },
+  { text: 'Music', icon: <MusicIcon />, path: '/music' },
   { text: 'Videos', icon: <VideoLibraryIcon />, path: '/videos' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
