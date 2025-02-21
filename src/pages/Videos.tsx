@@ -163,23 +163,35 @@ const VideoCard = ({ video, onPlay }: { video: Video; onPlay: (id: string) => vo
 export default function Videos() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchVideos();
   }, []);
 
   const fetchVideos = async () => {
-    const { data, error } = await supabase
-      .from('videos')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      setLoading(true);
+      setError(null);
+      const { data, error } = await supabase
+        .from('videos')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching videos:', error);
-      return;
+      if (error) {
+        console.error('Error fetching videos:', error);
+        setError(error.message);
+        return;
+      }
+
+      setVideos(data || []);
+    } catch (err) {
+      console.error('Error:', err);
+      setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
     }
-
-    setVideos(data || []);
   };
 
   const handlePlay = (videoId: string) => {
@@ -196,8 +208,22 @@ export default function Videos() {
         Wedding Planning Videos
       </Typography>
 
+      {loading && (
+        <Typography>Loading videos...</Typography>
+      )}
+
+      {error && (
+        <Typography color="error" gutterBottom>
+          {error}
+        </Typography>
+      )}
+
+      {!loading && !error && videos.length === 0 && (
+        <Typography>No videos available yet.</Typography>
+      )}
+
       <Grid container spacing={3}>
-        {videos.map((video) => (
+        {videos && videos.map((video) => (
           <Grid item xs={12} sm={6} md={4} key={video.id}>
             <VideoCard video={video} onPlay={handlePlay} />
           </Grid>
