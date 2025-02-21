@@ -83,7 +83,7 @@ export default function Navigation() {
       </Box>
       <Divider />
       <List>
-        {menuItems.map((item) => (
+        {menuItems && menuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton
               onClick={() => {

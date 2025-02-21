@@ -49,7 +49,6 @@ export default function SeatingChart() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,9 +61,9 @@ export default function SeatingChart() {
       setLoading(true);
       setError(null);
       const { data, error } = await supabase
-        .from('table_templates')
+        .from('tables')
         .select('*')
-        .order('created_at');
+        .order('created_at', { ascending: true });
 
       if (error) {
         console.error('Error fetching tables:', error);
@@ -72,14 +71,21 @@ export default function SeatingChart() {
         return;
       }
 
-      const defaultTables = data.length === 0 ? [
+      // Initialize with default tables if none exist
+      const defaultTables = data?.length ? data : [
         { id: '1', name: 'Table 1', shape: 'round', seats: 8, guests: [], color: '#e3f2fd' },
         { id: '2', name: 'Table 2', shape: 'round', seats: 8, guests: [], color: '#e8f5e9' },
         { id: '3', name: 'Table 3', shape: 'round', seats: 8, guests: [], color: '#fff3e0' },
         { id: '4', name: 'Table 4', shape: 'round', seats: 8, guests: [], color: '#f3e5f5' },
-      ] : data;
+      ];
 
-      setTables(defaultTables);
+      // Ensure each table has a guests array
+      const tablesWithGuests = defaultTables.map(table => ({
+        ...table,
+        guests: table.guests || []
+      }));
+
+      setTables(tablesWithGuests);
     } catch (err) {
       console.error('Error:', err);
       setError('An unexpected error occurred');
@@ -88,107 +94,55 @@ export default function SeatingChart() {
     }
   };
 
-  const handleDragEnd = async (result: DropResult) => {
-    if (!result.destination) return;
-
-    const { source, destination } = result;
-    const sourceTable = tables.find(t => t.id === source.droppableId);
-    const destTable = tables.find(t => t.id === destination.droppableId);
-
-    if (!sourceTable || !destTable) return;
-
-    const [movedGuest] = sourceTable.guests.splice(source.index, 1);
-    destTable.guests.splice(destination.index, 0, movedGuest);
-
-    // Update in database
-    const { error } = await supabase
-      .from('table_assignments')
-      .update({ table_id: destTable.id })
-      .eq('guest_id', movedGuest.id);
-
-    if (error) {
-      showSnackbar('Error updating guest assignment', 'error');
-      return;
-    }
-
-    setTables([...tables]);
-    showSnackbar('Guest moved successfully', 'success');
+  const handleDragEnd = (result: DropResult) => {
+    // Handle drag and drop logic here
   };
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    setSelectedTable(null);
-  };
+  const TableComponent = ({ table }: { table: Table }) => (
+    <Paper
+      sx={{
+        p: 2,
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        position: 'relative',
+      }}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h6">{table.name}</Typography>
+        <IconButton size="small" onClick={handleMenuOpen}>
+          <MoreVertIcon />
+        </IconButton>
+      </Box>
 
-  const showSnackbar = (message: string, severity: 'success' | 'error') => {
-    setSnackbar({ open: true, message, severity });
-  };
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+        <TableRestaurantIcon sx={{ mr: 1 }} />
+        <Typography variant="body2">{table.seats} seats</Typography>
+      </Box>
 
-  const TableComponent: React.FC<{ table: Table }> = ({ table }) => {
-    const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
-      setAnchorEl(event.currentTarget);
-      setSelectedTable(table);
-    };
+      <Box sx={{ flexGrow: 1 }}>
+        {table.guests?.map((guest) => (
+          <Chip
+            key={guest.id}
+            label={guest.name}
+            size="small"
+            sx={{ m: 0.5 }}
+          />
+        ))}
+      </Box>
 
-    return (
-      <Droppable droppableId={table.id}>
-        {(provided: DroppableProvided) => (
-          <Paper 
-            elevation={3}
-            sx={{
-              p: 2,
-              height: '250px',
-              display: 'flex',
-              flexDirection: 'column',
-              position: 'relative',
-              backgroundColor: table.color || '#fff',
-            }}
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <TableRestaurantIcon sx={{ mr: 1 }} />
-                <Typography variant="h6">{table.name}</Typography>
-              </Box>
-              <IconButton size="small" onClick={handleMenuClick}>
-                <MoreVertIcon />
-              </IconButton>
-            </Box>
-
-            <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-              {table.guests.map((guest, index) => (
-                <Draggable key={guest.id} draggableId={guest.id} index={index}>
-                  {(provided: DraggableProvided) => (
-                    <Chip
-                      label={guest.name}
-                      sx={{ m: 0.5 }}
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                    />
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </Box>
-
-            {table.notes && (
-              <Tooltip title={table.notes}>
-                <Typography variant="caption" sx={{ mt: 1, fontStyle: 'italic' }}>
-                  {table.notes.substring(0, 30)}...
-                </Typography>
-              </Tooltip>
-            )}
-            
-            <Typography variant="caption" sx={{ mt: 1 }}>
-              {table.guests.length} / {table.seats} seats filled
-            </Typography>
-          </Paper>
-        )}
-      </Droppable>
-    );
-  };
+      <Box sx={{ mt: 2 }}>
+        <Button
+          startIcon={<PersonAddIcon />}
+          size="small"
+          fullWidth
+          variant="outlined"
+        >
+          Assign Guests
+        </Button>
+      </Box>
+    </Paper>
+  );
 
   const TableMenu = () => (
     <Menu
@@ -197,19 +151,12 @@ export default function SeatingChart() {
       onClose={handleMenuClose}
     >
       <MenuItem onClick={() => {
-        setEditingTable(selectedTable);
+        setEditingTable(tables.find(t => t.id === anchorEl?.getAttribute('data-table-id')));
         setIsEditDialogOpen(true);
         handleMenuClose();
       }}>
         <EditIcon sx={{ mr: 1 }} fontSize="small" />
         Edit Table
-      </MenuItem>
-      <MenuItem onClick={() => {
-        // Handle adding guests
-        handleMenuClose();
-      }}>
-        <PersonAddIcon sx={{ mr: 1 }} fontSize="small" />
-        Add Guests
       </MenuItem>
       <MenuItem onClick={() => {
         // Handle table deletion
@@ -220,6 +167,24 @@ export default function SeatingChart() {
       </MenuItem>
     </Menu>
   );
+
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
+        <Typography>Loading tables...</Typography>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
+        <Typography color="error" gutterBottom>
+          {error}
+        </Typography>
+      </Container>
+    );
+  }
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
@@ -238,27 +203,17 @@ export default function SeatingChart() {
           </Button>
         </Box>
 
-        {loading && (
-          <Typography>Loading tables...</Typography>
-        )}
-
-        {error && (
-          <Typography color="error" gutterBottom>
-            {error}
-          </Typography>
-        )}
-
-        {!loading && !error && tables.length === 0 && (
+        {tables.length === 0 ? (
           <Typography>No tables created yet. Click "Add Table" to get started.</Typography>
+        ) : (
+          <Grid container spacing={3}>
+            {tables.map(table => (
+              <Grid item xs={12} sm={6} md={3} key={table.id}>
+                <TableComponent table={table} />
+              </Grid>
+            ))}
+          </Grid>
         )}
-
-        <Grid container spacing={3}>
-          {tables.map(table => (
-            <Grid item xs={12} sm={6} md={3} key={table.id}>
-              <TableComponent table={table} />
-            </Grid>
-          ))}
-        </Grid>
 
         <TableMenu />
         
