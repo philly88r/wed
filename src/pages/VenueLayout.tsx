@@ -3,8 +3,6 @@ import { supabase } from '../lib/supabase';
 import {
   Box,
   Container,
-  Grid,
-  Paper,
   Typography,
   IconButton,
   Dialog,
@@ -12,40 +10,30 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  Chip,
   Menu,
   MenuItem,
   Snackbar,
   Alert,
+  Paper,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import TableRestaurantIcon from '@mui/icons-material/TableRestaurant';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 
-interface TableGuest {
-  id: string;
-  name: string;
-  table_id: string;
-}
-
-interface Table {
+interface VenueTable {
   id: string;
   name: string;
   shape: 'round' | 'rectangular' | 'square' | 'oval';
   seats: number;
-  guests: TableGuest[];
   color?: string;
-  notes?: string;
   position: { x: number; y: number; width: number; height: number };
 }
 
-export default function SeatingChart() {
-  const [tables, setTables] = useState<Table[]>([]);
-  const [editingTable, setEditingTable] = useState<Table | null>(null);
+export default function VenueLayout() {
+  const [tables, setTables] = useState<VenueTable[]>([]);
+  const [editingTable, setEditingTable] = useState<VenueTable | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -61,17 +49,8 @@ export default function SeatingChart() {
       setLoading(true);
       setError(null);
       const { data, error } = await supabase
-        .from('seating_tables')
-        .select(`
-          *,
-          table_assignments (
-            guest_id,
-            guests (
-              id,
-              name
-            )
-          )
-        `)
+        .from('venue_tables')
+        .select('*')
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -87,7 +66,6 @@ export default function SeatingChart() {
           name: 'Head Table', 
           shape: 'rectangular', 
           seats: 12, 
-          guests: [], 
           color: '#e3f2fd',
           position: { x: 0, y: 0, width: 4, height: 1 }
         },
@@ -96,7 +74,6 @@ export default function SeatingChart() {
           name: 'Family Table', 
           shape: 'round', 
           seats: 10, 
-          guests: [], 
           color: '#e8f5e9',
           position: { x: 0, y: 1, width: 2, height: 2 }
         },
@@ -105,7 +82,6 @@ export default function SeatingChart() {
           name: 'Friends Table', 
           shape: 'round', 
           seats: 8, 
-          guests: [], 
           color: '#fff3e0',
           position: { x: 2, y: 1, width: 2, height: 2 }
         },
@@ -114,37 +90,18 @@ export default function SeatingChart() {
           name: 'Colleagues Table', 
           shape: 'square', 
           seats: 6, 
-          guests: [], 
           color: '#f3e5f5',
           position: { x: 0, y: 3, width: 2, height: 2 }
         }
       ];
 
-      // Transform the data to include guests from assignments
-      const tablesWithGuests = defaultTables.map(table => {
-        const guests = table.table_assignments?.map(assignment => ({
-          id: assignment.guests.id,
-          name: assignment.guests.name,
-        })) || [];
-
-        return {
-          ...table,
-          guests,
-          table_assignments: undefined // Remove the raw assignments data
-        };
-      });
-
-      setTables(tablesWithGuests);
+      setTables(defaultTables);
     } catch (err) {
       console.error('Error:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDragEnd = (_result: DropResult) => {
-    // Handle drag and drop logic here
   };
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -155,7 +112,7 @@ export default function SeatingChart() {
     setAnchorEl(null);
   };
 
-  const TableComponent = ({ table }: { table: Table }) => {
+  const TableComponent = ({ table }: { table: VenueTable }) => {
     const getTableStyle = () => {
       let style: any = {
         p: 2,
@@ -228,24 +185,6 @@ export default function SeatingChart() {
           <TableRestaurantIcon sx={{ mr: 1 }} />
           <Typography variant="body2">{table.seats} seats</Typography>
         </Box>
-
-        <Box sx={{ 
-          flexGrow: 1,
-          overflowY: 'auto',
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 0.5,
-          p: 1
-        }}>
-          {table.guests?.map((guest) => (
-            <Chip
-              key={guest.id}
-              label={guest.name}
-              size="small"
-              sx={{ m: 0.5 }}
-            />
-          ))}
-        </Box>
       </Paper>
     );
   };
@@ -279,7 +218,7 @@ export default function SeatingChart() {
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Typography>Loading tables...</Typography>
+        <Typography>Loading venue layout...</Typography>
       </Container>
     );
   }
@@ -295,80 +234,78 @@ export default function SeatingChart() {
   }
 
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
-          <Typography variant="h4">Seating Chart</Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => {
-              setEditingTable(null);
-              setIsEditDialogOpen(true);
-            }}
-          >
-            Add Table
-          </Button>
-        </Box>
-
-        {tables.length === 0 ? (
-          <Typography>No tables created yet. Click "Add Table" to get started.</Typography>
-        ) : (
-          <Box sx={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: 3,
-            backgroundColor: '#f5f5f5',
-            p: 3,
-            borderRadius: 2,
-            minHeight: '600px',
-            position: 'relative'
-          }}>
-            {tables.map(table => (
-              <Box 
-                key={table.id}
-                sx={{
-                  gridColumn: `span ${table.position.width}`,
-                  gridRow: `span ${table.position.height}`,
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}
-              >
-                <TableComponent table={table} />
-              </Box>
-            ))}
-          </Box>
-        )}
-
-        <TableMenu />
-        
-        <Dialog open={isEditDialogOpen} onClose={() => setIsEditDialogOpen(false)}>
-          <DialogTitle>{editingTable ? 'Edit Table' : 'Add New Table'}</DialogTitle>
-          <DialogContent>
-            {/* Add form fields for table editing */}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-            <Button variant="contained" onClick={() => {
-              // Handle save
-              setIsEditDialogOpen(false);
-            }}>
-              Save
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        <Snackbar 
-          open={snackbar.open} 
-          autoHideDuration={6000} 
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
+    <Container maxWidth="lg" sx={{ mt: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
+        <Typography variant="h4">Venue Layout</Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => {
+            setEditingTable(null);
+            setIsEditDialogOpen(true);
+          }}
         >
-          <Alert severity={snackbar.severity} sx={{ width: '100%' }}>
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-      </Container>
-    </DragDropContext>
+          Add Table
+        </Button>
+      </Box>
+
+      {tables.length === 0 ? (
+        <Typography>No tables created yet. Click "Add Table" to get started.</Typography>
+      ) : (
+        <Box sx={{ 
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 3,
+          backgroundColor: '#f5f5f5',
+          p: 3,
+          borderRadius: 2,
+          minHeight: '600px',
+          position: 'relative'
+        }}>
+          {tables.map(table => (
+            <Box 
+              key={table.id}
+              sx={{
+                gridColumn: `span ${table.position.width}`,
+                gridRow: `span ${table.position.height}`,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}
+            >
+              <TableComponent table={table} />
+            </Box>
+          ))}
+        </Box>
+      )}
+
+      <TableMenu />
+      
+      <Dialog open={isEditDialogOpen} onClose={() => setIsEditDialogOpen(false)}>
+        <DialogTitle>{editingTable ? 'Edit Table' : 'Add New Table'}</DialogTitle>
+        <DialogContent>
+          {/* Add form fields for table editing */}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={() => {
+            // Handle save
+            setIsEditDialogOpen(false);
+          }}>
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Container>
   );
 }
