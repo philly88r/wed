@@ -327,11 +327,11 @@ export default function SeatingChart() {
                                 draggableId={guest.id}
                                 index={index}
                               >
-                                {(provided) => (
+                                {(dragProvided) => (
                                   <Chip
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    {...provided.dragHandleProps}
+                                    ref={dragProvided.innerRef}
+                                    {...dragProvided.draggableProps}
+                                    {...dragProvided.dragHandleProps}
                                     label={guest.name}
                                     size="small"
                                     sx={{ m: 0.5 }}
