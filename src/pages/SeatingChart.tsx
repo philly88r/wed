@@ -204,6 +204,12 @@ export default function SeatingChart() {
     }
   };
 
+  const handleTableClick = (table: Table) => {
+    setSelectedTable(table);
+    setNewTableName(table.name);
+    setEditDialogOpen(true);
+  };
+
   const filteredGuests = guests.filter(guest => {
     if (filter === 'all') return true;
     return guest.status === filter;
@@ -290,20 +296,21 @@ export default function SeatingChart() {
                       }}
                     >
                       <Paper
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
                         sx={{
-                          width: 120,
-                          height: 120,
-                          borderRadius: '50%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'move',
+                          p: 2,
+                          mb: 2,
                           backgroundColor: table.color || '#fff',
+                          cursor: 'pointer',
                           '&:hover': {
                             boxShadow: 3,
+                            transform: 'scale(1.02)',
+                            transition: 'all 0.2s ease-in-out',
                           },
                         }}
+                        onClick={() => handleTableClick(table)}
                       >
                         <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
                           {table.name}

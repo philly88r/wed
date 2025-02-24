@@ -265,12 +265,28 @@ export default function ServiceMenu() {
         <Grid container spacing={2} justifyContent="center">
           {services.slice(0, -1).map((service) => (
             <Grid item xs={12} sm={6} md={4} key={service.title}>
-              <Typography 
-                variant="body1"
-                sx={{ fontFamily: "'Lato', sans-serif" }}
+              <Paper
+                onClick={() => navigate(service.path)}
+                sx={{
+                  height: '100%',
+                  p: 4,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    boxShadow: 6,
+                    transform: 'scale(1.02)',
+                    transition: 'all 0.2s ease-in-out',
+                  },
+                }}
               >
-                • {service.title}
-              </Typography>
+                <Typography 
+                  variant="body1"
+                  sx={{ fontFamily: "'Lato', sans-serif" }}
+                >
+                  • {service.title}
+                </Typography>
+              </Paper>
             </Grid>
           ))}
         </Grid>
