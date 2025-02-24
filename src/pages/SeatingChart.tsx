@@ -296,9 +296,6 @@ export default function SeatingChart() {
                       }}
                     >
                       <Paper
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
                         sx={{
                           p: 2,
                           mb: 2,
