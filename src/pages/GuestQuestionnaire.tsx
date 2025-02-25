@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
@@ -27,7 +27,7 @@ export default function GuestQuestionnaire() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('guest_responses')
       .insert([
         {
