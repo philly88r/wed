@@ -45,6 +45,8 @@ export default function Guests() {
   const [showForm, setShowForm] = useState(false);
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
   const [customLink, setCustomLink] = useState('');
+  const [customLinkInput, setCustomLinkInput] = useState('');
+  const [savedLinks, setSavedLinks] = useState<Array<{ name: string; link: string }>>([]);
   const [lastName, setLastName] = useState('');
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -187,21 +189,37 @@ export default function Guests() {
       .filter(seat => !assignedSeats.includes(seat));
   };
 
-  const generateCustomLink = () => {
-    if (!lastName) return;
-    const link = `${window.location.origin}/${lastName.toLowerCase()}wedding`;
+  const generateCustomLink = async () => {
+    if (!customLinkInput) return;
+    const linkName = customLinkInput.toLowerCase().replace(/\s+/g, '');
+    const link = `https://${linkName}.altare.com`;
     setCustomLink(link);
+    
+    // Save to database and local state
+    const { data, error } = await supabase
+      .from('custom_links')
+      .insert([{ name: linkName, link }])
+      .select();
+      
+    if (!error && data) {
+      setSavedLinks([...savedLinks, { name: linkName, link }]);
+    }
+    
+    setCustomLinkInput('');
   };
 
-  const copyLink = async () => {
-    if (!customLink) return;
-    try {
-      await navigator.clipboard.writeText(customLink);
-      // You might want to add a toast notification here
-    } catch (err) {
-      console.error('Failed to copy link:', err);
+  const loadSavedLinks = async () => {
+    const { data } = await supabase
+      .from('custom_links')
+      .select('name, link');
+    if (data) {
+      setSavedLinks(data);
     }
   };
+
+  useEffect(() => {
+    loadSavedLinks();
+  }, []);
 
   const [newGuest, setNewGuest] = useState<Partial<Guest>>({
     plus_one: false,
@@ -227,162 +245,169 @@ export default function Guests() {
 
   return (
     <div className="p-6">
-      {/* Altare Header */}
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold">Altare</h1>
       </div>
 
-      {/* Custom Link Generator */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Create Your Custom Link</h2>
-        <div className="flex gap-4 items-center">
-          <input
-            type="text"
-            placeholder="Enter last name"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            className="border rounded-md px-4 py-2 flex-1"
-          />
-          <button
-            onClick={generateCustomLink}
-            className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark"
-          >
-            Generate Link
-          </button>
-        </div>
-        {customLink && (
-          <div className="mt-4 flex items-center gap-2 bg-gray-50 p-3 rounded">
+      <div className="grid grid-cols-2 gap-8 mb-8">
+        {/* Custom Link Generator */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-semibold mb-4">Create Your Custom Link</h2>
+          <p className="text-gray-600 mb-4">e.g. (smithwedding)</p>
+          <div className="flex gap-4 items-center mb-6">
             <input
               type="text"
-              value={customLink}
-              readOnly
-              className="flex-1 bg-transparent"
+              placeholder="Enter your custom name"
+              value={customLinkInput}
+              onChange={(e) => setCustomLinkInput(e.target.value)}
+              className="border rounded-md px-4 py-2 flex-1"
             />
             <button
-              onClick={copyLink}
-              className="flex items-center gap-2 text-primary hover:text-primary-dark"
+              onClick={generateCustomLink}
+              className="bg-primary text-white px-6 py-2 rounded-md hover:bg-primary-dark whitespace-nowrap"
             >
-              <Copy size={18} />
-              Copy
+              Create Link
             </button>
           </div>
-        )}
-        <p className="text-sm text-gray-600 mt-2">
-          Send this link to your guests and they'll be able to fill out their information
-        </p>
-      </div>
 
-      {/* Guest Form */}
-      {showForm && (
-        <form onSubmit={handleSubmit} className="mb-6 p-4 bg-white rounded shadow">
-          {/* ... existing form fields ... */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block mb-2">First Name</label>
-              <input
-                type="text"
-                value={newGuest.first_name || ''}
-                onChange={e => setNewGuest(prev => ({ ...prev, first_name: e.target.value }))}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-            <div>
-              <label className="block mb-2">Last Name</label>
-              <input
-                type="text"
-                value={newGuest.last_name || ''}
-                onChange={e => setNewGuest(prev => ({ ...prev, last_name: e.target.value }))}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-            <div>
-              <label className="block mb-2">Email</label>
-              <input
-                type="email"
-                value={newGuest.email || ''}
-                onChange={e => setNewGuest(prev => ({ ...prev, email: e.target.value }))}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-            <div>
-              <label className="block mb-2">Phone</label>
-              <input
-                type="tel"
-                value={newGuest.phone || ''}
-                onChange={e => setNewGuest(prev => ({ ...prev, phone: e.target.value }))}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-            <div>
-              <label className="block mb-2">Relationship</label>
-              <select
-                value={newGuest.relationship || relationshipGroups[0]}
-                onChange={e => setNewGuest(prev => ({ ...prev, relationship: e.target.value }))}
-                className="w-full p-2 border rounded"
-              >
-                {relationshipGroups.map(group => (
-                  <option key={group} value={group}>{group}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block mb-2">RSVP Status</label>
-              <select
-                value={newGuest.rsvp_status || 'pending'}
-                onChange={e => setNewGuest(prev => ({ ...prev, rsvp_status: e.target.value as Guest['rsvp_status'] }))}
-                className="w-full p-2 border rounded"
-              >
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="declined">Declined</option>
-              </select>
-            </div>
-            <div>
-              <label className="block mb-2">Plus One</label>
-              <input
-                type="checkbox"
-                checked={newGuest.plus_one || false}
-                onChange={e => setNewGuest(prev => ({ ...prev, plus_one: e.target.checked }))}
-                className="mr-2"
-              />
-            </div>
-            <div>
-              <label className="block mb-2">Dietary Restrictions</label>
-              <input
-                type="text"
-                value={newGuest.dietary_restrictions || ''}
-                onChange={e => setNewGuest(prev => ({ ...prev, dietary_restrictions: e.target.value }))}
-                className="w-full p-2 border rounded"
-              />
-            </div>
+          {/* Saved Links */}
+          <div className="space-y-3">
+            {savedLinks.map((savedLink, index) => (
+              <div key={index} className="flex items-center gap-2 bg-gray-50 p-3 rounded">
+                <input
+                  type="text"
+                  value={savedLink.link}
+                  readOnly
+                  className="flex-1 bg-transparent"
+                />
+                <button
+                  onClick={() => navigator.clipboard.writeText(savedLink.link)}
+                  className="flex items-center gap-2 text-primary hover:text-primary-dark"
+                >
+                  <Copy size={18} />
+                  Copy
+                </button>
+              </div>
+            ))}
           </div>
-          <div className="mt-4 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setShowForm(false);
-                setEditingGuest(null);
-                setNewGuest({
-                  plus_one: false,
-                  rsvp_status: 'pending',
-                  relationship: relationshipGroups[0]
-                });
-              }}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              {editingGuest ? 'Update Guest' : 'Add Guest'}
-            </button>
-          </div>
-        </form>
-      )}
+        </div>
+
+        {/* Manual Address Entry */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-semibold mb-4">Address Book</h2>
+          <p className="text-gray-600 mb-4">Manually add guest addresses</p>
+          {showForm && (
+            <form onSubmit={handleSubmit} className="mb-6 p-4 bg-white rounded shadow">
+              {/* ... existing form fields ... */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block mb-2">First Name</label>
+                  <input
+                    type="text"
+                    value={newGuest.first_name || ''}
+                    onChange={e => setNewGuest(prev => ({ ...prev, first_name: e.target.value }))}
+                    className="w-full p-2 border rounded"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2">Last Name</label>
+                  <input
+                    type="text"
+                    value={newGuest.last_name || ''}
+                    onChange={e => setNewGuest(prev => ({ ...prev, last_name: e.target.value }))}
+                    className="w-full p-2 border rounded"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={newGuest.email || ''}
+                    onChange={e => setNewGuest(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2">Phone</label>
+                  <input
+                    type="tel"
+                    value={newGuest.phone || ''}
+                    onChange={e => setNewGuest(prev => ({ ...prev, phone: e.target.value }))}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2">Relationship</label>
+                  <select
+                    value={newGuest.relationship || relationshipGroups[0]}
+                    onChange={e => setNewGuest(prev => ({ ...prev, relationship: e.target.value }))}
+                    className="w-full p-2 border rounded"
+                  >
+                    {relationshipGroups.map(group => (
+                      <option key={group} value={group}>{group}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-2">RSVP Status</label>
+                  <select
+                    value={newGuest.rsvp_status || 'pending'}
+                    onChange={e => setNewGuest(prev => ({ ...prev, rsvp_status: e.target.value as Guest['rsvp_status'] }))}
+                    className="w-full p-2 border rounded"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="declined">Declined</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block mb-2">Plus One</label>
+                  <input
+                    type="checkbox"
+                    checked={newGuest.plus_one || false}
+                    onChange={e => setNewGuest(prev => ({ ...prev, plus_one: e.target.checked }))}
+                    className="mr-2"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2">Dietary Restrictions</label>
+                  <input
+                    type="text"
+                    value={newGuest.dietary_restrictions || ''}
+                    onChange={e => setNewGuest(prev => ({ ...prev, dietary_restrictions: e.target.value }))}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+              </div>
+              <div className="mt-4 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingGuest(null);
+                    setNewGuest({
+                      plus_one: false,
+                      rsvp_status: 'pending',
+                      relationship: relationshipGroups[0]
+                    });
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  {editingGuest ? 'Update Guest' : 'Add Guest'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
 
       {/* Filters and Search */}
       <div className="flex gap-4 mb-6">
