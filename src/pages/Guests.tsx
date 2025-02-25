@@ -201,14 +201,21 @@ export default function Guests() {
   };
 
   const loadSavedLinks = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('custom_links')
-      .select('name, link')
+      .select('*')
       .order('created_at', { ascending: false })
       .limit(1);
+    
+    if (error) {
+      console.error('Error loading saved links:', error);
+      return;
+    }
+    
     if (data && data.length > 0) {
       setSavedLinks(data);
       setExistingLink(data[0]);
+      setCustomLink(data[0].link);
     }
   };
 
@@ -221,40 +228,46 @@ export default function Guests() {
     const linkName = customLinkInput.toLowerCase().replace(/\s+/g, '');
     const link = `https://wedding-p.netlify.app/${linkName}`;
     
-    // If there's an existing link, delete it first
-    if (existingLink) {
-      const { error: deleteError } = await supabase
+    try {
+      // If there's an existing link, delete it first
+      if (existingLink) {
+        const { error: deleteError } = await supabase
+          .from('custom_links')
+          .delete()
+          .eq('name', existingLink.name);
+          
+        if (deleteError) {
+          console.error('Error deleting existing link:', deleteError);
+          return;
+        }
+      }
+      
+      // Create new link
+      const { data, error } = await supabase
         .from('custom_links')
-        .delete()
-        .eq('name', existingLink.name);
+        .insert([{ 
+          name: linkName, 
+          link: link,
+          questionnaire_path: `/${linkName}`,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select();
         
-      if (deleteError) {
-        console.error('Error deleting existing link:', deleteError);
+      if (error) {
+        console.error('Error creating link:', error);
         return;
       }
-    }
-    
-    // Create new link
-    const { data, error } = await supabase
-      .from('custom_links')
-      .insert([{ 
-        name: linkName, 
-        link: link,
-        questionnaire_path: `/${linkName}`,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }])
-      .select();
       
-    if (!error && data) {
-      setCustomLink(link);
-      setExistingLink({ name: linkName, link });
-      setSavedLinks([{ name: linkName, link }]);
-    } else {
-      console.error('Error creating link:', error);
+      if (data && data.length > 0) {
+        setCustomLink(link);
+        setExistingLink(data[0]);
+        setSavedLinks([data[0]]);
+        setCustomLinkInput('');
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
     }
-    
-    setCustomLinkInput('');
   };
 
   const [newGuest, setNewGuest] = useState<Partial<Guest>>({
