@@ -205,13 +205,17 @@ export default function Guests() {
   const generateCustomLink = async () => {
     if (!customLinkInput) return;
     const linkName = customLinkInput.toLowerCase().replace(/\s+/g, '');
-    const link = `https://${linkName}.altare.com`;
+    const link = `https://wedding-p.netlify.app/${linkName}`;
     setCustomLink(link);
     
     // Save to database and local state
     const { data, error } = await supabase
       .from('custom_links')
-      .insert([{ name: linkName, link }])
+      .insert([{ 
+        name: linkName, 
+        link,
+        questionnaire_path: `/${linkName}`
+      }])
       .select();
       
     if (!error && data) {
@@ -323,16 +327,30 @@ export default function Guests() {
                 variant="body1"
                 sx={{ mb: 2, color: theme.palette.text.secondary }}
               >
-                Enter a name for your wedding website (e.g. smithwedding)
+                Enter a name for your wedding website (e.g. smithswedding)
               </Typography>
               
-              <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <TextField
                   fullWidth
                   variant="outlined"
                   placeholder="Enter your custom name"
                   value={customLinkInput}
                   onChange={(e) => setCustomLinkInput(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <Typography
+                        component="span"
+                        sx={{
+                          color: theme.palette.text.secondary,
+                          mr: 1,
+                          userSelect: 'none'
+                        }}
+                      >
+                        https://wedding-p.netlify.app/
+                      </Typography>
+                    ),
+                  }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 2,
@@ -342,14 +360,21 @@ export default function Guests() {
                 <Button
                   variant="contained"
                   onClick={generateCustomLink}
+                  size="large"
                   sx={{
-                    minWidth: 120,
+                    py: 2,
                     borderRadius: 2,
                     textTransform: 'none',
-                    fontSize: '1rem',
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    background: theme.palette.primary.main,
+                    '&:hover': {
+                      background: theme.palette.primary.dark,
+                    },
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
                   }}
                 >
-                  Create Link
+                  Create Your Custom Link
                 </Button>
               </Box>
             </Box>

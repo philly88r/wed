@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS custom_links (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
   link TEXT NOT NULL,
+  questionnaire_path TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
