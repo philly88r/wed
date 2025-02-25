@@ -239,8 +239,10 @@ export default function Guests() {
       .from('custom_links')
       .insert([{ 
         name: linkName, 
-        link,
-        questionnaire_path: `/${linkName}`
+        link: link,
+        questionnaire_path: `/${linkName}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }])
       .select();
       
@@ -248,6 +250,8 @@ export default function Guests() {
       setCustomLink(link);
       setExistingLink({ name: linkName, link });
       setSavedLinks([{ name: linkName, link }]);
+    } else {
+      console.error('Error creating link:', error);
     }
     
     setCustomLinkInput('');
