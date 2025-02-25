@@ -262,17 +262,16 @@ export default function Guests() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 8 }}>
-      <Box sx={{ mb: 8, textAlign: 'center' }}>
-        <Typography 
-          variant="h1" 
-          sx={{ 
-            fontSize: { xs: '2.5rem', md: '3.5rem' },
+      <Box sx={{ textAlign: 'center', mb: 6 }}>
+        <Typography
+          variant="h2"
+          sx={{
             fontFamily: "'Playfair Display', serif",
-            mb: 2,
-            color: theme.palette.primary.main
+            color: theme.palette.primary.main,
+            mb: 4
           }}
         >
-          Guest Management
+          ALTARE
         </Typography>
         <Typography 
           variant="h4" 
