@@ -272,49 +272,26 @@ export default function Guests() {
         >
           ALTARE
         </Typography>
-        <Typography 
-          variant="h4" 
-          sx={{ 
-            fontFamily: "'Playfair Display', serif",
-            color: theme.palette.text.secondary,
-            fontWeight: 300
-          }}
-        >
-          Create your custom link and manage your guest list
-        </Typography>
       </Box>
 
       <Grid container spacing={4}>
-        {/* Custom Link Generator */}
+        {/* Custom Link Section */}
         <Grid item xs={12} md={6}>
           <Paper
             elevation={3}
             sx={{
-              p: 4,
-              height: '100%',
-              borderRadius: 4,
+              p: { xs: 3, md: 4 },
+              borderRadius: 2,
               background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
-              border: '1px solid',
-              borderColor: theme.palette.divider,
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: theme.palette.primary.main,
-              }
+              height: '100%'
             }}
           >
             <Typography
               variant="h5"
               sx={{
-                mb: 3,
                 fontFamily: "'Playfair Display', serif",
-                color: theme.palette.primary.main,
+                color: theme.palette.text.primary,
+                mb: 3
               }}
             >
               Create Your Custom Link
@@ -433,36 +410,23 @@ export default function Guests() {
           </Paper>
         </Grid>
 
-        {/* Address Book */}
+        {/* Address Book Section */}
         <Grid item xs={12} md={6}>
           <Paper
             elevation={3}
             sx={{
-              p: 4,
-              height: '100%',
-              borderRadius: 4,
+              p: { xs: 3, md: 4 },
+              borderRadius: 2,
               background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
-              border: '1px solid',
-              borderColor: theme.palette.divider,
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: theme.palette.primary.main,
-              }
+              height: '100%'
             }}
           >
             <Typography
               variant="h5"
               sx={{
-                mb: 3,
                 fontFamily: "'Playfair Display', serif",
-                color: theme.palette.primary.main,
+                color: theme.palette.text.primary,
+                mb: 3
               }}
             >
               Address Book
