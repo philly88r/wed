@@ -19,17 +19,14 @@ import {
 
 interface Guest {
   id: string;
-  first_name: string;
-  last_name: string;
-  email?: string;
-  phone?: string;
-  relationship?: string;
-  dietary_restrictions?: string;
-  plus_one: boolean;
-  rsvp_status: 'pending' | 'confirmed' | 'declined';
-  table_assignment?: string;
-  seat_number?: number;
-  created_by: string;
+  full_name: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  country: string;
+  email: string;
+  table_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -57,9 +54,10 @@ export default function Guests() {
   const [tables, setTables] = useState<Table[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
-  const [customLink, setCustomLink] = useState('');
   const [customLinkInput, setCustomLinkInput] = useState('');
+  const [customLink, setCustomLink] = useState('');
   const [savedLinks, setSavedLinks] = useState<Array<{ name: string; link: string }>>([]);
+  const [existingLink, setExistingLink] = useState<{ name: string; link: string } | null>(null);
   const [lastName, setLastName] = useState('');
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -119,16 +117,13 @@ export default function Guests() {
       const { error } = await supabase
         .from('guests')
         .update({
-          first_name: newGuest.first_name,
-          last_name: newGuest.last_name,
+          full_name: newGuest.full_name,
+          address: newGuest.address,
+          city: newGuest.city,
+          state: newGuest.state,
+          zip_code: newGuest.zip_code,
+          country: newGuest.country,
           email: newGuest.email,
-          phone: newGuest.phone,
-          relationship: newGuest.relationship,
-          dietary_restrictions: newGuest.dietary_restrictions,
-          plus_one: newGuest.plus_one,
-          rsvp_status: newGuest.rsvp_status,
-          table_assignment: newGuest.table_assignment,
-          seat_number: newGuest.seat_number
         })
         .eq('id', editingGuest.id);
 
@@ -149,9 +144,13 @@ export default function Guests() {
 
     await fetchGuests();
     setNewGuest({
-      plus_one: false,
-      rsvp_status: 'pending',
-      relationship: relationshipGroups[0]
+      full_name: '',
+      address: '',
+      city: '',
+      state: '',
+      zip_code: '',
+      country: '',
+      email: ''
     });
     setEditingGuest(null);
     setShowForm(false);
@@ -173,12 +172,11 @@ export default function Guests() {
     }
   };
 
-  const assignTable = async (guestId: string, tableId: string | null, seatNumber?: number) => {
+  const assignTable = async (guestId: string, tableId: string | null) => {
     const { error } = await supabase
       .from('guests')
       .update({
-        table_assignment: tableId,
-        seat_number: seatNumber
+        table_id: tableId,
       })
       .eq('id', guestId);
 
@@ -195,20 +193,48 @@ export default function Guests() {
     if (!table) return [];
 
     const assignedSeats = guests
-      .filter(g => g.table_assignment === tableId)
+      .filter(g => g.table_id === tableId)
       .map(g => g.seat_number);
 
     return Array.from({ length: table.seats }, (_, i) => i + 1)
       .filter(seat => !assignedSeats.includes(seat));
   };
 
+  const loadSavedLinks = async () => {
+    const { data } = await supabase
+      .from('custom_links')
+      .select('name, link')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (data && data.length > 0) {
+      setSavedLinks(data);
+      setExistingLink(data[0]);
+    }
+  };
+
+  useEffect(() => {
+    loadSavedLinks();
+  }, []);
+
   const generateCustomLink = async () => {
     if (!customLinkInput) return;
     const linkName = customLinkInput.toLowerCase().replace(/\s+/g, '');
     const link = `https://wedding-p.netlify.app/${linkName}`;
-    setCustomLink(link);
     
-    // Save to database and local state
+    // If there's an existing link, delete it first
+    if (existingLink) {
+      const { error: deleteError } = await supabase
+        .from('custom_links')
+        .delete()
+        .eq('name', existingLink.name);
+        
+      if (deleteError) {
+        console.error('Error deleting existing link:', deleteError);
+        return;
+      }
+    }
+    
+    // Create new link
     const { data, error } = await supabase
       .from('custom_links')
       .insert([{ 
@@ -219,44 +245,34 @@ export default function Guests() {
       .select();
       
     if (!error && data) {
-      setSavedLinks([...savedLinks, { name: linkName, link }]);
+      setCustomLink(link);
+      setExistingLink({ name: linkName, link });
+      setSavedLinks([{ name: linkName, link }]);
     }
     
     setCustomLinkInput('');
   };
 
-  const loadSavedLinks = async () => {
-    const { data } = await supabase
-      .from('custom_links')
-      .select('name, link');
-    if (data) {
-      setSavedLinks(data);
-    }
-  };
-
-  useEffect(() => {
-    loadSavedLinks();
-  }, []);
-
   const [newGuest, setNewGuest] = useState<Partial<Guest>>({
-    plus_one: false,
-    rsvp_status: 'pending',
-    relationship: relationshipGroups[0]
+    full_name: '',
+    address: '',
+    city: '',
+    state: '',
+    zip_code: '',
+    country: '',
+    email: ''
   });
 
   const filteredGuests = guests.filter(guest => {
     if (filter === 'all') return true;
-    if (filter === 'assigned') return guest.table_assignment !== null;
-    if (filter === 'unassigned') return guest.table_assignment === null;
-    if (filter === 'confirmed') return guest.rsvp_status === 'confirmed';
+    if (filter === 'assigned') return guest.table_id !== null;
+    if (filter === 'unassigned') return guest.table_id === null;
     return guest.rsvp_status === filter;
   }).filter(guest => {
     const searchLower = search.toLowerCase();
     return (
-      guest.first_name.toLowerCase().includes(searchLower) ||
-      guest.last_name.toLowerCase().includes(searchLower) ||
-      guest.email?.toLowerCase().includes(searchLower) ||
-      guest.phone?.includes(search)
+      guest.full_name.toLowerCase().includes(searchLower) ||
+      guest.email.toLowerCase().includes(searchLower)
     );
   });
 
@@ -326,7 +342,9 @@ export default function Guests() {
                 variant="body1"
                 sx={{ mb: 2, color: theme.palette.text.secondary }}
               >
-                Enter a name for your wedding website (e.g. smithswedding)
+                {existingLink 
+                  ? "Your current custom link is shown below. Enter a new name to change it."
+                  : "Enter a name for your wedding website (e.g. smithswedding)"}
               </Typography>
               
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -373,63 +391,59 @@ export default function Guests() {
                     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
                   }}
                 >
-                  Create Your Custom Link
+                  {existingLink ? 'Update Custom Link' : 'Create Custom Link'}
                 </Button>
               </Box>
-            </Box>
 
-            <Box sx={{ mt: 4 }}>
-              <Typography
-                variant="h6"
-                sx={{
-                  mb: 2,
-                  fontFamily: "'Playfair Display', serif",
-                  color: theme.palette.text.primary,
-                }}
-              >
-                Your Custom Links
-              </Typography>
-              
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {savedLinks.map((savedLink, index) => (
-                  <Paper
-                    key={index}
-                    sx={{
-                      p: 2,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 2,
-                      background: theme.palette.grey[50],
-                      border: '1px solid',
-                      borderColor: theme.palette.divider,
-                      borderRadius: 2,
-                    }}
+              {existingLink && (
+                <Paper
+                  elevation={1}
+                  sx={{
+                    mt: 3,
+                    p: 3,
+                    borderRadius: 2,
+                    background: 'linear-gradient(145deg, #f8f9fa 0%, #ffffff 100%)',
+                    border: '1px solid',
+                    borderColor: 'divider'
+                  }}
+                >
+                  <Typography
+                    variant="subtitle1"
+                    sx={{ mb: 1, color: theme.palette.text.secondary }}
                   >
-                    <TextField
-                      fullWidth
-                      variant="outlined"
-                      value={savedLink.link}
-                      InputProps={{
-                        readOnly: true,
-                        sx: { borderRadius: 2 }
-                      }}
-                      size="small"
-                    />
-                    <IconButton
-                      onClick={() => navigator.clipboard.writeText(savedLink.link)}
-                      color="primary"
+                    Current Custom Link:
+                  </Typography>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 2,
+                    p: 2,
+                    borderRadius: 1,
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider'
+                  }}>
+                    <Typography
                       sx={{
-                        '&:hover': {
-                          background: theme.palette.primary.light,
-                          color: theme.palette.common.white,
-                        }
+                        flex: 1,
+                        fontFamily: 'monospace',
+                        fontSize: '0.9rem'
                       }}
                     >
-                      <Copy />
-                    </IconButton>
-                  </Paper>
-                ))}
-              </Box>
+                      {existingLink.link}
+                    </Typography>
+                    <Button
+                      startIcon={<Copy size={16} />}
+                      onClick={() => {
+                        navigator.clipboard.writeText(existingLink.link);
+                      }}
+                      size="small"
+                    >
+                      Copy
+                    </Button>
+                  </Box>
+                </Paper>
+              )}
             </Box>
           </Paper>
         </Grid>
@@ -528,11 +542,11 @@ export default function Guests() {
                       label="Full Name"
                       required
                       fullWidth
-                      value={newGuest.first_name || ''}
-                      onChange={(e) => setNewGuest({ ...newGuest, first_name: e.target.value })}
+                      value={newGuest.full_name || ''}
+                      onChange={(e) => setNewGuest({ ...newGuest, full_name: e.target.value })}
                     />
                     <TextField
-                      label="Current Home Address"
+                      label="Address"
                       required
                       fullWidth
                       value={newGuest.address || ''}
@@ -612,9 +626,6 @@ export default function Guests() {
             <option value="all">All Guests</option>
             <option value="assigned">Assigned to Table</option>
             <option value="unassigned">Not Assigned</option>
-            <option value="confirmed">RSVP Confirmed</option>
-            <option value="pending">RSVP Pending</option>
-            <option value="declined">RSVP Declined</option>
           </select>
         </div>
         <div className="flex items-center gap-2 flex-1">
@@ -636,8 +647,7 @@ export default function Guests() {
             <tr className="bg-gray-50">
               <th className="p-4 text-left">Name</th>
               <th className="p-4 text-left">Contact</th>
-              <th className="p-4 text-left">Relationship</th>
-              <th className="p-4 text-left">RSVP</th>
+              <th className="p-4 text-left">Address</th>
               <th className="p-4 text-left">Table Assignment</th>
               <th className="p-4 text-left">Actions</th>
             </tr>
@@ -646,39 +656,23 @@ export default function Guests() {
             {filteredGuests.map(guest => (
               <tr key={guest.id} className="border-t">
                 <td className="p-4">
-                  <div>{guest.first_name} {guest.last_name}</div>
-                  {guest.plus_one && (
-                    <div className="text-sm text-gray-500">+1 Guest</div>
-                  )}
+                  <div>{guest.full_name}</div>
                 </td>
                 <td className="p-4">
-                  {guest.email && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-gray-500" />
-                      <span>{guest.email}</span>
-                    </div>
-                  )}
-                  {guest.phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-gray-500" />
-                      <span>{guest.phone}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-gray-500" />
+                    <span>{guest.email}</span>
+                  </div>
                 </td>
-                <td className="p-4">{guest.relationship}</td>
                 <td className="p-4">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                    ${guest.rsvp_status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                      guest.rsvp_status === 'declined' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                    {guest.rsvp_status.charAt(0).toUpperCase() + guest.rsvp_status.slice(1)}
-                  </span>
+                  <div>{guest.address}</div>
+                  <div>{guest.city}, {guest.state} {guest.zip_code}</div>
+                  <div>{guest.country}</div>
                 </td>
                 <td className="p-4">
                   {selectedLayoutId ? (
                     <select
-                      value={guest.table_assignment || ''}
+                      value={guest.table_id || ''}
                       onChange={async (e) => {
                         const tableId = e.target.value || null;
                         await assignTable(guest.id, tableId);
