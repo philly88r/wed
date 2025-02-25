@@ -19,16 +19,16 @@ import {
 
 interface Guest {
   id: string;
-  full_name: string;
-  address: string;
-  city: string;
-  state: string;
-  zip_code: string;
-  country: string;
-  email: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  phone?: string;
+  relationship?: string;
+  dietary_restrictions?: string;
   plus_one: boolean;
   rsvp_status: 'pending' | 'confirmed' | 'declined';
-  relationship: string;
+  table_assignment?: string;
+  seat_number?: number;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -112,50 +112,49 @@ export default function Guests() {
     setTables(tablesWithSeats);
   };
 
-  const addGuest = async () => {
-    if (!newGuest.full_name || !newGuest.address || !newGuest.city || 
-        !newGuest.state || !newGuest.zip_code || !newGuest.country || !newGuest.email) {
-      alert('Please fill in all required fields');
-      return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (editingGuest) {
+      const { error } = await supabase
+        .from('guests')
+        .update({
+          first_name: newGuest.first_name,
+          last_name: newGuest.last_name,
+          email: newGuest.email,
+          phone: newGuest.phone,
+          relationship: newGuest.relationship,
+          dietary_restrictions: newGuest.dietary_restrictions,
+          plus_one: newGuest.plus_one,
+          rsvp_status: newGuest.rsvp_status,
+          table_assignment: newGuest.table_assignment,
+          seat_number: newGuest.seat_number
+        })
+        .eq('id', editingGuest.id);
+
+      if (error) {
+        console.error('Error updating guest:', error);
+        return;
+      }
+    } else {
+      const { error } = await supabase
+        .from('guests')
+        .insert([newGuest]);
+
+      if (error) {
+        console.error('Error adding guest:', error);
+        return;
+      }
     }
 
-    const { error } = await supabase
-      .from('guests')
-      .insert([{
-        full_name: newGuest.full_name,
-        address: newGuest.address,
-        city: newGuest.city,
-        state: newGuest.state,
-        zip_code: newGuest.zip_code,
-        country: newGuest.country,
-        email: newGuest.email,
-        plus_one: newGuest.plus_one,
-        rsvp_status: newGuest.rsvp_status,
-        relationship: newGuest.relationship
-      }]);
-
-    if (error) {
-      console.error('Error adding guest:', error);
-      alert('Error adding guest. Please try again.');
-      return;
-    }
-
-    // Reset form
+    await fetchGuests();
     setNewGuest({
-      full_name: '',
-      address: '',
-      city: '',
-      state: '',
-      zip_code: '',
-      country: '',
-      email: '',
       plus_one: false,
       rsvp_status: 'pending',
       relationship: relationshipGroups[0]
     });
-
-    // Refresh guest list
-    fetchGuests();
+    setEditingGuest(null);
+    setShowForm(false);
   };
 
   const deleteGuest = async (id: string) => {
@@ -254,8 +253,10 @@ export default function Guests() {
   }).filter(guest => {
     const searchLower = search.toLowerCase();
     return (
-      guest.full_name.toLowerCase().includes(searchLower) ||
-      guest.email?.toLowerCase().includes(searchLower)
+      guest.first_name.toLowerCase().includes(searchLower) ||
+      guest.last_name.toLowerCase().includes(searchLower) ||
+      guest.email?.toLowerCase().includes(searchLower) ||
+      guest.phone?.includes(search)
     );
   });
 
@@ -272,26 +273,49 @@ export default function Guests() {
         >
           ALTARE
         </Typography>
+        <Typography 
+          variant="h4" 
+          sx={{ 
+            fontFamily: "'Playfair Display', serif",
+            color: theme.palette.text.secondary,
+            fontWeight: 300
+          }}
+        >
+          Create your custom link and manage your guest list
+        </Typography>
       </Box>
 
       <Grid container spacing={4}>
-        {/* Custom Link Section */}
+        {/* Custom Link Generator */}
         <Grid item xs={12} md={6}>
           <Paper
             elevation={3}
             sx={{
-              p: { xs: 3, md: 4 },
-              borderRadius: 2,
+              p: 4,
+              height: '100%',
+              borderRadius: 4,
               background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
-              height: '100%'
+              border: '1px solid',
+              borderColor: theme.palette.divider,
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: theme.palette.primary.main,
+              }
             }}
           >
             <Typography
               variant="h5"
               sx={{
+                mb: 3,
                 fontFamily: "'Playfair Display', serif",
-                color: theme.palette.text.primary,
-                mb: 3
+                color: theme.palette.primary.main,
               }}
             >
               Create Your Custom Link
@@ -410,23 +434,36 @@ export default function Guests() {
           </Paper>
         </Grid>
 
-        {/* Address Book Section */}
+        {/* Address Book */}
         <Grid item xs={12} md={6}>
           <Paper
             elevation={3}
             sx={{
-              p: { xs: 3, md: 4 },
-              borderRadius: 2,
+              p: 4,
+              height: '100%',
+              borderRadius: 4,
               background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
-              height: '100%'
+              border: '1px solid',
+              borderColor: theme.palette.divider,
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: theme.palette.primary.main,
+              }
             }}
           >
             <Typography
               variant="h5"
               sx={{
+                mb: 3,
                 fontFamily: "'Playfair Display', serif",
-                color: theme.palette.text.primary,
-                mb: 3
+                color: theme.palette.primary.main,
               }}
             >
               Address Book
@@ -439,95 +476,126 @@ export default function Guests() {
               Manually add and manage your guest addresses
             </Typography>
 
-            <Box sx={{ mb: 6 }}>
-              <Typography
-                variant="h5"
-                sx={{
-                  fontFamily: "'Playfair Display', serif",
-                  color: theme.palette.text.primary,
-                  mb: 3
-                }}
-              >
-                Add Guest Manually
-              </Typography>
+            <Button
+              variant="contained"
+              onClick={() => setShowForm(true)}
+              startIcon={<Plus />}
+              sx={{
+                mb: 3,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontSize: '1rem',
+              }}
+            >
+              Add New Guest
+            </Button>
 
-              <Paper
-                elevation={3}
-                sx={{
-                  p: { xs: 3, md: 4 },
-                  borderRadius: 2,
-                  background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
-                }}
-              >
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <TextField
-                    label="Full Name"
-                    required
-                    fullWidth
-                    value={newGuest.full_name || ''}
-                    onChange={(e) => setNewGuest({ ...newGuest, full_name: e.target.value })}
-                  />
-                  <TextField
-                    label="Address"
-                    required
-                    fullWidth
-                    value={newGuest.address || ''}
-                    onChange={(e) => setNewGuest({ ...newGuest, address: e.target.value })}
-                  />
-                  <TextField
-                    label="City"
-                    required
-                    fullWidth
-                    value={newGuest.city || ''}
-                    onChange={(e) => setNewGuest({ ...newGuest, city: e.target.value })}
-                  />
-                  <TextField
-                    label="State"
-                    required
-                    fullWidth
-                    value={newGuest.state || ''}
-                    onChange={(e) => setNewGuest({ ...newGuest, state: e.target.value })}
-                  />
-                  <TextField
-                    label="Zip Code"
-                    required
-                    fullWidth
-                    value={newGuest.zip_code || ''}
-                    onChange={(e) => setNewGuest({ ...newGuest, zip_code: e.target.value })}
-                  />
-                  <TextField
-                    label="Country"
-                    required
-                    fullWidth
-                    value={newGuest.country || ''}
-                    onChange={(e) => setNewGuest({ ...newGuest, country: e.target.value })}
-                  />
-                  <TextField
-                    label="Email Address"
-                    type="email"
-                    required
-                    fullWidth
-                    value={newGuest.email || ''}
-                    onChange={(e) => setNewGuest({ ...newGuest, email: e.target.value })}
-                  />
-                  <Button
-                    onClick={addGuest}
-                    variant="contained"
-                    size="large"
-                    sx={{
-                      mt: 2,
-                      py: 2,
-                      fontSize: '1.1rem',
-                      textTransform: 'none',
-                      borderRadius: 2
-                    }}
-                  >
-                    Add Guest
-                  </Button>
-                </Box>
-              </Paper>
-            </Box>
+            {showForm && (
+              <Box sx={{ mb: 6 }}>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontFamily: "'Playfair Display', serif",
+                    color: theme.palette.text.primary,
+                    mb: 3,
+                    textAlign: 'center'
+                  }}
+                >
+                  Add Guest Manually
+                </Typography>
 
+                <Paper 
+                  elevation={3}
+                  sx={{
+                    p: { xs: 3, md: 6 },
+                    borderRadius: 4,
+                    background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: '4px',
+                      background: theme.palette.primary.main,
+                    }
+                  }}
+                >
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <TextField
+                      label="Full Name"
+                      required
+                      fullWidth
+                      value={newGuest.first_name || ''}
+                      onChange={(e) => setNewGuest({ ...newGuest, first_name: e.target.value })}
+                    />
+                    <TextField
+                      label="Current Home Address"
+                      required
+                      fullWidth
+                      value={newGuest.address || ''}
+                      onChange={(e) => setNewGuest({ ...newGuest, address: e.target.value })}
+                    />
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
+                      <TextField
+                        label="City"
+                        required
+                        fullWidth
+                        value={newGuest.city || ''}
+                        onChange={(e) => setNewGuest({ ...newGuest, city: e.target.value })}
+                      />
+                      <TextField
+                        label="State"
+                        required
+                        fullWidth
+                        value={newGuest.state || ''}
+                        onChange={(e) => setNewGuest({ ...newGuest, state: e.target.value })}
+                      />
+                    </Box>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
+                      <TextField
+                        label="Zip or Postal Code"
+                        required
+                        fullWidth
+                        value={newGuest.zip_code || ''}
+                        onChange={(e) => setNewGuest({ ...newGuest, zip_code: e.target.value })}
+                      />
+                      <TextField
+                        label="Country"
+                        required
+                        fullWidth
+                        value={newGuest.country || ''}
+                        onChange={(e) => setNewGuest({ ...newGuest, country: e.target.value })}
+                      />
+                    </Box>
+                    <TextField
+                      label="Email Address"
+                      type="email"
+                      required
+                      fullWidth
+                      value={newGuest.email || ''}
+                      onChange={(e) => setNewGuest({ ...newGuest, email: e.target.value })}
+                    />
+                    <Button
+                      onClick={handleSubmit}
+                      variant="contained"
+                      size="large"
+                      sx={{
+                        mt: 2,
+                        py: 2,
+                        fontSize: '1.1rem',
+                        textTransform: 'none',
+                        borderRadius: 2
+                      }}
+                    >
+                      Add Guest
+                    </Button>
+                  </Box>
+                </Paper>
+              </Box>
+            )}
           </Paper>
         </Grid>
       </Grid>
@@ -578,7 +646,7 @@ export default function Guests() {
             {filteredGuests.map(guest => (
               <tr key={guest.id} className="border-t">
                 <td className="p-4">
-                  <div>{guest.full_name}</div>
+                  <div>{guest.first_name} {guest.last_name}</div>
                   {guest.plus_one && (
                     <div className="text-sm text-gray-500">+1 Guest</div>
                   )}
@@ -588,6 +656,12 @@ export default function Guests() {
                     <div className="flex items-center gap-2">
                       <Mail className="w-4 h-4 text-gray-500" />
                       <span>{guest.email}</span>
+                    </div>
+                  )}
+                  {guest.phone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-gray-500" />
+                      <span>{guest.phone}</span>
                     </div>
                   )}
                 </td>
