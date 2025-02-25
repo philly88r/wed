@@ -56,8 +56,8 @@ export default function Guests() {
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
   const [customLinkInput, setCustomLinkInput] = useState('');
   const [customLink, setCustomLink] = useState('');
-  const [savedLinks, setSavedLinks] = useState<Array<{ name: string; link: string }>>([]);
-  const [existingLink, setExistingLink] = useState<{ name: string; link: string } | null>(null);
+  const [savedLinks, setSavedLinks] = useState<Array<{ id: string; name: string; link: string }>>([]);
+  const [existingLink, setExistingLink] = useState<{ id: string; name: string; link: string } | null>(null);
   const [lastName, setLastName] = useState('');
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -234,7 +234,7 @@ export default function Guests() {
         const { error: deleteError } = await supabase
           .from('custom_links')
           .delete()
-          .eq('name', existingLink.name);
+          .eq('id', existingLink.id);
           
         if (deleteError) {
           console.error('Error deleting existing link:', deleteError);
