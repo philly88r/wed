@@ -4,6 +4,18 @@ import { Plus, Users, Mail, Phone, MapPin, Filter, Download, Upload, Search, Cop
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import ChairIcon from '@mui/icons-material/Chair';
+import {
+  Container,
+  Grid,
+  Paper,
+  Typography,
+  Box,
+  useTheme,
+  Button,
+  TextField,
+  Zoom,
+  IconButton,
+} from '@mui/material';
 
 interface Guest {
   id: string;
@@ -40,6 +52,7 @@ const relationshipGroups = [
 ];
 
 export default function Guests() {
+  const theme = useTheme();
   const [guests, setGuests] = useState<Guest[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -244,170 +257,327 @@ export default function Guests() {
   });
 
   return (
-    <div className="p-6">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold">Altare</h1>
-      </div>
+    <Container maxWidth="lg" sx={{ py: 8 }}>
+      <Box sx={{ mb: 8, textAlign: 'center' }}>
+        <Typography 
+          variant="h1" 
+          sx={{ 
+            fontSize: { xs: '2.5rem', md: '3.5rem' },
+            fontFamily: "'Playfair Display', serif",
+            mb: 2,
+            color: theme.palette.primary.main
+          }}
+        >
+          Guest Management
+        </Typography>
+        <Typography 
+          variant="h4" 
+          sx={{ 
+            fontFamily: "'Playfair Display', serif",
+            color: theme.palette.text.secondary,
+            fontWeight: 300
+          }}
+        >
+          Create your custom link and manage your guest list
+        </Typography>
+      </Box>
 
-      <div className="grid grid-cols-2 gap-8 mb-8">
+      <Grid container spacing={4}>
         {/* Custom Link Generator */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-semibold mb-4">Create Your Custom Link</h2>
-          <p className="text-gray-600 mb-4">e.g. (smithwedding)</p>
-          <div className="flex gap-4 items-center mb-6">
-            <input
-              type="text"
-              placeholder="Enter your custom name"
-              value={customLinkInput}
-              onChange={(e) => setCustomLinkInput(e.target.value)}
-              className="border rounded-md px-4 py-2 flex-1"
-            />
-            <button
-              onClick={generateCustomLink}
-              className="bg-primary text-white px-6 py-2 rounded-md hover:bg-primary-dark whitespace-nowrap"
+        <Grid item xs={12} md={6}>
+          <Paper
+            elevation={3}
+            sx={{
+              p: 4,
+              height: '100%',
+              borderRadius: 4,
+              background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+              border: '1px solid',
+              borderColor: theme.palette.divider,
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: theme.palette.primary.main,
+              }
+            }}
+          >
+            <Typography
+              variant="h5"
+              sx={{
+                mb: 3,
+                fontFamily: "'Playfair Display', serif",
+                color: theme.palette.primary.main,
+              }}
             >
-              Create Link
-            </button>
-          </div>
-
-          {/* Saved Links */}
-          <div className="space-y-3">
-            {savedLinks.map((savedLink, index) => (
-              <div key={index} className="flex items-center gap-2 bg-gray-50 p-3 rounded">
-                <input
-                  type="text"
-                  value={savedLink.link}
-                  readOnly
-                  className="flex-1 bg-transparent"
-                />
-                <button
-                  onClick={() => navigator.clipboard.writeText(savedLink.link)}
-                  className="flex items-center gap-2 text-primary hover:text-primary-dark"
-                >
-                  <Copy size={18} />
-                  Copy
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Manual Address Entry */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-semibold mb-4">Address Book</h2>
-          <p className="text-gray-600 mb-4">Manually add guest addresses</p>
-          {showForm && (
-            <form onSubmit={handleSubmit} className="mb-6 p-4 bg-white rounded shadow">
-              {/* ... existing form fields ... */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-2">First Name</label>
-                  <input
-                    type="text"
-                    value={newGuest.first_name || ''}
-                    onChange={e => setNewGuest(prev => ({ ...prev, first_name: e.target.value }))}
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block mb-2">Last Name</label>
-                  <input
-                    type="text"
-                    value={newGuest.last_name || ''}
-                    onChange={e => setNewGuest(prev => ({ ...prev, last_name: e.target.value }))}
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block mb-2">Email</label>
-                  <input
-                    type="email"
-                    value={newGuest.email || ''}
-                    onChange={e => setNewGuest(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
-                <div>
-                  <label className="block mb-2">Phone</label>
-                  <input
-                    type="tel"
-                    value={newGuest.phone || ''}
-                    onChange={e => setNewGuest(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
-                <div>
-                  <label className="block mb-2">Relationship</label>
-                  <select
-                    value={newGuest.relationship || relationshipGroups[0]}
-                    onChange={e => setNewGuest(prev => ({ ...prev, relationship: e.target.value }))}
-                    className="w-full p-2 border rounded"
-                  >
-                    {relationshipGroups.map(group => (
-                      <option key={group} value={group}>{group}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block mb-2">RSVP Status</label>
-                  <select
-                    value={newGuest.rsvp_status || 'pending'}
-                    onChange={e => setNewGuest(prev => ({ ...prev, rsvp_status: e.target.value as Guest['rsvp_status'] }))}
-                    className="w-full p-2 border rounded"
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="confirmed">Confirmed</option>
-                    <option value="declined">Declined</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block mb-2">Plus One</label>
-                  <input
-                    type="checkbox"
-                    checked={newGuest.plus_one || false}
-                    onChange={e => setNewGuest(prev => ({ ...prev, plus_one: e.target.checked }))}
-                    className="mr-2"
-                  />
-                </div>
-                <div>
-                  <label className="block mb-2">Dietary Restrictions</label>
-                  <input
-                    type="text"
-                    value={newGuest.dietary_restrictions || ''}
-                    onChange={e => setNewGuest(prev => ({ ...prev, dietary_restrictions: e.target.value }))}
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
-              </div>
-              <div className="mt-4 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    setEditingGuest(null);
-                    setNewGuest({
-                      plus_one: false,
-                      rsvp_status: 'pending',
-                      relationship: relationshipGroups[0]
-                    });
+              Create Your Custom Link
+            </Typography>
+            
+            <Box sx={{ mb: 4 }}>
+              <Typography
+                variant="body1"
+                sx={{ mb: 2, color: theme.palette.text.secondary }}
+              >
+                Enter a name for your wedding website (e.g. smithwedding)
+              </Typography>
+              
+              <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Enter your custom name"
+                  value={customLinkInput}
+                  onChange={(e) => setCustomLinkInput(e.target.value)}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    }
                   }}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                />
+                <Button
+                  variant="contained"
+                  onClick={generateCustomLink}
+                  sx={{
+                    minWidth: 120,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontSize: '1rem',
+                  }}
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  {editingGuest ? 'Update Guest' : 'Add Guest'}
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-      </div>
+                  Create Link
+                </Button>
+              </Box>
+            </Box>
+
+            <Box sx={{ mt: 4 }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  mb: 2,
+                  fontFamily: "'Playfair Display', serif",
+                  color: theme.palette.text.primary,
+                }}
+              >
+                Your Custom Links
+              </Typography>
+              
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {savedLinks.map((savedLink, index) => (
+                  <Paper
+                    key={index}
+                    sx={{
+                      p: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      background: theme.palette.grey[50],
+                      border: '1px solid',
+                      borderColor: theme.palette.divider,
+                      borderRadius: 2,
+                    }}
+                  >
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      value={savedLink.link}
+                      InputProps={{
+                        readOnly: true,
+                        sx: { borderRadius: 2 }
+                      }}
+                      size="small"
+                    />
+                    <IconButton
+                      onClick={() => navigator.clipboard.writeText(savedLink.link)}
+                      color="primary"
+                      sx={{
+                        '&:hover': {
+                          background: theme.palette.primary.light,
+                          color: theme.palette.common.white,
+                        }
+                      }}
+                    >
+                      <Copy />
+                    </IconButton>
+                  </Paper>
+                ))}
+              </Box>
+            </Box>
+          </Paper>
+        </Grid>
+
+        {/* Address Book */}
+        <Grid item xs={12} md={6}>
+          <Paper
+            elevation={3}
+            sx={{
+              p: 4,
+              height: '100%',
+              borderRadius: 4,
+              background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+              border: '1px solid',
+              borderColor: theme.palette.divider,
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: theme.palette.primary.main,
+              }
+            }}
+          >
+            <Typography
+              variant="h5"
+              sx={{
+                mb: 3,
+                fontFamily: "'Playfair Display', serif",
+                color: theme.palette.primary.main,
+              }}
+            >
+              Address Book
+            </Typography>
+            
+            <Typography
+              variant="body1"
+              sx={{ mb: 4, color: theme.palette.text.secondary }}
+            >
+              Manually add and manage your guest addresses
+            </Typography>
+
+            <Button
+              variant="contained"
+              onClick={() => setShowForm(true)}
+              startIcon={<Plus />}
+              sx={{
+                mb: 3,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontSize: '1rem',
+              }}
+            >
+              Add New Guest
+            </Button>
+
+            {showForm && (
+              <form onSubmit={handleSubmit} className="mb-6 p-4 bg-white rounded shadow">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block mb-2">First Name</label>
+                    <input
+                      type="text"
+                      value={newGuest.first_name || ''}
+                      onChange={e => setNewGuest(prev => ({ ...prev, first_name: e.target.value }))}
+                      className="w-full p-2 border rounded"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-2">Last Name</label>
+                    <input
+                      type="text"
+                      value={newGuest.last_name || ''}
+                      onChange={e => setNewGuest(prev => ({ ...prev, last_name: e.target.value }))}
+                      className="w-full p-2 border rounded"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={newGuest.email || ''}
+                      onChange={e => setNewGuest(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full p-2 border rounded"
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-2">Phone</label>
+                    <input
+                      type="tel"
+                      value={newGuest.phone || ''}
+                      onChange={e => setNewGuest(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full p-2 border rounded"
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-2">Relationship</label>
+                    <select
+                      value={newGuest.relationship || relationshipGroups[0]}
+                      onChange={e => setNewGuest(prev => ({ ...prev, relationship: e.target.value }))}
+                      className="w-full p-2 border rounded"
+                    >
+                      {relationshipGroups.map(group => (
+                        <option key={group} value={group}>{group}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block mb-2">RSVP Status</label>
+                    <select
+                      value={newGuest.rsvp_status || 'pending'}
+                      onChange={e => setNewGuest(prev => ({ ...prev, rsvp_status: e.target.value as Guest['rsvp_status'] }))}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="declined">Declined</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block mb-2">Plus One</label>
+                    <input
+                      type="checkbox"
+                      checked={newGuest.plus_one || false}
+                      onChange={e => setNewGuest(prev => ({ ...prev, plus_one: e.target.checked }))}
+                      className="mr-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-2">Dietary Restrictions</label>
+                    <input
+                      type="text"
+                      value={newGuest.dietary_restrictions || ''}
+                      onChange={e => setNewGuest(prev => ({ ...prev, dietary_restrictions: e.target.value }))}
+                      className="w-full p-2 border rounded"
+                    />
+                  </div>
+                </div>
+                <div className="mt-4 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForm(false);
+                      setEditingGuest(null);
+                      setNewGuest({
+                        plus_one: false,
+                        rsvp_status: 'pending',
+                        relationship: relationshipGroups[0]
+                      });
+                    }}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    {editingGuest ? 'Update Guest' : 'Add Guest'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
 
       {/* Filters and Search */}
       <div className="flex gap-4 mb-6">
@@ -535,6 +705,6 @@ export default function Guests() {
           </tbody>
         </table>
       </div>
-    </div>
+    </Container>
   );
 }
