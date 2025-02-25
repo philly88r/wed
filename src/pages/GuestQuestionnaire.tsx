@@ -1,6 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import {
+  Container,
+  Paper,
+  Typography,
+  Box,
+  TextField,
+  Button,
+  useTheme,
+} from '@mui/material';
 
 interface FormData {
   fullName: string;
@@ -13,7 +22,9 @@ interface FormData {
 }
 
 export default function GuestQuestionnaire() {
+  const theme = useTheme();
   const { weddingName } = useParams();
+  const [coupleName, setCoupleName] = useState('');
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     address: '',
@@ -24,20 +35,61 @@ export default function GuestQuestionnaire() {
     email: '',
   });
 
+  useEffect(() => {
+    const fetchCoupleInfo = async () => {
+      const { data } = await supabase
+        .from('custom_links')
+        .select('name')
+        .eq('questionnaire_path', `/${weddingName}`)
+        .single();
+
+      if (data) {
+        // Convert smithswedding to "the Smiths"
+        const name = data.name.toLowerCase()
+          .replace('wedding', '')
+          .replace(/s$/, '')
+          .trim();
+        const formattedName = name.charAt(0).toUpperCase() + name.slice(1);
+        setCoupleName(`the ${formattedName}s`);
+      }
+    };
+
+    if (weddingName) {
+      fetchCoupleInfo();
+    }
+  }, [weddingName]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const { error } = await supabase
-      .from('guest_responses')
-      .insert([
-        {
-          wedding_name: weddingName,
-          ...formData
-        }
-      ]);
+    // First, add to guests table
+    const { error: guestError } = await supabase
+      .from('guests')
+      .insert([{
+        full_name: formData.fullName,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zip_code: formData.zipCode,
+        country: formData.country,
+        email: formData.email
+      }]);
 
-    if (error) {
-      console.error('Error submitting form:', error);
+    if (guestError) {
+      console.error('Error submitting to guests:', guestError);
+      return;
+    }
+
+    // Also store in guest_responses for backup
+    const { error: responseError } = await supabase
+      .from('guest_responses')
+      .insert([{
+        wedding_name: weddingName,
+        ...formData
+      }]);
+
+    if (responseError) {
+      console.error('Error submitting response:', responseError);
       return;
     }
 
@@ -55,132 +107,154 @@ export default function GuestQuestionnaire() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            {weddingName?.replace(/wedding$/, '').toUpperCase()} Wedding
-          </h1>
-          <p className="text-lg text-gray-600">
-            Please provide your information for the invitation
-          </p>
-        </div>
+    <Box 
+      sx={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        py: 8
+      }}
+    >
+      <Container maxWidth="md">
+        <Box sx={{ textAlign: 'center', mb: 6 }}>
+          <Typography
+            variant="h2"
+            sx={{
+              fontFamily: "'Playfair Display', serif",
+              color: theme.palette.primary.main,
+              mb: 2
+            }}
+          >
+            Altare
+          </Typography>
+          <img 
+            src="/logo.png" 
+            alt="Altare Logo" 
+            style={{ 
+              width: 120, 
+              height: 'auto',
+              margin: '0 auto 2rem'
+            }} 
+          />
+        </Box>
 
-        <div className="bg-white py-8 px-6 shadow rounded-lg">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <input
-                type="text"
-                id="fullName"
+        <Paper 
+          elevation={3}
+          sx={{
+            p: { xs: 3, md: 6 },
+            borderRadius: 4,
+            background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: theme.palette.primary.main,
+            }
+          }}
+        >
+          <Box sx={{ textAlign: 'center', mb: 6 }}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontFamily: "'Playfair Display', serif",
+                color: theme.palette.text.primary,
+                mb: 3
+              }}
+            >
+              You're Invited
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: theme.palette.text.secondary,
+                fontSize: '1.1rem',
+                lineHeight: 1.6,
+                maxWidth: '600px',
+                margin: '0 auto'
+              }}
+            >
+              {coupleName} are excited to share their special day with you! To ensure you receive all the important details about their wedding celebration, please take a moment to provide your contact information below.
+            </Typography>
+          </Box>
+
+          <form onSubmit={handleSubmit}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <TextField
+                label="Full Name"
                 required
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary"
+                fullWidth
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
               />
-            </div>
-
-            <div>
-              <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                Current Home Address
-              </label>
-              <input
-                type="text"
-                id="address"
+              <TextField
+                label="Current Home Address"
                 required
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary"
+                fullWidth
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-                  City
-                </label>
-                <input
-                  type="text"
-                  id="city"
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
+                <TextField
+                  label="City"
                   required
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary"
+                  fullWidth
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                 />
-              </div>
-
-              <div>
-                <label htmlFor="state" className="block text-sm font-medium text-gray-700">
-                  State
-                </label>
-                <input
-                  type="text"
-                  id="state"
+                <TextField
+                  label="State"
                   required
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary"
+                  fullWidth
                   value={formData.state}
                   onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                 />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700">
-                  Zip or Postal Code
-                </label>
-                <input
-                  type="text"
-                  id="zipCode"
+              </Box>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
+                <TextField
+                  label="Zip or Postal Code"
                   required
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary"
+                  fullWidth
                   value={formData.zipCode}
                   onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
                 />
-              </div>
-
-              <div>
-                <label htmlFor="country" className="block text-sm font-medium text-gray-700">
-                  Country
-                </label>
-                <input
-                  type="text"
-                  id="country"
+                <TextField
+                  label="Country"
                   required
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary"
+                  fullWidth
                   value={formData.country}
                   onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                 />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email Address
-              </label>
-              <input
+              </Box>
+              <TextField
+                label="Email Address"
                 type="email"
-                id="email"
                 required
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary"
+                fullWidth
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
-            </div>
-
-            <div>
-              <button
+              <Button
                 type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                variant="contained"
+                size="large"
+                sx={{
+                  mt: 2,
+                  py: 2,
+                  fontSize: '1.1rem',
+                  textTransform: 'none',
+                  borderRadius: 2
+                }}
               >
                 Submit Information
-              </button>
-            </div>
+              </Button>
+            </Box>
           </form>
-        </div>
-      </div>
-    </div>
+        </Paper>
+      </Container>
+    </Box>
   );
 }
