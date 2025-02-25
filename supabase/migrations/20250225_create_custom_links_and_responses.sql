@@ -8,6 +8,16 @@ CREATE TABLE IF NOT EXISTS custom_links (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Enable RLS
+ALTER TABLE custom_links ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+CREATE POLICY "Enable read access for all users" ON custom_links
+  FOR SELECT USING (true);
+
+CREATE POLICY "Enable insert for authenticated users only" ON custom_links
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
 -- Create guest_responses table
 CREATE TABLE IF NOT EXISTS guest_responses (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -22,3 +32,13 @@ CREATE TABLE IF NOT EXISTS guest_responses (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Enable RLS
+ALTER TABLE guest_responses ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+CREATE POLICY "Enable read access for authenticated users" ON guest_responses
+  FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Enable insert for all users" ON guest_responses
+  FOR INSERT WITH CHECK (true);
