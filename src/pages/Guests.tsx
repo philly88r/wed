@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
-import { Plus, Users, Mail, Phone, MapPin, Filter, Download, Upload, Search } from 'lucide-react';
+import { Plus, Users, Mail, Phone, MapPin, Filter, Download, Upload, Search, Copy, Link } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import ChairIcon from '@mui/icons-material/Chair';
@@ -44,11 +44,8 @@ export default function Guests() {
   const [tables, setTables] = useState<Table[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
-  const [newGuest, setNewGuest] = useState<Partial<Guest>>({
-    plus_one: false,
-    rsvp_status: 'pending',
-    relationship: relationshipGroups[0]
-  });
+  const [customLink, setCustomLink] = useState('');
+  const [lastName, setLastName] = useState('');
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [selectedLayoutId, setSelectedLayoutId] = useState<string | null>(null);
@@ -190,6 +187,28 @@ export default function Guests() {
       .filter(seat => !assignedSeats.includes(seat));
   };
 
+  const generateCustomLink = () => {
+    if (!lastName) return;
+    const link = `${window.location.origin}/${lastName.toLowerCase()}wedding`;
+    setCustomLink(link);
+  };
+
+  const copyLink = async () => {
+    if (!customLink) return;
+    try {
+      await navigator.clipboard.writeText(customLink);
+      // You might want to add a toast notification here
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+    }
+  };
+
+  const [newGuest, setNewGuest] = useState<Partial<Guest>>({
+    plus_one: false,
+    rsvp_status: 'pending',
+    relationship: relationshipGroups[0]
+  });
+
   const filteredGuests = guests.filter(guest => {
     if (filter === 'all') return true;
     if (filter === 'assigned') return guest.table_assignment !== null;
@@ -208,24 +227,49 @@ export default function Guests() {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Guest List</h1>
-        <div className="flex gap-4">
+      {/* Altare Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold">Altare</h1>
+      </div>
+
+      {/* Custom Link Generator */}
+      <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h2 className="text-2xl font-semibold mb-4">Create Your Custom Link</h2>
+        <div className="flex gap-4 items-center">
+          <input
+            type="text"
+            placeholder="Enter last name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            className="border rounded-md px-4 py-2 flex-1"
+          />
           <button
-            onClick={() => navigate('/seating')}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            onClick={generateCustomLink}
+            className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark"
           >
-            <ChairIcon sx={{ width: 16, height: 16 }} />
-            Seating Layout
-          </button>
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-          >
-            <Plus className="w-4 h-4" />
-            Add Guest
+            Generate Link
           </button>
         </div>
+        {customLink && (
+          <div className="mt-4 flex items-center gap-2 bg-gray-50 p-3 rounded">
+            <input
+              type="text"
+              value={customLink}
+              readOnly
+              className="flex-1 bg-transparent"
+            />
+            <button
+              onClick={copyLink}
+              className="flex items-center gap-2 text-primary hover:text-primary-dark"
+            >
+              <Copy size={18} />
+              Copy
+            </button>
+          </div>
+        )}
+        <p className="text-sm text-gray-600 mt-2">
+          Send this link to your guests and they'll be able to fill out their information
+        </p>
       </div>
 
       {/* Guest Form */}
