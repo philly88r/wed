@@ -1,4 +1,4 @@
-import { TimelineItem } from '../components/ui/wedding-timeline';
+import { TimelineItem } from '../../components/ui/wedding-timeline';
 
 export const weddingChecklistData: TimelineItem[] = [
   {

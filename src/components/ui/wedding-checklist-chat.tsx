@@ -6,8 +6,8 @@ import { ChatMessageList } from './chat-message-list';
 import { Button } from './button';
 import { MessageLoading } from './message-loading';
 import WeddingTimeline, { TimelineItem } from './wedding-timeline';
-import { weddingChecklistData } from '@/data/wedding-checklist';
-import { Calendar, Check, List, X } from 'lucide-react';
+import { weddingChecklistData } from '../../data/wedding-checklist';
+import { Calendar, List, X } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -155,10 +155,9 @@ export const WeddingChecklistChat: React.FC = () => {
 
   return (
     <ExpandableChat
-      isExpanded={isExpanded}
-      onToggle={() => setIsExpanded(!isExpanded)}
-      title="Wedding Planner"
-      description="Your personal wedding planning assistant"
+      size="md"
+      position="bottom-right"
+      icon={<Calendar className="h-6 w-6" />}
       className="z-50"
     >
       <div className="flex items-center justify-between px-4 py-2 border-b">
@@ -200,21 +199,30 @@ export const WeddingChecklistChat: React.FC = () => {
           {messages.map((message) => (
             <ChatBubble
               key={message.id}
-              content={message.content}
-              role={message.role}
-              timestamp={message.timestamp}
-            />
+              variant={message.role === "user" ? "sent" : "received"}
+            >
+              {message.content}
+            </ChatBubble>
           ))}
           {isLoading && <MessageLoading />}
         </ChatMessageList>
       )}
 
       <div className="p-4 border-t">
-        <ChatInput
-          onSendMessage={handleSendMessage}
-          placeholder="Ask about your wedding planning..."
-          disabled={isLoading}
-        />
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          const form = e.currentTarget;
+          const formData = new FormData(form);
+          const message = formData.get('message') as string;
+          handleSendMessage(message);
+          form.reset();
+        }}>
+          <ChatInput
+            name="message"
+            placeholder="Ask about your wedding planning..."
+            disabled={isLoading}
+          />
+        </form>
       </div>
     </ExpandableChat>
   );

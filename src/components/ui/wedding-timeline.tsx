@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '../../lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from './card';
 import { Check, Clock, AlertTriangle } from 'lucide-react';
 
