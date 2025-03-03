@@ -14,7 +14,7 @@ import {
   DialogActions,
   IconButton,
 } from '@mui/material';
-import { MessageSquare, Upload, Download, Trash2, Edit2, Copy, X } from 'lucide-react';
+import { MessageSquare, Upload, Download, Trash2, Edit2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '@mui/material/styles';
 
