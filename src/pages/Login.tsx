@@ -14,7 +14,6 @@ import {
   Card,
   CardContent,
   CardActionArea,
-  useMediaQuery,
   useTheme
 } from '@mui/material';
 import AuroraBackground from '../components/ui/AuroraBackground';
@@ -27,7 +26,6 @@ const Login: React.FC = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
   const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
