@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -9,16 +9,42 @@ import {
   Box,
   useTheme,
   Typography,
+  Button,
 } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { User } from '@supabase/supabase-js';
 
 export default function Header() {
   const theme = useTheme();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [cartAnchorEl, setCartAnchorEl] = useState<null | HTMLElement>(null);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Get current user on component mount
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    
+    getUser();
+    
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+    
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -33,9 +59,13 @@ export default function Header() {
     setCartAnchorEl(null);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     handleMenuClose();
-    // Add logout logic here when authentication is implemented
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
+
+  const handleLogin = () => {
     navigate('/login');
   };
 
@@ -49,39 +79,70 @@ export default function Header() {
         borderBottom: `1px solid ${theme.palette.divider}`,
       }}
     >
-      <Toolbar sx={{ justifyContent: 'flex-end' }}>
+      <Toolbar sx={{ justifyContent: 'space-between' }}>
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{
+            fontFamily: "'Playfair Display', serif",
+            fontWeight: 'bold',
+            color: theme.palette.primary.main,
+            cursor: 'pointer'
+          }}
+          onClick={() => navigate('/')}
+        >
+          Astare
+        </Typography>
+        
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <IconButton
-            size="large"
-            aria-label="show cart items"
-            color="inherit"
-            onClick={handleCartMenuOpen}
-            sx={{ 
-              color: theme.palette.text.primary,
-              '&:hover': {
-                color: theme.palette.primary.main,
-              }
-            }}
-          >
-            <Badge badgeContent={0} color="error">
-              <ShoppingCartIcon />
-            </Badge>
-          </IconButton>
-          <IconButton
-            size="large"
-            edge="end"
-            aria-label="account of current user"
-            aria-haspopup="true"
-            onClick={handleProfileMenuOpen}
-            sx={{ 
-              color: theme.palette.text.primary,
-              '&:hover': {
-                color: theme.palette.primary.main,
-              }
-            }}
-          >
-            <AccountCircle />
-          </IconButton>
+          {user ? (
+            <>
+              <IconButton
+                size="large"
+                aria-label="show cart items"
+                color="inherit"
+                onClick={handleCartMenuOpen}
+                sx={{ 
+                  color: theme.palette.text.primary,
+                  '&:hover': {
+                    color: theme.palette.primary.main,
+                  }
+                }}
+              >
+                <Badge badgeContent={0} color="error">
+                  <ShoppingCartIcon />
+                </Badge>
+              </IconButton>
+              <IconButton
+                size="large"
+                edge="end"
+                aria-label="account of current user"
+                aria-haspopup="true"
+                onClick={handleProfileMenuOpen}
+                sx={{ 
+                  color: theme.palette.text.primary,
+                  '&:hover': {
+                    color: theme.palette.primary.main,
+                  }
+                }}
+              >
+                <AccountCircle />
+              </IconButton>
+            </>
+          ) : (
+            <Button 
+              variant="outlined" 
+              onClick={handleLogin}
+              sx={{
+                borderRadius: '20px',
+                px: 3,
+                textTransform: 'none',
+                fontWeight: 'medium'
+              }}
+            >
+              Login
+            </Button>
+          )}
         </Box>
 
         {/* Profile Menu */}

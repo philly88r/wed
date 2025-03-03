@@ -11,26 +11,34 @@ import Timeline from './pages/Timeline';
 import Guests from './pages/Guests';
 import GuestQuestionnaire from './pages/GuestQuestionnaire';
 import ComingSoon from './pages/ComingSoon';
+import GuestDirectory from './pages/GuestDirectory';
+import Login from './pages/Login';
+import { Home, Users, ChevronLeft, Menu, Settings, LayoutGrid, Book } from 'lucide-react';
 
 function AppContent() {
   const location = useLocation();
   const isQuestionnairePage = !location.pathname.startsWith('/');
+  const isLoginPage = location.pathname === '/login';
   
   return (
-    <Box sx={{ minHeight: '100vh', pt: isQuestionnairePage ? 0 : 8 }}>
-      {!isQuestionnairePage && <Header />}
+    <Box sx={{ minHeight: '100vh', pt: isQuestionnairePage || isLoginPage ? 0 : 8 }}>
+      {!isQuestionnairePage && !isLoginPage && <Header />}
       <Routes>
+        {/* Auth routes */}
+        <Route path="/login" element={<Login />} />
+        
         {/* Put the questionnaire route first to ensure it takes precedence */}
         <Route path="/:weddingName" element={<GuestQuestionnaire />} />
         
         {/* App routes */}
         <Route path="/" element={<ServiceMenu />} />
-        <Route path="/seating-chart" element={<SeatingChart />} />
+        <Route path="/seating" element={<SeatingChart />} />
         <Route path="/budget" element={<Budget />} />
         <Route path="/checklist" element={<Checklist />} />
         <Route path="/vendors" element={<Vendors />} />
         <Route path="/timeline" element={<Timeline />} />
         <Route path="/guests" element={<Guests />} />
+        <Route path="/directory" element={<GuestDirectory />} />
         <Route path="/tutorials" element={<ComingSoon />} />
         <Route path="/coordination" element={<ComingSoon />} />
         
