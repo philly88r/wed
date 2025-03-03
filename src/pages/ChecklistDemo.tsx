@@ -1,8 +1,8 @@
-import { Container, Typography, Box, Paper, Grid, LinearProgress, Chip } from '@mui/material';
-import WeddingTimeline from '../components/ui/wedding-timeline';
-import { weddingChecklistData } from '../data/wedding-checklist';
 import { useState, useEffect } from 'react';
+import { Container, Typography, Box, Paper, Grid, LinearProgress, Chip } from '@mui/material';
+import { weddingChecklistData } from '../data/wedding-checklist';
 import { Check, Clock, AlertTriangle, Calendar, Heart, Gift, Camera, Music, Utensils, MapPin } from 'lucide-react';
+import { TimelineItem } from '../components/ui/wedding-timeline';
 import confetti from 'canvas-confetti';
 
 // Category icons mapping
@@ -16,8 +16,13 @@ const categoryIcons: Record<string, React.ReactNode> = {
   'Planning': <Calendar size={18} />
 };
 
+// Define the extended timeline item type with category
+interface CategorizedTimelineItem extends TimelineItem {
+  category: string;
+}
+
 // Add categories to checklist items
-const categorizedChecklist = weddingChecklistData.map(item => {
+const categorizedChecklist: CategorizedTimelineItem[] = weddingChecklistData.map(item => {
   // Assign categories based on keywords in the task
   let category = 'Planning';
   if (item.task.toLowerCase().includes('venue') || item.task.toLowerCase().includes('location')) {
@@ -41,7 +46,7 @@ const categorizedChecklist = weddingChecklistData.map(item => {
 });
 
 export default function ChecklistDemo() {
-  const [checklist, setChecklist] = useState(categorizedChecklist);
+  const [checklist, setChecklist] = useState<CategorizedTimelineItem[]>(categorizedChecklist);
   const [weddingDate, setWeddingDate] = useState<Date>(() => {
     // Default to 6 months from now
     const date = new Date();
@@ -82,7 +87,7 @@ export default function ChecklistDemo() {
     }
   }, [showConfetti]);
 
-  const handleUpdateTaskStatus = (id: string, status: 'NOT STARTED' | 'IN PROGRESS' | 'COMPLETED') => {
+  const handleUpdateTaskStatus = (id: string, status: TimelineItem['status']) => {
     const prevStatus = checklist.find(item => item.id === id)?.status;
     
     setChecklist(prev => 
@@ -97,7 +102,7 @@ export default function ChecklistDemo() {
     }
   };
 
-  const getStatusIcon = (status: 'NOT STARTED' | 'IN PROGRESS' | 'COMPLETED') => {
+  const getStatusIcon = (status: TimelineItem['status']) => {
     switch (status) {
       case 'COMPLETED':
         return <Check className="h-5 w-5 text-green-500" />;
@@ -108,7 +113,7 @@ export default function ChecklistDemo() {
     }
   };
 
-  const getStatusClass = (status: 'NOT STARTED' | 'IN PROGRESS' | 'COMPLETED') => {
+  const getStatusClass = (status: TimelineItem['status']) => {
     switch (status) {
       case 'COMPLETED':
         return 'bg-green-100 border-green-300 text-green-800';
@@ -120,7 +125,7 @@ export default function ChecklistDemo() {
   };
 
   // Group items by quarter and deadline
-  const groupedItems = checklist.reduce<Record<number, Record<string, typeof categorizedChecklist[0]>>>((acc, item) => {
+  const groupedItems: Record<number, Record<string, CategorizedTimelineItem[]>> = checklist.reduce<Record<number, Record<string, CategorizedTimelineItem[]>>>((acc, item) => {
     if (!acc[item.quarter]) {
       acc[item.quarter] = {};
     }
@@ -130,7 +135,7 @@ export default function ChecklistDemo() {
     }
     
     // Only add if no category filter or matching category
-    if (!activeCategory || (item as any).category === activeCategory) {
+    if (!activeCategory || item.category === activeCategory) {
       acc[item.quarter][item.deadline].push(item);
     }
     
@@ -138,11 +143,11 @@ export default function ChecklistDemo() {
   }, {});
 
   // Get all unique categories
-  const categories = Array.from(new Set(categorizedChecklist.map(item => (item as any).category)));
+  const categories = Array.from(new Set(categorizedChecklist.map(item => item.category)));
 
   // Get deadline order for sorting
-  const getDeadlineOrder = (deadline: typeof categorizedChecklist[0]['deadline']) => {
-    const order: Record<typeof categorizedChecklist[0]['deadline'], number> = {
+  const getDeadlineOrder = (deadline: TimelineItem['deadline']) => {
+    const order: Record<TimelineItem['deadline'], number> = {
       'First': 1,
       'Second': 2,
       'Third': 3,
@@ -278,7 +283,7 @@ export default function ChecklistDemo() {
         {categories.map(category => (
           <Chip 
             key={category}
-            icon={categoryIcons[category]}
+            icon={categoryIcons[category] as React.ReactElement}
             label={category} 
             onClick={() => setActiveCategory(category)}
             color={activeCategory === category ? "primary" : "default"}
@@ -331,7 +336,7 @@ export default function ChecklistDemo() {
         }}
       >
         {Object.entries(groupedItems[activeQuarter] || {})
-          .sort(([deadlineA], [deadlineB]) => getDeadlineOrder(deadlineA as any) - getDeadlineOrder(deadlineB as any))
+          .sort(([deadlineA], [deadlineB]) => getDeadlineOrder(deadlineA as TimelineItem['deadline']) - getDeadlineOrder(deadlineB as TimelineItem['deadline']))
           .map(([deadline, items]) => (
             <Box key={deadline} sx={{ mb: 4 }}>
               <Typography 
@@ -347,7 +352,7 @@ export default function ChecklistDemo() {
                 {deadline} Deadline
               </Typography>
               <Grid container spacing={2}>
-                {items.map(item => (
+                {items.map((item: CategorizedTimelineItem) => (
                   <Grid item xs={12} sm={6} md={4} key={item.id}>
                     <Paper 
                       elevation={2} 
@@ -364,8 +369,8 @@ export default function ChecklistDemo() {
                     >
                       <Box sx={{ display: 'flex', mb: 2, alignItems: 'center', justifyContent: 'space-between' }}>
                         <Chip 
-                          icon={categoryIcons[(item as any).category]}
-                          label={(item as any).category} 
+                          icon={categoryIcons[item.category] as React.ReactElement}
+                          label={item.category} 
                           size="small"
                           sx={{ 
                             background: 'rgba(156, 39, 176, 0.1)',
@@ -374,7 +379,7 @@ export default function ChecklistDemo() {
                         />
                         <button
                           onClick={() => {
-                            const nextStatus: Record<'NOT STARTED' | 'IN PROGRESS' | 'COMPLETED', 'NOT STARTED' | 'IN PROGRESS' | 'COMPLETED'> = {
+                            const nextStatus: Record<TimelineItem['status'], TimelineItem['status']> = {
                               'NOT STARTED': 'IN PROGRESS',
                               'IN PROGRESS': 'COMPLETED',
                               'COMPLETED': 'NOT STARTED'
