@@ -15,6 +15,8 @@ import {
   TextField,
   Zoom,
   IconButton,
+  Alert,
+  AlertTitle
 } from '@mui/material';
 
 interface Guest {
@@ -26,6 +28,7 @@ interface Guest {
   zip_code: string;
   country: string;
   email: string;
+  phone?: string;
   table_id?: string;
   created_at: string;
   updated_at: string;
@@ -629,114 +632,237 @@ export default function Guests() {
             )}
           </Paper>
         </Grid>
-      </Grid>
 
-      {/* Filters and Search */}
-      <div className="flex gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-gray-500" />
-          <select
-            value={filter}
-            onChange={e => setFilter(e.target.value)}
-            className="p-2 border rounded"
+        <Grid item xs={12}>
+          <Paper
+            elevation={3}
+            sx={{
+              p: 4,
+              borderRadius: 4,
+              background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: theme.palette.primary.main,
+              }
+            }}
           >
-            <option value="all">All Guests</option>
-            <option value="assigned">Assigned to Table</option>
-            <option value="unassigned">Not Assigned</option>
-          </select>
-        </div>
-        <div className="flex items-center gap-2 flex-1">
-          <Search className="w-4 h-4 text-gray-500" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search guests..."
-            className="p-2 border rounded w-full"
-          />
-        </div>
-      </div>
+            <Box sx={{ mb: 4 }}>
+              <Typography
+                variant="h4"
+                sx={{
+                  fontFamily: "'Playfair Display', serif",
+                  color: theme.palette.text.primary,
+                  mb: 2
+                }}
+              >
+                Send Group Message
+              </Typography>
+              
+              <Typography
+                variant="body1"
+                sx={{ mb: 3, color: theme.palette.text.secondary }}
+              >
+                Send a message to all your guests with phone numbers. This feature opens your phone's messaging app with all guest numbers pre-filled.
+              </Typography>
 
-      {/* Guest List */}
-      <div className="bg-white rounded shadow overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="p-4 text-left">Name</th>
-              <th className="p-4 text-left">Contact</th>
-              <th className="p-4 text-left">Address</th>
-              <th className="p-4 text-left">Table Assignment</th>
-              <th className="p-4 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredGuests.map(guest => (
-              <tr key={guest.id} className="border-t">
-                <td className="p-4">
-                  <div>{guest.full_name}</div>
-                </td>
-                <td className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-gray-500" />
-                    <span>{guest.email}</span>
-                  </div>
-                </td>
-                <td className="p-4">
-                  <div>{guest.address}</div>
-                  <div>{guest.city}, {guest.state} {guest.zip_code}</div>
-                  <div>{guest.country}</div>
-                </td>
-                <td className="p-4">
-                  {selectedLayoutId ? (
-                    <select
-                      value={guest.table_id || ''}
-                      onChange={async (e) => {
-                        const tableId = e.target.value || null;
-                        await assignTable(guest.id, tableId);
-                      }}
-                      className="p-2 border rounded"
-                    >
-                      <option value="">Not Assigned</option>
-                      {tables.map(table => (
-                        <option key={table.id} value={table.id}>
-                          {table.name} ({getAvailableSeats(table.id).length} seats available)
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <button
-                      onClick={() => navigate('/seating')}
-                      className="text-blue-500 hover:text-blue-600"
-                    >
-                      Create Seating Layout
-                    </button>
-                  )}
-                </td>
-                <td className="p-4">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        setEditingGuest(guest);
-                        setNewGuest(guest);
-                        setShowForm(true);
-                      }}
-                      className="text-blue-500 hover:text-blue-600"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => deleteGuest(guest.id)}
-                      className="text-red-500 hover:text-red-600"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
+              <Alert 
+                severity="info" 
+                sx={{ 
+                  mb: 3,
+                  borderRadius: 2,
+                  '& .MuiAlert-icon': {
+                    color: theme.palette.primary.main
+                  }
+                }}
+              >
+                <AlertTitle>Mobile Device Required</AlertTitle>
+                This feature must be used from a mobile phone as it opens your device's messaging app.
+              </Alert>
+
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                gap: 2,
+                p: 3,
+                borderRadius: 2,
+                bgcolor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider'
+              }}>
+                <Typography variant="subtitle1" color="text.secondary">
+                  Guest Summary:
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 3 }}>
+                  <Box>
+                    <Typography variant="h6">
+                      {guests.filter(g => g.phone).length}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Guests with phone numbers
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="h6">
+                      {guests.length - guests.filter(g => g.phone).length}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Guests without phone numbers
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Button
+                  onClick={() => {
+                    const phoneNumbers = guests
+                      .filter(guest => guest.phone)
+                      .map(guest => guest.phone)
+                      .join(',');
+                    
+                    if (!phoneNumbers) {
+                      alert('No guest phone numbers found. Add phone numbers to your guests first.');
+                      return;
+                    }
+                    
+                    // Create SMS link with all numbers
+                    const smsLink = `sms:${phoneNumbers}`;
+                    window.location.href = smsLink;
+                  }}
+                  variant="contained"
+                  size="large"
+                  startIcon={<MessageSquare />}
+                  sx={{
+                    mt: 2,
+                    py: 2,
+                    fontSize: '1.1rem',
+                    textTransform: 'none',
+                    borderRadius: 2,
+                    background: theme.palette.primary.main,
+                    '&:hover': {
+                      background: theme.palette.primary.dark,
+                    },
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                  }}
+                >
+                  Open Messaging App
+                </Button>
+              </Box>
+            </Box>
+          </Paper>
+        </Grid>
+
+        {/* Filters and Search */}
+        <div className="flex gap-4 mb-6">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-gray-500" />
+            <select
+              value={filter}
+              onChange={e => setFilter(e.target.value)}
+              className="p-2 border rounded"
+            >
+              <option value="all">All Guests</option>
+              <option value="assigned">Assigned to Table</option>
+              <option value="unassigned">Not Assigned</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2 flex-1">
+            <Search className="w-4 h-4 text-gray-500" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search guests..."
+              className="p-2 border rounded w-full"
+            />
+          </div>
+        </div>
+
+        {/* Guest List */}
+        <div className="bg-white rounded shadow overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="p-4 text-left">Name</th>
+                <th className="p-4 text-left">Contact</th>
+                <th className="p-4 text-left">Address</th>
+                <th className="p-4 text-left">Table Assignment</th>
+                <th className="p-4 text-left">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredGuests.map(guest => (
+                <tr key={guest.id} className="border-t">
+                  <td className="p-4">
+                    <div>{guest.full_name}</div>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-gray-500" />
+                      <span>{guest.email}</span>
+                    </div>
+                  </td>
+                  <td className="p-4">
+                    <div>{guest.address}</div>
+                    <div>{guest.city}, {guest.state} {guest.zip_code}</div>
+                    <div>{guest.country}</div>
+                  </td>
+                  <td className="p-4">
+                    {selectedLayoutId ? (
+                      <select
+                        value={guest.table_id || ''}
+                        onChange={async (e) => {
+                          const tableId = e.target.value || null;
+                          await assignTable(guest.id, tableId);
+                        }}
+                        className="p-2 border rounded"
+                      >
+                        <option value="">Not Assigned</option>
+                        {tables.map(table => (
+                          <option key={table.id} value={table.id}>
+                            {table.name} ({getAvailableSeats(table.id).length} seats available)
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <button
+                        onClick={() => navigate('/seating')}
+                        className="text-blue-500 hover:text-blue-600"
+                      >
+                        Create Seating Layout
+                      </button>
+                    )}
+                  </td>
+                  <td className="p-4">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setEditingGuest(guest);
+                          setNewGuest(guest);
+                          setShowForm(true);
+                        }}
+                        className="text-blue-500 hover:text-blue-600"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteGuest(guest.id)}
+                        className="text-red-500 hover:text-red-600"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Grid>
     </Container>
   );
 }

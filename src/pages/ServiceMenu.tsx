@@ -11,6 +11,7 @@ import {
   Zoom,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { WeddingChecklistChat } from '../components/ui/wedding-checklist-chat';
 
 interface ServiceCard {
   title: string;
@@ -312,6 +313,10 @@ export default function ServiceMenu() {
           Get the Bundle
         </Button>
       </Box>
+
+      {/* WeddingChecklistChat Component */}
+      <WeddingChecklistChat />
+
     </Container>
   );
 }
