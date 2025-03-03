@@ -1,15 +1,51 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Box, Container, Typography, TextField, Button, Paper, Alert, CircularProgress } from '@mui/material';
+import { Box, Container, Typography, TextField, Button, Paper, Alert, CircularProgress, Link, Divider } from '@mui/material';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!email || !password) {
+      setMessage({ type: 'error', text: 'Please enter both email and password' });
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setMessage(null);
+      
+      // Sign in with email and password
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Redirect to home page on successful login
+      navigate('/');
+      
+    } catch (error: any) {
+      setMessage({ 
+        type: 'error', 
+        text: error.error_description || error.message || 'Invalid login credentials' 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMagicLinkLogin = async () => {
     if (!email) {
       setMessage({ type: 'error', text: 'Please enter your email address' });
       return;
@@ -61,9 +97,11 @@ const Login: React.FC = () => {
           component="h1" 
           variant="h4" 
           sx={{ 
-            mb: 3, 
+            mb: 2, 
             fontWeight: 'bold',
-            color: 'primary.main'
+            color: 'primary.main',
+            fontFamily: "'Playfair Display', serif",
+            textAlign: 'center'
           }}
         >
           Welcome to Astare
@@ -95,6 +133,21 @@ const Login: React.FC = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
+            sx={{ mb: 2 }}
+          />
+          
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Password"
+            type="password"
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
             sx={{ mb: 3 }}
           />
           
@@ -106,19 +159,49 @@ const Login: React.FC = () => {
             sx={{ 
               py: 1.5, 
               mb: 2,
-              fontSize: '1rem'
+              fontSize: '1rem',
+              borderRadius: '8px'
             }}
           >
             {loading ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              'Send Magic Link'
+              'Sign In'
             )}
           </Button>
           
-          <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
-            We'll email you a magic link for a password-free sign in.
-          </Typography>
+          <Divider sx={{ my: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              or
+            </Typography>
+          </Divider>
+          
+          <Button
+            fullWidth
+            variant="outlined"
+            onClick={handleMagicLinkLogin}
+            disabled={loading}
+            sx={{ 
+              py: 1.5, 
+              mb: 2,
+              fontSize: '1rem',
+              borderRadius: '8px'
+            }}
+          >
+            Send Magic Link
+          </Button>
+          
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              Don't have an account?{' '}
+              <Link href="#" variant="body2" onClick={(e) => {
+                e.preventDefault();
+                setMessage({ type: 'info', text: 'Please contact us to start your wedding planning journey.' });
+              }}>
+                Wedding Planning Partnership
+              </Link>
+            </Typography>
+          </Box>
         </Box>
       </Paper>
     </Container>
