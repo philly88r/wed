@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ExpandableChat } from './expandable-chat';
 import { ChatBubble } from './chat-bubble';
 import { ChatInput } from './chat-input';
@@ -17,7 +17,6 @@ interface Message {
 }
 
 export const WeddingChecklistChat: React.FC = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
