@@ -13,8 +13,7 @@ import {
   Grid,
   Card,
   CardContent,
-  CardActionArea,
-  useTheme
+  CardActionArea
 } from '@mui/material';
 import AuroraBackground from '../components/ui/AuroraBackground';
 import '../components/ui/aurora-background.css';
@@ -25,7 +24,6 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
   const navigate = useNavigate();
-  const theme = useTheme();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
