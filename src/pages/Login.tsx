@@ -1,7 +1,22 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Box, Container, Typography, TextField, Button, Paper, Alert, CircularProgress, Link, Divider } from '@mui/material';
+import { 
+  Box, 
+  Container, 
+  Typography, 
+  TextField, 
+  Button, 
+  Paper, 
+  Alert, 
+  CircularProgress, 
+  Grid,
+  Card,
+  CardContent,
+  CardActionArea,
+  useMediaQuery,
+  useTheme
+} from '@mui/material';
 import AuroraBackground from '../components/ui/AuroraBackground';
 import '../components/ui/aurora-background.css';
 
@@ -11,6 +26,8 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,49 +64,29 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleMagicLinkLogin = async () => {
-    if (!email) {
-      setMessage({ type: 'error', text: 'Please enter your email address' });
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      setMessage(null);
-      
-      // Send magic link to user's email
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: window.location.origin,
-        },
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      setMessage({ 
-        type: 'success', 
-        text: 'Magic link sent! Check your email for the login link.' 
-      });
-    } catch (error: any) {
-      setMessage({ 
-        type: 'error', 
-        text: error.error_description || error.message || 'An error occurred during login' 
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleAccountOption = (option: 'vendor' | 'couple') => {
+    setMessage({ 
+      type: 'info', 
+      text: option === 'vendor' 
+        ? 'Please contact us to join our wedding planning vendor network.' 
+        : 'Please contact us to start your wedding planning journey.'
+    });
   };
 
   return (
     <AuroraBackground>
-      <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 10 }}>
+      <Container maxWidth="sm" sx={{ 
+        position: 'relative', 
+        zIndex: 10,
+        py: 3,
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center'
+      }}>
         <Paper 
           elevation={3} 
           sx={{ 
-            p: 4, 
+            p: { xs: 2, sm: 4 }, 
             display: 'flex', 
             flexDirection: 'column', 
             alignItems: 'center',
@@ -97,7 +94,8 @@ const Login: React.FC = () => {
             background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(10px)',
             boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.3)'
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            width: '100%'
           }}
         >
           <Typography 
@@ -108,7 +106,8 @@ const Login: React.FC = () => {
               fontWeight: 'bold',
               color: 'primary.main',
               fontFamily: "'Playfair Display', serif",
-              textAlign: 'center'
+              textAlign: 'center',
+              fontSize: { xs: '1.75rem', sm: '2.125rem' }
             }}
           >
             Welcome to Astare
@@ -165,7 +164,7 @@ const Login: React.FC = () => {
               disabled={loading}
               sx={{ 
                 py: 1.5, 
-                mb: 2,
+                mb: 3,
                 fontSize: '1rem',
                 borderRadius: '8px'
               }}
@@ -177,38 +176,93 @@ const Login: React.FC = () => {
               )}
             </Button>
             
-            <Divider sx={{ my: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                or
-              </Typography>
-            </Divider>
-            
-            <Button
-              fullWidth
-              variant="outlined"
-              onClick={handleMagicLinkLogin}
-              disabled={loading}
+            <Typography 
+              variant="h6" 
               sx={{ 
-                py: 1.5, 
+                textAlign: 'center', 
                 mb: 2,
-                fontSize: '1rem',
-                borderRadius: '8px'
+                fontWeight: 'medium'
               }}
             >
-              Send Magic Link
-            </Button>
+              Don't have an account?
+            </Typography>
             
-            <Box sx={{ mt: 2, textAlign: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                Don't have an account?{' '}
-                <Link href="#" variant="body2" onClick={(e) => {
-                  e.preventDefault();
-                  setMessage({ type: 'info', text: 'Please contact us to start your wedding planning journey.' });
-                }}>
-                  Wedding Planning Partnership
-                </Link>
-              </Typography>
-            </Box>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Card 
+                  sx={{ 
+                    height: '100%',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                    }
+                  }}
+                >
+                  <CardActionArea 
+                    onClick={() => handleAccountOption('vendor')}
+                    sx={{ height: '100%' }}
+                  >
+                    <CardContent sx={{ 
+                      textAlign: 'center',
+                      p: { xs: 2, sm: 3 }
+                    }}>
+                      <Typography 
+                        variant="h6" 
+                        color="primary"
+                        sx={{ 
+                          fontWeight: 'bold',
+                          mb: 1,
+                          fontSize: { xs: '1rem', sm: '1.25rem' }
+                        }}
+                      >
+                        Wedding Planning Vendor
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Join our network of trusted wedding professionals
+                      </Typography>
+                    </CardContent>
+                  </CardActionArea>
+                </Card>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Card 
+                  sx={{ 
+                    height: '100%',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                    }
+                  }}
+                >
+                  <CardActionArea 
+                    onClick={() => handleAccountOption('couple')}
+                    sx={{ height: '100%' }}
+                  >
+                    <CardContent sx={{ 
+                      textAlign: 'center',
+                      p: { xs: 2, sm: 3 }
+                    }}>
+                      <Typography 
+                        variant="h6" 
+                        color="primary"
+                        sx={{ 
+                          fontWeight: 'bold',
+                          mb: 1,
+                          fontSize: { xs: '1rem', sm: '1.25rem' }
+                        }}
+                      >
+                        Getting Married
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Start planning your perfect wedding day
+                      </Typography>
+                    </CardContent>
+                  </CardActionArea>
+                </Card>
+              </Grid>
+            </Grid>
           </Box>
         </Paper>
       </Container>
