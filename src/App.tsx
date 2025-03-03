@@ -13,7 +13,6 @@ import GuestQuestionnaire from './pages/GuestQuestionnaire';
 import ComingSoon from './pages/ComingSoon';
 import GuestDirectory from './pages/GuestDirectory';
 import Login from './pages/Login';
-import { Home, Users, ChevronLeft, Menu, Settings, LayoutGrid, Book } from 'lucide-react';
 
 function AppContent() {
   const location = useLocation();
