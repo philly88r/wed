@@ -51,6 +51,13 @@ const services: ServiceCard[] = [
     longDescription: 'Dynamic checklist that adapts to your wedding date. Get personalized reminders, track progress, and ensure every detail is covered. Perfect for staying organized and stress-free!'
   },
   {
+    title: 'Wedding Checklist',
+    price: '$29',
+    path: '/wedding-checklist',
+    description: 'Comprehensive quarter-by-quarter planning guide',
+    longDescription: 'Complete wedding planning checklist with resources for every task. Organized by quarters with detailed tips and guidance for each stage of your wedding planning journey.'
+  },
+  {
     title: 'Vendor Directory',
     price: '$29',
     path: '/vendors',
@@ -80,7 +87,7 @@ const services: ServiceCard[] = [
   },
 ];
 
-const bundlePrice = 260;
+const bundlePrice = 289;
 
 export default function ServiceMenu() {
   const theme = useTheme();
