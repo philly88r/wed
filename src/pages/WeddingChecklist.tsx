@@ -1,33 +1,9 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ChevronDown, ChevronUp, 
-  ExternalLink, Calendar, Gift, Heart, 
-  MapPin, Music, Camera, Utensils, Lightbulb, ArrowRight,
-  Circle, CheckCircle, CircleDashed
-} from 'lucide-react';
+import { Circle, CheckCircle, CircleDashed, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { weddingChecklistData } from '../data/wedding-checklist';
 import { TimelineItem } from '../components/ui/wedding-timeline';
-import confetti from 'canvas-confetti';
-
-// Category icons mapping
-const categoryIcons: Record<string, React.ReactNode> = {
-  'Venue': <MapPin size={18} />,
-  'Photography': <Camera size={18} />,
-  'Catering': <Utensils size={18} />,
-  'Music': <Music size={18} />,
-  'Gifts': <Gift size={18} />,
-  'Ceremony': <Heart size={18} />,
-  'Planning': <Calendar size={18} />
-};
-
-// Resource type icons
-const resourceTypeIcons: Record<string, React.ReactNode> = {
-  'internal': <ExternalLink size={16} />,
-  'external': <ExternalLink size={16} />,
-  'tool': <Calendar size={16} />,
-  'tip': <Lightbulb size={16} />
-};
 
 // Define the extended timeline item type with category
 interface CategorizedTimelineItem extends TimelineItem {
@@ -83,6 +59,48 @@ export default function WeddingChecklist() {
   const [progress, setProgress] = useState(0);
   const [daysLeft, setDaysLeft] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [quarterDates, setQuarterDates] = useState<{start: Date; end: Date}[]>([]);
+
+  // Calculate quarter dates based on wedding date
+  useEffect(() => {
+    const calculateQuarterDates = (date: Date) => {
+      // Clone the date to avoid modifying the original
+      const weddingDay = new Date(date);
+      
+      // Calculate Q4 (last 2 months before wedding)
+      const q4End = new Date(weddingDay);
+      const q4Start = new Date(weddingDay);
+      q4Start.setMonth(weddingDay.getMonth() - 2);
+      
+      // Calculate Q3 (3-4 months before wedding)
+      const q3End = new Date(q4Start);
+      q3End.setDate(q3End.getDate() - 1);
+      const q3Start = new Date(weddingDay);
+      q3Start.setMonth(weddingDay.getMonth() - 4);
+      
+      // Calculate Q2 (5-6 months before wedding)
+      const q2End = new Date(q3Start);
+      q2End.setDate(q2End.getDate() - 1);
+      const q2Start = new Date(weddingDay);
+      q2Start.setMonth(weddingDay.getMonth() - 6);
+      
+      // Calculate Q1 (7-9 months before wedding)
+      const q1End = new Date(q2Start);
+      q1End.setDate(q1End.getDate() - 1);
+      const q1Start = new Date(weddingDay);
+      q1Start.setMonth(weddingDay.getMonth() - 9);
+      
+      return [
+        { start: q1Start, end: q1End },
+        { start: q2Start, end: q2End },
+        { start: q3Start, end: q3End },
+        { start: q4Start, end: q4End }
+      ];
+    };
+    
+    const quarters = calculateQuarterDates(weddingDate);
+    setQuarterDates(quarters);
+  }, [weddingDate]);
 
   // Calculate progress and days left
   useEffect(() => {
@@ -151,23 +169,27 @@ export default function WeddingChecklist() {
   const getStatusClass = (status: TimelineItem['status']) => {
     switch (status) {
       case 'COMPLETED':
-        return 'bg-green-100 border-green-300 text-green-800';
+        return 'border-green-200 bg-green-50 hover:bg-green-100';
       case 'IN PROGRESS':
-        return 'bg-amber-100 border-amber-300 text-amber-800';
+        return 'border-amber-200 bg-amber-50 hover:bg-amber-100';
       case 'NOT STARTED':
-        return 'bg-gray-100 border-gray-300 text-gray-800';
+        return 'border-gray-200 bg-gray-50 hover:bg-gray-100';
     }
   };
 
+  // Toggle expanded state for a timeline item
   const toggleItemExpanded = (id: string) => {
     setExpandedItems(prev => 
       prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
     );
   };
 
-  const handleResourceClick = (link: string | undefined) => {
-    if (link) {
+  // Handle resource link clicks
+  const handleResourceClick = (link: string) => {
+    if (link.startsWith('/')) {
       navigate(link);
+    } else {
+      window.open(link, '_blank');
     }
   };
 
@@ -214,6 +236,34 @@ export default function WeddingChecklist() {
     }
   };
 
+  // Format date to readable string
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+  };
+
+  // Resource type icons
+  const resourceTypeIcons: Record<string, React.ReactNode> = {
+    'tip': <span className="inline-block w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">i</span>,
+    'tool': <span className="inline-block w-4 h-4 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-bold">T</span>,
+    'internal': <span className="inline-block w-4 h-4 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs font-bold">L</span>,
+    'external': <span className="inline-block w-4 h-4 rounded-full bg-amber-600 text-white flex items-center justify-center text-xs font-bold">E</span>
+  };
+
+  // Category icons
+  const categoryIcons: Record<string, React.ReactNode> = {
+    'Venue': <span className="text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-800">Venue</span>,
+    'Photography': <span className="text-xs font-medium px-2 py-1 rounded-full bg-purple-100 text-purple-800">Photo</span>,
+    'Catering': <span className="text-xs font-medium px-2 py-1 rounded-full bg-amber-100 text-amber-800">Food</span>,
+    'Music': <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-800">Music</span>,
+    'Gifts': <span className="text-xs font-medium px-2 py-1 rounded-full bg-rose-100 text-rose-800">Gifts</span>,
+    'Ceremony': <span className="text-xs font-medium px-2 py-1 rounded-full bg-indigo-100 text-indigo-800">Ceremony</span>,
+    'Planning': <span className="text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-800">Planning</span>
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="text-center mb-10">
@@ -249,36 +299,56 @@ export default function WeddingChecklist() {
             <span className="text-lg font-semibold">{progress}%</span>
           </div>
         </div>
+
+        {/* Quarter Date Ranges */}
+        <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Your Wedding Planning Timeline</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {quarterDates.map((quarter, index) => (
+              <div 
+                key={index} 
+                className={`p-4 rounded-lg border ${activeQuarter === index + 1 ? 'border-rose-500 bg-rose-50' : 'border-gray-200'}`}
+                onClick={() => setActiveQuarter(index + 1)}
+              >
+                <h3 className="font-bold text-lg text-rose-600">Quarter {index + 1}</h3>
+                <p className="text-sm text-gray-600">
+                  {formatDate(quarter.start)} - {formatDate(quarter.end)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="flex flex-wrap justify-center gap-2 mb-8">
+          <button 
+            onClick={() => setActiveQuarter(0)} 
+            className={`px-4 py-2 rounded-full ${activeQuarter === 0 ? 'bg-rose-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+          >
+            All Quarters
+          </button>
+          {[1, 2, 3, 4].map(quarter => (
+            <button 
+              key={quarter}
+              onClick={() => setActiveQuarter(quarter)} 
+              className={`px-4 py-2 rounded-full ${activeQuarter === quarter ? 'bg-rose-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+            >
+              Quarter {quarter}
+            </button>
+          ))}
+        </div>
         
         <div className="flex flex-wrap justify-center gap-2 mb-8">
           {categories.map(category => (
             <button
               key={category}
               onClick={() => setActiveCategory(activeCategory === category ? null : category)}
-              className={`px-4 py-2 rounded-full flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-full ${
                 activeCategory === category 
                   ? 'bg-rose-600 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              {categoryIcons[category] || <Calendar size={18} />}
               {category}
-            </button>
-          ))}
-        </div>
-        
-        <div className="flex justify-center gap-2 mb-8">
-          {[1, 2, 3, 4].map(quarter => (
-            <button
-              key={quarter}
-              onClick={() => setActiveQuarter(quarter)}
-              className={`px-6 py-2 rounded-md ${
-                activeQuarter === quarter 
-                  ? 'bg-rose-600 text-white' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Q{quarter}
             </button>
           ))}
         </div>
@@ -286,9 +356,20 @@ export default function WeddingChecklist() {
       
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Quarter {activeQuarter}</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            {activeQuarter === 0 ? 'All Quarters' : `Quarter ${activeQuarter}`}
+          </h2>
           
-          {Object.entries(groupedItems[activeQuarter] || {})
+          {Object.entries(activeQuarter === 0 
+            ? Object.entries(groupedItems).reduce((all, [_, deadlines]) => {
+                Object.entries(deadlines).forEach(([deadline, items]) => {
+                  if (!all[deadline]) all[deadline] = [];
+                  all[deadline].push(...items);
+                });
+                return all;
+              }, {} as Record<string, CategorizedTimelineItem[]>)
+            : (groupedItems[activeQuarter] || {})
+          )
             .sort(([a], [b]) => getDeadlineOrder(a as TimelineItem['deadline']) - getDeadlineOrder(b as TimelineItem['deadline']))
             .map(([deadline, items]) => (
               <div key={deadline} className="mb-8">
@@ -396,7 +477,7 @@ export default function WeddingChecklist() {
                                   
                                   {resource.link && (
                                     <button
-                                      onClick={() => handleResourceClick(resource.link)}
+                                      onClick={() => resource.link && handleResourceClick(resource.link)}
                                       className={`mt-2 ml-6 text-sm flex items-center gap-1 ${
                                         resource.type === 'internal' 
                                           ? 'text-rose-600 hover:text-rose-700' 
