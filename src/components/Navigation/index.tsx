@@ -39,6 +39,7 @@ const menuItems = [
   { text: 'Timeline', icon: <EventIcon />, path: '/timeline' },
   { text: 'Guests', icon: <PeopleIcon />, path: '/guests' },
   { text: 'Budget', icon: <BudgetIcon />, path: '/budget' },
+  { text: 'Wedding Checklist', icon: <ChecklistIcon />, path: '/wedding-checklist' },
   { text: 'Checklist', icon: <ChecklistIcon />, path: '/checklist' },
   { text: 'Vendors', icon: <VendorsIcon />, path: '/vendors' },
   { text: 'Table Layout', icon: <SeatingIcon />, path: '/table-layout' },

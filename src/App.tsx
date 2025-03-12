@@ -14,6 +14,7 @@ import ComingSoon from './pages/ComingSoon';
 import GuestDirectory from './pages/GuestDirectory';
 import Login from './pages/Login';
 import ChecklistDemo from './pages/ChecklistDemo';
+import WeddingChecklist from './pages/WeddingChecklist';
 
 function AppContent() {
   const location = useLocation();
@@ -35,6 +36,7 @@ function AppContent() {
         <Route path="/seating" element={<SeatingChart />} />
         <Route path="/budget" element={<Budget />} />
         <Route path="/checklist" element={<Checklist />} />
+        <Route path="/wedding-checklist" element={<WeddingChecklist />} />
         <Route path="/checklist-demo" element={<ChecklistDemo />} />
         <Route path="/vendors" element={<Vendors />} />
         <Route path="/timeline" element={<Timeline />} />
