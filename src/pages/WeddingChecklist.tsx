@@ -66,29 +66,51 @@ export default function WeddingChecklist() {
     const calculateQuarterDates = (date: Date) => {
       // Clone the date to avoid modifying the original
       const weddingDay = new Date(date);
+      const today = new Date();
       
-      // Calculate Q4 (last 2 months before wedding)
+      // Calculate total days until the wedding
+      const totalDays = Math.max(0, Math.ceil((weddingDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
+      
+      // If the wedding is in the past or today, return empty quarters
+      if (totalDays === 0) {
+        return [
+          { start: today, end: today },
+          { start: today, end: today },
+          { start: today, end: today },
+          { start: today, end: today }
+        ];
+      }
+      
+      // Calculate the number of days for each quarter (divide total days by 4)
+      const daysPerQuarter = Math.ceil(totalDays / 4);
+      
+      // Calculate Q4 (last quarter before wedding)
       const q4End = new Date(weddingDay);
       const q4Start = new Date(weddingDay);
-      q4Start.setMonth(weddingDay.getMonth() - 2);
+      q4Start.setDate(weddingDay.getDate() - daysPerQuarter);
       
-      // Calculate Q3 (3-4 months before wedding)
+      // Calculate Q3
       const q3End = new Date(q4Start);
       q3End.setDate(q3End.getDate() - 1);
-      const q3Start = new Date(weddingDay);
-      q3Start.setMonth(weddingDay.getMonth() - 4);
+      const q3Start = new Date(q3End);
+      q3Start.setDate(q3End.getDate() - daysPerQuarter);
       
-      // Calculate Q2 (5-6 months before wedding)
+      // Calculate Q2
       const q2End = new Date(q3Start);
       q2End.setDate(q2End.getDate() - 1);
-      const q2Start = new Date(weddingDay);
-      q2Start.setMonth(weddingDay.getMonth() - 6);
+      const q2Start = new Date(q2End);
+      q2Start.setDate(q2End.getDate() - daysPerQuarter);
       
-      // Calculate Q1 (7-9 months before wedding)
+      // Calculate Q1 (first quarter of planning)
       const q1End = new Date(q2Start);
       q1End.setDate(q1End.getDate() - 1);
-      const q1Start = new Date(weddingDay);
-      q1Start.setMonth(weddingDay.getMonth() - 9);
+      const q1Start = new Date(q1End);
+      q1Start.setDate(q1End.getDate() - daysPerQuarter);
+      
+      // Ensure q1Start is not before today
+      if (q1Start < today) {
+        q1Start.setTime(today.getTime());
+      }
       
       return [
         { start: q1Start, end: q1End },
@@ -310,7 +332,11 @@ export default function WeddingChecklist() {
                 className={`p-4 rounded-lg border ${activeQuarter === index + 1 ? 'border-rose-500 bg-rose-50' : 'border-gray-200'}`}
                 onClick={() => setActiveQuarter(index + 1)}
               >
-                <h3 className="font-bold text-lg text-rose-600">Quarter {index + 1}</h3>
+                <h3 className="font-bold text-lg text-rose-600">
+                  {index === 0 ? "First Quarter" : 
+                   index === 1 ? "Second Quarter" : 
+                   index === 2 ? "Third Quarter" : "Final Quarter"}
+                </h3>
                 <p className="text-sm text-gray-600">
                   {formatDate(quarterDates[index].start)} - {formatDate(quarterDates[index].end)}
                 </p>
@@ -332,7 +358,9 @@ export default function WeddingChecklist() {
               onClick={() => setActiveQuarter(quarter)} 
               className={`px-4 py-2 rounded-full ${activeQuarter === quarter ? 'bg-rose-600 text-white' : 'bg-gray-200 text-gray-700'}`}
             >
-              Quarter {quarter}
+              {quarter === 1 ? "First Quarter" : 
+               quarter === 2 ? "Second Quarter" : 
+               quarter === 3 ? "Third Quarter" : "Final Quarter"}
             </button>
           ))}
         </div>
@@ -357,7 +385,10 @@ export default function WeddingChecklist() {
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="p-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            {activeQuarter === 0 ? 'All Quarters' : `Quarter ${activeQuarter}`}
+            {activeQuarter === 0 ? 'All Quarters' : 
+             activeQuarter === 1 ? "First Quarter" : 
+             activeQuarter === 2 ? "Second Quarter" : 
+             activeQuarter === 3 ? "Third Quarter" : "Final Quarter"}
           </h2>
           
           {Object.entries(activeQuarter === 0 
