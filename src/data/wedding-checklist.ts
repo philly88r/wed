@@ -855,6 +855,19 @@ export const weddingChecklistData: TimelineItem[] = [
     status: 'NOT STARTED',
     task: 'Start your timeline with us or on your own',
     note: 'Pop-up offer for timeline',
+    resources: [
+      {
+        title: 'Timeline Builder',
+        description: 'Use our timeline builder to create a detailed wedding day schedule',
+        link: '/timeline',
+        type: 'internal'
+      },
+      {
+        title: 'Timeline Tips',
+        description: 'Include buffer time between events and share with all vendors',
+        type: 'tip'
+      }
+    ]
   },
   {
     id: '4-2',
@@ -863,6 +876,19 @@ export const weddingChecklistData: TimelineItem[] = [
     status: 'NOT STARTED',
     task: 'Start your seating chart with us or on your own',
     note: 'Pop-up offer for seating chart tool',
+    resources: [
+      {
+        title: 'Seating Chart Tool',
+        description: 'Use our interactive seating chart tool to arrange your guests',
+        link: '/seating',
+        type: 'internal'
+      },
+      {
+        title: 'Seating Tips',
+        description: 'Group guests by relationship and consider special needs',
+        type: 'tip'
+      }
+    ]
   },
   {
     id: '4-3',
@@ -870,6 +896,19 @@ export const weddingChecklistData: TimelineItem[] = [
     deadline: 'First',
     status: 'NOT STARTED',
     task: 'Visit the venue for a final walkthrough with the caterer',
+    resources: [
+      {
+        title: 'Venue Walkthrough Checklist',
+        description: 'Bring floor plans, timeline, and questions for your venue coordinator',
+        type: 'tip'
+      },
+      {
+        title: 'Vendor Management',
+        description: 'Update your vendor contacts with final details',
+        link: '/vendors',
+        type: 'internal'
+      }
+    ]
   },
   {
     id: '4-4',
@@ -877,6 +916,13 @@ export const weddingChecklistData: TimelineItem[] = [
     deadline: 'First',
     status: 'NOT STARTED',
     task: 'Attire should be ready',
+    resources: [
+      {
+        title: 'Final Fitting Tips',
+        description: 'Bring your wedding shoes and accessories to your final fitting',
+        type: 'tip'
+      }
+    ]
   },
   {
     id: '4-5',
@@ -884,6 +930,19 @@ export const weddingChecklistData: TimelineItem[] = [
     deadline: 'First',
     status: 'NOT STARTED',
     task: 'Follow-up on any missing RSVPs',
+    resources: [
+      {
+        title: 'Guest Management',
+        description: 'Track RSVPs and contact missing responses',
+        link: '/guests',
+        type: 'internal'
+      },
+      {
+        title: 'RSVP Follow-up Template',
+        description: 'Use a friendly message to check in with guests who haven\'t responded',
+        type: 'tip'
+      }
+    ]
   },
   {
     id: '4-6',
@@ -891,6 +950,13 @@ export const weddingChecklistData: TimelineItem[] = [
     deadline: 'First',
     status: 'NOT STARTED',
     task: 'Begin Writing Vows',
+    resources: [
+      {
+        title: 'Vow Writing Tips',
+        description: 'Speak from the heart and practice reading your vows aloud',
+        type: 'tip'
+      }
+    ]
   },
   {
     id: '4-7',
@@ -898,6 +964,14 @@ export const weddingChecklistData: TimelineItem[] = [
     deadline: 'Second',
     status: 'NOT STARTED',
     task: 'Begin assigning dinner seating',
+    resources: [
+      {
+        title: 'Seating Chart Tool',
+        description: 'Arrange your guests with our interactive seating chart',
+        link: '/seating',
+        type: 'internal'
+      }
+    ]
   },
   {
     id: '4-8',
@@ -905,6 +979,19 @@ export const weddingChecklistData: TimelineItem[] = [
     deadline: 'Second',
     status: 'NOT STARTED',
     task: 'Complete photo shot list and send to photographer',
+    resources: [
+      {
+        title: 'Photo List Tips',
+        description: 'Include must-have family groupings and special moments',
+        type: 'tip'
+      },
+      {
+        title: 'Photography Timeline',
+        description: 'Plan when each photo will be taken throughout the day',
+        link: '/timeline',
+        type: 'internal'
+      }
+    ]
   },
   {
     id: '4-9',
@@ -912,6 +999,14 @@ export const weddingChecklistData: TimelineItem[] = [
     deadline: 'Second',
     status: 'NOT STARTED',
     task: 'Finish seating chart',
+    resources: [
+      {
+        title: 'Seating Chart Finalization',
+        description: 'Make final adjustments based on RSVPs and special requests',
+        link: '/seating',
+        type: 'internal'
+      }
+    ]
   },
   {
     id: '4-10',
@@ -919,6 +1014,13 @@ export const weddingChecklistData: TimelineItem[] = [
     deadline: 'Second',
     status: 'NOT STARTED',
     task: 'Print seating charts, escort cards & other specific paper items.',
+    resources: [
+      {
+        title: 'Printing Timeline',
+        description: 'Allow at least 1-2 weeks for printing and delivery',
+        type: 'tip'
+      }
+    ]
   },
   {
     id: '4-11',
@@ -926,6 +1028,13 @@ export const weddingChecklistData: TimelineItem[] = [
     deadline: 'Second',
     status: 'NOT STARTED',
     task: 'Make necessary adjustments to seating assignments',
+    resources: [
+      {
+        title: 'Last-Minute Changes',
+        description: 'Keep a backup plan for unexpected guest changes',
+        type: 'tip'
+      }
+    ]
   },
   {
     id: '4-12',
@@ -933,6 +1042,19 @@ export const weddingChecklistData: TimelineItem[] = [
     deadline: 'Second',
     status: 'NOT STARTED',
     task: 'Final Menu Selections Made',
+    resources: [
+      {
+        title: 'Menu Planning',
+        description: 'Confirm dietary restrictions and special meal requests',
+        type: 'tip'
+      },
+      {
+        title: 'Budget Tracker',
+        description: 'Update your budget with final catering costs',
+        link: '/budget',
+        type: 'internal'
+      }
+    ]
   },
   {
     id: '4-13',
@@ -940,6 +1062,13 @@ export const weddingChecklistData: TimelineItem[] = [
     deadline: 'Second',
     status: 'NOT STARTED',
     task: 'Finalize count with rehearsal dinner',
+    resources: [
+      {
+        title: 'Rehearsal Dinner Planning',
+        description: 'Confirm final headcount and any special arrangements',
+        type: 'tip'
+      }
+    ]
   },
   {
     id: '4-14',
@@ -947,49 +1076,219 @@ export const weddingChecklistData: TimelineItem[] = [
     deadline: '30 Days Before WD',
     status: 'NOT STARTED',
     task: 'Finalize guest count with ALL vendors',
+    resources: [
+      {
+        title: 'Vendor Final Counts',
+        description: 'Send final headcount to catering, venue, rentals, and bar service',
+        type: 'tip'
+      },
+      {
+        title: 'Vendor Management',
+        description: 'Track all vendor communications in one place',
+        link: '/vendors',
+        type: 'internal'
+      }
+    ]
   },
   {
     id: '4-15',
     quarter: 4,
-    deadline: 'Third',
+    deadline: '30 Days Before WD',
     status: 'NOT STARTED',
-    task: 'Organize cash for vendor tips',
+    task: 'Finalize timeline with all vendors',
+    resources: [
+      {
+        title: 'Timeline Coordination',
+        description: 'Share your final timeline with all vendors and wedding party',
+        link: '/timeline',
+        type: 'internal'
+      },
+      {
+        title: 'Vendor Communication',
+        description: 'Confirm arrival and setup times with each vendor',
+        type: 'tip'
+      }
+    ]
   },
   {
     id: '4-16',
     quarter: 4,
-    deadline: 'Third',
+    deadline: '30 Days Before WD',
     status: 'NOT STARTED',
-    task: 'Meet with all vendors to review timeline and floor plan',
+    task: 'Finalize transportation details',
+    resources: [
+      {
+        title: 'Transportation Checklist',
+        description: 'Confirm pickup times, locations, and contact information',
+        type: 'tip'
+      }
+    ]
   },
   {
     id: '4-17',
     quarter: 4,
-    deadline: '10 Days Before WD',
+    deadline: '30 Days Before WD',
     status: 'NOT STARTED',
-    task: 'Finish timeline and send to all vendors',
+    task: 'Finalize honeymoon plans',
+    resources: [
+      {
+        title: 'Honeymoon Planning',
+        description: 'Confirm reservations and create a packing list',
+        type: 'tip'
+      }
+    ]
   },
   {
     id: '4-18',
     quarter: 4,
-    deadline: '1 Day Before WD',
+    deadline: '10 Days Before WD',
     status: 'NOT STARTED',
-    task: 'Enjoy your rehearsal dinner/welcome party',
-    condition: 'Only show if selected earlier',
+    task: 'Pick up wedding bands',
+    resources: [
+      {
+        title: 'Ring Checklist',
+        description: 'Check that rings fit properly and assign a trusted person to hold them',
+        type: 'tip'
+      }
+    ]
   },
   {
     id: '4-19',
     quarter: 4,
-    deadline: 'WD',
+    deadline: '10 Days Before WD',
     status: 'NOT STARTED',
-    task: 'Celebrate! It\'s your wedding day!',
+    task: 'Prepare final payments for vendors',
+    resources: [
+      {
+        title: 'Payment Tracking',
+        description: 'Organize final payments and tips in labeled envelopes',
+        type: 'tip'
+      },
+      {
+        title: 'Budget Management',
+        description: 'Track all final payments in your budget',
+        link: '/budget',
+        type: 'internal'
+      }
+    ]
   },
   {
     id: '4-20',
     quarter: 4,
+    deadline: '10 Days Before WD',
+    status: 'NOT STARTED',
+    task: 'Confirm all details with vendors',
+    resources: [
+      {
+        title: 'Vendor Confirmation',
+        description: 'Send final confirmation emails with timeline and contact information',
+        link: '/vendors',
+        type: 'internal'
+      }
+    ]
+  },
+  {
+    id: '4-21',
+    quarter: 4,
+    deadline: '10 Days Before WD',
+    status: 'NOT STARTED',
+    task: 'Delegate wedding day tasks',
+    resources: [
+      {
+        title: 'Day-Of Task List',
+        description: 'Assign specific responsibilities to wedding party and family members',
+        type: 'tip'
+      }
+    ]
+  },
+  {
+    id: '4-22',
+    quarter: 4,
+    deadline: '1 Day Before WD',
+    status: 'NOT STARTED',
+    task: 'Rehearsal dinner',
+    resources: [
+      {
+        title: 'Rehearsal Dinner Tips',
+        description: 'Keep it relaxed and enjoyable for everyone involved',
+        type: 'tip'
+      }
+    ]
+  },
+  {
+    id: '4-23',
+    quarter: 4,
+    deadline: '1 Day Before WD',
+    status: 'NOT STARTED',
+    task: 'Prepare payment envelopes for vendors',
+    resources: [
+      {
+        title: 'Vendor Payment Organization',
+        description: 'Label envelopes with vendor names and assign someone to distribute them',
+        type: 'tip'
+      }
+    ]
+  },
+  {
+    id: '4-24',
+    quarter: 4,
+    deadline: '1 Day Before WD',
+    status: 'NOT STARTED',
+    task: 'Pack for honeymoon',
+    resources: [
+      {
+        title: 'Honeymoon Packing List',
+        description: 'Don\'t forget travel documents, medications, and chargers',
+        type: 'tip'
+      }
+    ]
+  },
+  {
+    id: '4-25',
+    quarter: 4,
+    deadline: 'WD',
+    status: 'NOT STARTED',
+    task: 'Enjoy your wedding day!',
+    resources: [
+      {
+        title: 'Wedding Day Reminder',
+        description: 'Take moments throughout the day to pause and soak it all in',
+        type: 'tip'
+      }
+    ]
+  },
+  {
+    id: '4-26',
+    quarter: 4,
     deadline: '1 Day After WD',
     status: 'NOT STARTED',
-    task: 'Say goodbye to your guests with your final event!',
-    condition: 'Only show if selected earlier',
+    task: 'Return any rentals',
+    resources: [
+      {
+        title: 'Rental Return Checklist',
+        description: 'Assign someone to handle returns while you\'re on your honeymoon',
+        type: 'tip'
+      }
+    ]
   },
+  {
+    id: '4-27',
+    quarter: 4,
+    deadline: '1 Day After WD',
+    status: 'NOT STARTED',
+    task: 'Begin thank you notes',
+    resources: [
+      {
+        title: 'Thank You Note Tips',
+        description: 'Be specific about the gift received and how you\'ll use or enjoy it',
+        type: 'tip'
+      },
+      {
+        title: 'Guest Management',
+        description: 'Track thank you notes in your guest list',
+        link: '/guests',
+        type: 'internal'
+      }
+    ]
+  }
 ];
