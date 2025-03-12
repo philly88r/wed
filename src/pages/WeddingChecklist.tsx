@@ -304,7 +304,7 @@ export default function WeddingChecklist() {
         <div className="bg-white rounded-xl shadow-md p-6 mb-8">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Your Wedding Planning Timeline</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {quarterDates.map((quarter, index) => (
+            {quarterDates.map((_, index) => (
               <div 
                 key={index} 
                 className={`p-4 rounded-lg border ${activeQuarter === index + 1 ? 'border-rose-500 bg-rose-50' : 'border-gray-200'}`}
@@ -312,7 +312,7 @@ export default function WeddingChecklist() {
               >
                 <h3 className="font-bold text-lg text-rose-600">Quarter {index + 1}</h3>
                 <p className="text-sm text-gray-600">
-                  {formatDate(quarter.start)} - {formatDate(quarter.end)}
+                  {formatDate(quarterDates[index].start)} - {formatDate(quarterDates[index].end)}
                 </p>
               </div>
             ))}
@@ -477,7 +477,7 @@ export default function WeddingChecklist() {
                                   
                                   {resource.link && (
                                     <button
-                                      onClick={() => resource.link && handleResourceClick(resource.link)}
+                                      onClick={() => resource.link && handleResourceClick(resource.link as string)}
                                       className={`mt-2 ml-6 text-sm flex items-center gap-1 ${
                                         resource.type === 'internal' 
                                           ? 'text-rose-600 hover:text-rose-700' 
