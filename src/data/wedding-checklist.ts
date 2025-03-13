@@ -93,14 +93,14 @@ export const weddingChecklistData: TimelineItem[] = [
     note: 'Place for them to rank vendors and integrate into list?',
     resources: [
       {
-        title: 'Vendor Prioritization Tool',
-        description: 'Rank your vendors by importance to help with budgeting decisions',
-        link: '/vendors',
+        title: 'Wedding Planning Tutorials',
+        description: 'Our Wedding Planning video tutorials can help you with this',
+        link: '/tutorials',
         type: 'internal'
       },
       {
         title: 'Priority Guide',
-        description: 'Consider what matters most to you: food quality, photography style, music, or atmosphere',
+        description: 'Focus on what matters most to you both - venue, food, photography, etc.',
         type: 'tip'
       }
     ]
@@ -616,20 +616,6 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '2-14',
-    quarter: 2,
-    deadline: 'Second',
-    status: 'NOT STARTED',
-    task: 'Shop for wedding bands',
-    resources: [
-      {
-        title: 'Ring Shopping Tips',
-        description: 'Consider lifestyle, comfort, and how it pairs with engagement rings',
-        type: 'tip'
-      }
-    ]
-  },
-  {
     id: '2-15',
     quarter: 2,
     deadline: 'Third',
@@ -641,31 +627,36 @@ export const weddingChecklistData: TimelineItem[] = [
     quarter: 2,
     deadline: 'Third',
     status: 'NOT STARTED',
-    task: 'Starting looking into wedding rings',
+    task: 'Start thinking about Honeymoon',
   },
   {
     id: '2-17',
     quarter: 2,
     deadline: 'Third',
     status: 'NOT STARTED',
-    task: 'Start thinking about Honeymoon',
+    task: 'Start thinking about day of paper items',
+    resources: [
+      {
+        title: 'Day-of Stationery Examples',
+        description: 'Welcome sign, programs, bar signs, escort cards, table numbers, menu cards, seating chart, etc.',
+        type: 'tip'
+      },
+      {
+        title: 'Stationery Design',
+        description: 'Keep your design consistent with your invitation suite for a cohesive look',
+        type: 'tip'
+      }
+    ]
   },
   {
     id: '2-18',
     quarter: 2,
     deadline: 'Third',
     status: 'NOT STARTED',
-    task: 'Start thinking about day of paper items',
-  },
-  {
-    id: '2-19',
-    quarter: 2,
-    deadline: 'Third',
-    status: 'NOT STARTED',
     task: 'Both marriers start ordering attire',
   },
   {
-    id: '2-20',
+    id: '2-19',
     quarter: 2,
     deadline: 'Third',
     status: 'NOT STARTED',
@@ -853,27 +844,6 @@ export const weddingChecklistData: TimelineItem[] = [
     quarter: 4,
     deadline: 'First',
     status: 'NOT STARTED',
-    task: 'Start your timeline with us or on your own',
-    note: 'Pop-up offer for timeline',
-    resources: [
-      {
-        title: 'Timeline Builder',
-        description: 'Use our timeline builder to create a detailed wedding day schedule',
-        link: '/timeline',
-        type: 'internal'
-      },
-      {
-        title: 'Timeline Tips',
-        description: 'Include buffer time between events and share with all vendors',
-        type: 'tip'
-      }
-    ]
-  },
-  {
-    id: '4-2',
-    quarter: 4,
-    deadline: 'First',
-    status: 'NOT STARTED',
     task: 'Start your seating chart with us or on your own',
     note: 'Pop-up offer for seating chart tool',
     resources: [
@@ -891,7 +861,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-3',
+    id: '4-2',
     quarter: 4,
     deadline: 'First',
     status: 'NOT STARTED',
@@ -911,7 +881,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-4',
+    id: '4-3',
     quarter: 4,
     deadline: 'First',
     status: 'NOT STARTED',
@@ -925,7 +895,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-5',
+    id: '4-4',
     quarter: 4,
     deadline: 'First',
     status: 'NOT STARTED',
@@ -945,7 +915,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-6',
+    id: '4-5',
     quarter: 4,
     deadline: 'First',
     status: 'NOT STARTED',
@@ -959,7 +929,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-7',
+    id: '4-6',
     quarter: 4,
     deadline: 'Second',
     status: 'NOT STARTED',
@@ -974,7 +944,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-8',
+    id: '4-7',
     quarter: 4,
     deadline: 'Second',
     status: 'NOT STARTED',
@@ -994,7 +964,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-9',
+    id: '4-8',
     quarter: 4,
     deadline: 'Second',
     status: 'NOT STARTED',
@@ -1009,7 +979,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-10',
+    id: '4-9',
     quarter: 4,
     deadline: 'Second',
     status: 'NOT STARTED',
@@ -1023,7 +993,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-11',
+    id: '4-10',
     quarter: 4,
     deadline: 'Second',
     status: 'NOT STARTED',
@@ -1037,7 +1007,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-12',
+    id: '4-11',
     quarter: 4,
     deadline: 'Second',
     status: 'NOT STARTED',
@@ -1057,7 +1027,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-13',
+    id: '4-12',
     quarter: 4,
     deadline: 'Second',
     status: 'NOT STARTED',
@@ -1071,7 +1041,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-14',
+    id: '4-13',
     quarter: 4,
     deadline: '30 Days Before WD',
     status: 'NOT STARTED',
@@ -1091,7 +1061,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-15',
+    id: '4-14',
     quarter: 4,
     deadline: '30 Days Before WD',
     status: 'NOT STARTED',
@@ -1111,7 +1081,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-16',
+    id: '4-15',
     quarter: 4,
     deadline: '30 Days Before WD',
     status: 'NOT STARTED',
@@ -1125,7 +1095,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-17',
+    id: '4-16',
     quarter: 4,
     deadline: '30 Days Before WD',
     status: 'NOT STARTED',
@@ -1139,7 +1109,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-18',
+    id: '4-17',
     quarter: 4,
     deadline: '10 Days Before WD',
     status: 'NOT STARTED',
@@ -1153,7 +1123,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-19',
+    id: '4-18',
     quarter: 4,
     deadline: '10 Days Before WD',
     status: 'NOT STARTED',
@@ -1173,7 +1143,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-20',
+    id: '4-19',
     quarter: 4,
     deadline: '10 Days Before WD',
     status: 'NOT STARTED',
@@ -1188,7 +1158,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-21',
+    id: '4-20',
     quarter: 4,
     deadline: '10 Days Before WD',
     status: 'NOT STARTED',
@@ -1202,7 +1172,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-22',
+    id: '4-21',
     quarter: 4,
     deadline: '1 Day Before WD',
     status: 'NOT STARTED',
@@ -1216,7 +1186,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-23',
+    id: '4-22',
     quarter: 4,
     deadline: '1 Day Before WD',
     status: 'NOT STARTED',
@@ -1230,7 +1200,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-24',
+    id: '4-23',
     quarter: 4,
     deadline: '1 Day Before WD',
     status: 'NOT STARTED',
@@ -1244,7 +1214,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-25',
+    id: '4-24',
     quarter: 4,
     deadline: 'WD',
     status: 'NOT STARTED',
@@ -1258,7 +1228,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-26',
+    id: '4-25',
     quarter: 4,
     deadline: '1 Day After WD',
     status: 'NOT STARTED',
@@ -1272,7 +1242,7 @@ export const weddingChecklistData: TimelineItem[] = [
     ]
   },
   {
-    id: '4-27',
+    id: '4-26',
     quarter: 4,
     deadline: '1 Day After WD',
     status: 'NOT STARTED',
