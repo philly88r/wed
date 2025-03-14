@@ -60,14 +60,60 @@ export const formatTime = (time: string): string => {
 
 // Helper function to parse time (convert 12h to 24h format)
 export const parseTime = (time: string): string => {
-  const [timePart, ampm] = time.split(' ');
-  let [hours, minutes] = timePart.split(':').map(part => parseInt(part, 10));
+  // Handle empty or invalid input
+  if (!time || typeof time !== 'string') {
+    return '00:00';
+  }
   
-  if (ampm === 'PM' && hours < 12) {
+  // If time is already in 24h format (no AM/PM), return it
+  if (!time.includes('AM') && !time.includes('PM') && time.includes(':')) {
+    const [hours, minutes] = time.split(':').map(part => parseInt(part, 10));
+    if (!isNaN(hours) && !isNaN(minutes)) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+  }
+  
+  // Handle 12h format with AM/PM
+  const timeUpperCase = time.toUpperCase();
+  const isPM = timeUpperCase.includes('PM');
+  const isAM = timeUpperCase.includes('AM');
+  
+  // Extract time part without AM/PM
+  let timePart = timeUpperCase;
+  if (isPM) {
+    timePart = timePart.replace('PM', '').trim();
+  } else if (isAM) {
+    timePart = timePart.replace('AM', '').trim();
+  }
+  
+  // Parse hours and minutes
+  let hours = 0;
+  let minutes = 0;
+  
+  if (timePart.includes(':')) {
+    const parts = timePart.split(':');
+    hours = parseInt(parts[0], 10);
+    minutes = parseInt(parts[1], 10);
+  } else {
+    // Handle case where only hours are provided
+    hours = parseInt(timePart, 10);
+    minutes = 0;
+  }
+  
+  // Handle NaN values
+  if (isNaN(hours)) hours = 0;
+  if (isNaN(minutes)) minutes = 0;
+  
+  // Convert to 24h format
+  if (isPM && hours < 12) {
     hours += 12;
-  } else if (ampm === 'AM' && hours === 12) {
+  } else if (isAM && hours === 12) {
     hours = 0;
   }
+  
+  // Ensure hours and minutes are in valid range
+  hours = Math.max(0, Math.min(23, hours));
+  minutes = Math.max(0, Math.min(59, minutes));
   
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 };
@@ -92,13 +138,16 @@ export const generateMermaidTimeline = (data: WeddingTimelineData): string => {
 
   // Generate Mermaid gantt chart
   let mermaidCode = `gantt
-    title Wedding Day Timeline - ${data.weddingDate}
+    title Wedding Day Timeline - ${data.weddingDate || 'Your Wedding Day'}
     dateFormat HH:mm
     axisFormat %H:%M
+    tickInterval 1hour
     `;
 
   // Add events by category
   Object.entries(eventsByCategory).forEach(([category, events]) => {
+    if (events.length === 0) return;
+    
     mermaidCode += `\n    section ${category}`;
     
     events.forEach((event, index) => {
@@ -108,29 +157,51 @@ export const generateMermaidTimeline = (data: WeddingTimelineData): string => {
       let duration = '30m';
       if (index < events.length - 1) {
         const nextStartTime = parseTime(events[index + 1].time);
+        
+        // Parse hours and minutes safely
         const [startHours, startMinutes] = startTime.split(':').map(part => parseInt(part, 10));
         const [nextHours, nextMinutes] = nextStartTime.split(':').map(part => parseInt(part, 10));
         
-        const startTotalMinutes = startHours * 60 + startMinutes;
-        const nextTotalMinutes = nextHours * 60 + nextMinutes;
-        const durationMinutes = nextTotalMinutes - startTotalMinutes;
-        
-        if (durationMinutes > 0) {
-          const durationHours = Math.floor(durationMinutes / 60);
-          const remainingMinutes = durationMinutes % 60;
+        // Ensure we have valid numbers
+        if (!isNaN(startHours) && !isNaN(startMinutes) && !isNaN(nextHours) && !isNaN(nextMinutes)) {
+          const startTotalMinutes = startHours * 60 + startMinutes;
+          const nextTotalMinutes = nextHours * 60 + nextMinutes;
           
-          if (durationHours > 0) {
-            duration = `${durationHours}h${remainingMinutes > 0 ? remainingMinutes + 'm' : ''}`;
-          } else {
-            duration = `${remainingMinutes}m`;
+          // Handle case where next event is on the next day (after midnight)
+          let durationMinutes = nextTotalMinutes - startTotalMinutes;
+          if (durationMinutes < 0) {
+            durationMinutes = (24 * 60) + durationMinutes; // Add 24 hours
+          }
+          
+          // Ensure minimum duration is 15 minutes for visibility
+          durationMinutes = Math.max(15, durationMinutes);
+          
+          if (durationMinutes > 0) {
+            const durationHours = Math.floor(durationMinutes / 60);
+            const remainingMinutes = durationMinutes % 60;
+            
+            if (durationHours > 0) {
+              duration = `${durationHours}h${remainingMinutes > 0 ? remainingMinutes + 'm' : ''}`;
+            } else {
+              duration = `${remainingMinutes}m`;
+            }
           }
         }
       }
       
-      // Escape colons in event names to avoid Mermaid syntax issues
-      const escapedEventName = event.event.replace(/:/g, '\\:');
+      // Escape colons and other special characters in event names to avoid Mermaid syntax issues
+      const escapedEventName = event.event.replace(/:/g, '\\:').replace(/,/g, '\\,');
       
-      mermaidCode += `\n    ${escapedEventName.padEnd(25)} :${startTime}, ${duration}`;
+      // Add notes as crit if they exist
+      const critTag = event.notes ? 'crit, ' : '';
+      
+      // Add the event to the timeline
+      mermaidCode += `\n    ${escapedEventName.padEnd(25)} :${critTag}${startTime}, ${duration}`;
+      
+      // Add notes as a comment if they exist
+      if (event.notes) {
+        mermaidCode += `\n    %% ${event.notes.replace(/\n/g, ' ')}`;
+      }
     });
   });
 
