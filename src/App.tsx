@@ -8,6 +8,7 @@ import Budget from './pages/Budget';
 import Checklist from './pages/Checklist';
 import Vendors from './pages/Vendors';
 import Timeline from './pages/Timeline';
+import TimelineCreator from './pages/TimelineCreator';
 import Guests from './pages/Guests';
 import GuestQuestionnaire from './pages/GuestQuestionnaire';
 import ComingSoon from './pages/ComingSoon';
@@ -40,6 +41,8 @@ function AppContent() {
         <Route path="/checklist-demo" element={<ChecklistDemo />} />
         <Route path="/vendors" element={<Vendors />} />
         <Route path="/timeline" element={<Timeline />} />
+        <Route path="/timeline-creator" element={<TimelineCreator />} />
+        <Route path="/timeline-share" element={<TimelineCreator />} />
         <Route path="/guests" element={<Guests />} />
         <Route path="/directory" element={<GuestDirectory />} />
         <Route path="/tutorials" element={<ComingSoon />} />

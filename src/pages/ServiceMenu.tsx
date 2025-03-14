@@ -67,7 +67,7 @@ const services: ServiceCard[] = [
   {
     title: 'Day Of Timeline Calculator',
     price: '$29',
-    path: '/timeline',
+    path: '/timeline-creator',
     description: 'Create the perfect wedding day schedule',
     longDescription: 'Build a detailed timeline for your wedding day. Account for hair & makeup, photos, ceremony, reception, and more. Share with vendors and wedding party to keep everyone on schedule.'
   },
