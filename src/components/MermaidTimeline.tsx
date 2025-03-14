@@ -30,6 +30,7 @@ const MermaidTimeline = ({ chart, className = '' }: MermaidTimelineProps) => {
           numberSectionStyles: 4,
           axisFormat: '%H:%M',
         },
+        themeCSS: '.node rect { font-family: "Lato", sans-serif; } .taskText { font-family: "Lato", sans-serif; }',
       });
 
       try {
@@ -55,11 +56,7 @@ const MermaidTimeline = ({ chart, className = '' }: MermaidTimelineProps) => {
     }
   }, [chart]);
 
-  return (
-    <div className={`mermaid-timeline ${className}`}>
-      <div ref={mermaidRef} className="mermaid-container" />
-    </div>
-  );
+  return <div ref={mermaidRef} className={`mermaid-timeline ${className}`} />;
 };
 
 export default MermaidTimeline;

@@ -55,52 +55,62 @@ interface FormErrors {
 }
 
 export default function TimelineCreator() {
+  // Get URL parameters to check if we're in share mode
+  const searchParams = new URLSearchParams(window.location.search);
+  const sharedData = searchParams.get('data');
+  const isShareMode = Boolean(sharedData);
+  
   // State for the current step in the wizard
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 7;
   
+  // Parse shared data if available
+  const initialTimelineData = isShareMode && sharedData ? 
+    JSON.parse(decodeURIComponent(sharedData)) : 
+    {
+      weddingDate: new Date().toISOString().split('T')[0],
+      venueSame: true,
+      ceremonyVenue: '',
+      receptionVenue: '',
+      ceremonyStart: '17:30',
+      ceremonyEnd: '18:00',
+      guestArrival: '17:00',
+      isChurch: false,
+      firstLook: false,
+      hairMakeup: false,
+      numHMU: 0,
+      hmuStart: '09:15',
+      hmuEnd: '13:45',
+      hmuArrive: '09:00',
+      readyAtVenue: true,
+      gettingReadyLocation: '',
+      travelTime: 0,
+      photosBeforeCeremony: false,
+      photosInCocktailHour: false,
+      cocktailHour: true,
+      cocktailStart: '18:00',
+      cocktailEnd: '19:00',
+      dinnerStart: '19:00',
+      dinnerService: 'plated',
+      dinnerEnd: '21:00',
+      entrance: false,
+      firstDance: false,
+      firstDanceTime: 'beginning',
+      familyDances: 0,
+      speeches: 0,
+      thankYouToast: false,
+      thankYouTime: 'toasts',
+      cake: false,
+      cakeAnnounced: false,
+      dessert: false,
+      venueEndTime: '00:00',
+      transportation: false,
+      specialPerformances: [],
+      events: [],
+    };
+  
   // State for the timeline data
-  const [timelineData, setTimelineData] = useState<WeddingTimelineData>({
-    weddingDate: new Date().toISOString().split('T')[0],
-    venueSame: true,
-    ceremonyVenue: '',
-    receptionVenue: '',
-    ceremonyStart: '17:30',
-    ceremonyEnd: '18:00',
-    guestArrival: '17:00',
-    isChurch: false,
-    firstLook: false,
-    hairMakeup: false,
-    numHMU: 0,
-    hmuStart: '09:15',
-    hmuEnd: '13:45',
-    hmuArrive: '09:00',
-    readyAtVenue: true,
-    gettingReadyLocation: '',
-    travelTime: 0,
-    photosBeforeCeremony: false,
-    photosInCocktailHour: false,
-    cocktailHour: true,
-    cocktailStart: '18:00',
-    cocktailEnd: '19:00',
-    dinnerStart: '19:00',
-    dinnerService: 'plated',
-    dinnerEnd: '21:00',
-    entrance: false,
-    firstDance: false,
-    firstDanceTime: 'beginning',
-    familyDances: 0,
-    speeches: 0,
-    thankYouToast: false,
-    thankYouTime: 'toasts',
-    cake: false,
-    cakeAnnounced: false,
-    dessert: false,
-    venueEndTime: '00:00',
-    transportation: false,
-    specialPerformances: [],
-    events: [],
-  });
+  const [timelineData, setTimelineData] = useState<WeddingTimelineData>(initialTimelineData);
   
   // State for form validation
   const [formErrors, setFormErrors] = useState<FormErrors>({});
@@ -129,7 +139,12 @@ export default function TimelineCreator() {
     // Generate Mermaid code
     const code = generateMermaidTimeline(timelineData);
     setMermaidCode(code);
-  }, [timelineData]);
+    
+    // If in share mode, skip to the final step
+    if (isShareMode) {
+      setCurrentStep(totalSteps);
+    }
+  }, [timelineData, isShareMode, totalSteps]);
   
   // Function to handle next step
   const handleNext = () => {
