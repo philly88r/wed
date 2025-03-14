@@ -40,12 +40,11 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 import WizardStep from '../components/WizardStep';
-import MermaidTimeline from '../components/MermaidTimeline';
+import ChronoTimeline from '../components/ChronoTimeline';
 import TimelineTable from '../components/TimelineTable';
 import { 
   WeddingTimelineData, 
   TimelineEvent,
-  generateMermaidTimeline,
   generateDefaultTimeline,
 } from '../utils/timelineCreatorUtils';
 
@@ -68,42 +67,39 @@ export default function TimelineCreator() {
   const initialTimelineData = isShareMode && sharedData ? 
     JSON.parse(decodeURIComponent(sharedData)) : 
     {
-      weddingDate: new Date().toISOString().split('T')[0],
+      weddingDate: format(new Date(), 'yyyy-MM-dd'),
       venueSame: true,
-      ceremonyVenue: '',
-      receptionVenue: '',
-      ceremonyStart: '17:30',
-      ceremonyEnd: '18:00',
-      guestArrival: '17:00',
+      ceremonyStart: '16:00',
+      ceremonyEnd: '16:30',
+      guestArrival: '15:30',
       isChurch: false,
       firstLook: false,
-      hairMakeup: false,
-      numHMU: 0,
-      hmuStart: '09:15',
-      hmuEnd: '13:45',
-      hmuArrive: '09:00',
-      readyAtVenue: true,
-      gettingReadyLocation: '',
-      travelTime: 0,
-      photosBeforeCeremony: false,
-      photosInCocktailHour: false,
+      hairMakeup: true,
+      numHMU: 4,
+      hmuStart: '10:00',
+      hmuEnd: '14:00',
+      hmuArrive: '09:30',
+      readyAtVenue: false,
+      travelTime: 30,
+      photosBeforeCeremony: true,
+      photosInCocktailHour: true,
       cocktailHour: true,
-      cocktailStart: '18:00',
-      cocktailEnd: '19:00',
-      dinnerStart: '19:00',
+      cocktailStart: '16:30',
+      cocktailEnd: '17:30',
+      dinnerStart: '17:30',
       dinnerService: 'plated',
-      dinnerEnd: '21:00',
-      entrance: false,
-      firstDance: false,
+      dinnerEnd: '19:00',
+      entrance: true,
+      firstDance: true,
       firstDanceTime: 'beginning',
-      familyDances: 0,
-      speeches: 0,
-      thankYouToast: false,
+      familyDances: 2,
+      speeches: 3,
+      thankYouToast: true,
       thankYouTime: 'toasts',
-      cake: false,
+      cake: true,
       cakeAnnounced: false,
-      dessert: false,
-      venueEndTime: '00:00',
+      dessert: true,
+      venueEndTime: '23:00',
       transportation: false,
       specialPerformances: [],
       events: [],
@@ -118,9 +114,6 @@ export default function TimelineCreator() {
   // State for view mode (timeline or table)
   const [viewMode, setViewMode] = useState<'timeline' | 'table'>('timeline');
   
-  // State for Mermaid diagram
-  const [mermaidCode, setMermaidCode] = useState<string>('');
-
   // State for share dialog
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   
@@ -152,11 +145,6 @@ export default function TimelineCreator() {
         setTimelineData(updatedData);
         return;
       }
-      
-      // Generate Mermaid code
-      const code = generateMermaidTimeline(timelineData);
-      console.log('Generated Mermaid code:', code);
-      setMermaidCode(code);
     } catch (error) {
       console.error('Error generating timeline:', error);
       setNotification({
@@ -1134,7 +1122,10 @@ export default function TimelineCreator() {
           <Box role="tabpanel" hidden={viewMode !== 'timeline'} id="timeline-panel" aria-labelledby="timeline-tab">
             {viewMode === 'timeline' && (
               <Box sx={{ overflowX: 'auto', mb: 4 }} ref={timelineRef}>
-                <MermaidTimeline chart={mermaidCode} className="wedding-timeline" />
+                <ChronoTimeline 
+                  events={timelineData.events} 
+                  weddingDate={timelineData.weddingDate}
+                />
               </Box>
             )}
           </Box>
