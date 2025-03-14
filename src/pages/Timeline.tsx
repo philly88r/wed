@@ -24,6 +24,7 @@ interface TimelineTask {
   due_date: string;
   category: string;
   status: 'todo' | 'completed';
+  priority: 'low' | 'medium' | 'high';
   cost?: number;
   link?: string;
   action_text?: string;
@@ -36,6 +37,7 @@ export default function Timeline() {
     title: '',
     due_date: '',
     category: '',
+    priority: 'medium',
     cost: '',
     link: '',
     action_text: '',
@@ -47,7 +49,7 @@ export default function Timeline() {
 
   const fetchTasks = async () => {
     const { data, error } = await supabase
-      .from('timeline')
+      .from('timeline_tasks')
       .select('*')
       .order('due_date', { ascending: true });
 
@@ -68,11 +70,12 @@ export default function Timeline() {
   };
 
   const handleAddTask = async () => {
-    const { error } = await supabase.from('timeline').insert([
+    const { error } = await supabase.from('timeline_tasks').insert([
       {
         title: newTask.title,
         due_date: newTask.due_date,
         category: newTask.category,
+        priority: newTask.priority,
         cost: newTask.cost ? parseFloat(newTask.cost) : null,
         link: newTask.link || null,
         action_text: newTask.action_text || null,
@@ -90,6 +93,7 @@ export default function Timeline() {
       title: '',
       due_date: '',
       category: '',
+      priority: 'medium',
       cost: '',
       link: '',
       action_text: '',
@@ -99,7 +103,7 @@ export default function Timeline() {
 
   const handleToggleStatus = async (task: TimelineTask) => {
     const { error } = await supabase
-      .from('timeline')
+      .from('timeline_tasks')
       .update({ status: task.status === 'todo' ? 'completed' : 'todo' })
       .eq('id', task.id);
 
@@ -112,7 +116,7 @@ export default function Timeline() {
   };
 
   const handleDeleteTask = async (id: string) => {
-    const { error } = await supabase.from('timeline').delete().eq('id', id);
+    const { error } = await supabase.from('timeline_tasks').delete().eq('id', id);
 
     if (error) {
       console.error('Error deleting task:', error);
@@ -147,6 +151,9 @@ export default function Timeline() {
                 alignItems: 'center',
                 gap: 2,
                 bgcolor: task.status === 'completed' ? 'action.hover' : 'background.paper',
+                borderLeft: 4,
+                borderColor: task.priority === 'high' ? 'error.main' : 
+                             task.priority === 'medium' ? 'warning.main' : 'success.main',
               }}
             >
               <IconButton
@@ -173,6 +180,12 @@ export default function Timeline() {
                     variant="outlined"
                   />
                   <Chip label={task.category} size="small" />
+                  <Chip 
+                    label={task.priority} 
+                    size="small" 
+                    color={task.priority === 'high' ? 'error' : 
+                           task.priority === 'medium' ? 'warning' : 'success'}
+                  />
                   {task.cost && (
                     <Chip
                       label={`$${task.cost.toLocaleString()}`}
@@ -225,6 +238,22 @@ export default function Timeline() {
               fullWidth
               required
             />
+            <TextField
+              label="Priority"
+              name="priority"
+              select
+              value={newTask.priority}
+              onChange={handleInputChange}
+              fullWidth
+              required
+              SelectProps={{
+                native: true,
+              }}
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </TextField>
             <TextField
               label="Cost"
               name="cost"

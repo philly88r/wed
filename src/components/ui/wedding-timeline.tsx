@@ -12,6 +12,13 @@ export interface TimelineItem {
   task: string;
   note?: string;
   condition?: string;
+  resources?: {
+    title: string;
+    description?: string;
+    link?: string;
+    type: 'internal' | 'external' | 'tool' | 'tip';
+  }[];
+  displayCondition?: string; // Condition to determine if this item should be displayed
 }
 
 interface TimelineProps {
