@@ -131,6 +131,14 @@ export default function TimelineCreator() {
     severity: 'success' as 'success' | 'error' | 'info' | 'warning'
   });
 
+  // State for custom events
+  const [newEvent, setNewEvent] = useState<Partial<TimelineEvent>>({
+    time: '',
+    event: '',
+    notes: '',
+    category: 'Custom',
+  });
+
   // Refs for export
   const timelineRef = useRef<HTMLDivElement>(null);
   
@@ -938,13 +946,6 @@ export default function TimelineCreator() {
 
   // Function to render the custom events step
   const renderCustomEventsStep = () => {
-    const [newEvent, setNewEvent] = useState<Partial<TimelineEvent>>({
-      time: '',
-      event: '',
-      notes: '',
-      category: 'Custom',
-    });
-
     const handleAddCustomEvent = () => {
       if (newEvent.time && newEvent.event) {
         handleAddEvent({
@@ -953,6 +954,7 @@ export default function TimelineCreator() {
           notes: newEvent.notes || '',
           category: newEvent.category || 'Custom',
         });
+        // Reset the newEvent state
         setNewEvent({
           time: '',
           event: '',
