@@ -144,9 +144,27 @@ export default function TimelineCreator() {
   
   // Effect to generate events when timeline data changes
   useEffect(() => {
-    // Generate Mermaid code
-    const code = generateMermaidTimeline(timelineData);
-    setMermaidCode(code);
+    try {
+      // Ensure we have events to display
+      if (!timelineData.events || timelineData.events.length === 0) {
+        // Generate default events if none exist
+        const updatedData = generateDefaultTimeline(timelineData);
+        setTimelineData(updatedData);
+        return;
+      }
+      
+      // Generate Mermaid code
+      const code = generateMermaidTimeline(timelineData);
+      console.log('Generated Mermaid code:', code);
+      setMermaidCode(code);
+    } catch (error) {
+      console.error('Error generating timeline:', error);
+      setNotification({
+        open: true,
+        message: 'Error generating timeline. Please check your data.',
+        severity: 'error'
+      });
+    }
     
     // If in share mode, skip to the final step
     if (isShareMode) {

@@ -31,7 +31,7 @@ import {
   ArrowDownward as ArrowDownwardIcon,
   EventNote as EventNoteIcon
 } from '@mui/icons-material';
-import { TimelineEvent } from '../utils/timelineCreatorUtils';
+import { TimelineEvent, formatTime } from '../utils/timelineCreatorUtils';
 
 interface TimelineTableProps {
   events: TimelineEvent[];
@@ -316,7 +316,7 @@ const TimelineTable = ({ events, onUpdateEvent, onDeleteEvent }: TimelineTablePr
                         />
                       ) : (
                         <Typography sx={{ fontWeight: 'medium' }}>
-                          {event.time}
+                          {formatTime(event.time)}
                         </Typography>
                       )}
                     </TableCell>

@@ -49,13 +49,30 @@ export interface WeddingTimelineData {
   events: TimelineEvent[];
 }
 
-// Helper function to format time (convert 24h to 12h format)
-export const formatTime = (time: string): string => {
-  const [hours, minutes] = time.split(':');
-  const hour = parseInt(hours, 10);
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  const formattedHour = hour % 12 || 12;
-  return `${formattedHour}:${minutes} ${ampm}`;
+// Format time string to a more readable format (e.g., "15:30" to "3:30 PM")
+export const formatTime = (timeString: string): string => {
+  if (!timeString || timeString.trim() === '') {
+    return '';
+  }
+
+  try {
+    // Handle if already in HH:mm format
+    const [hoursStr, minutesStr] = timeString.split(':');
+    const hours = parseInt(hoursStr, 10);
+    const minutes = minutesStr ? parseInt(minutesStr, 10) : 0;
+    
+    if (isNaN(hours) || isNaN(minutes)) {
+      return timeString; // Return original if parsing fails
+    }
+    
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const formattedHour = hours % 12 || 12; // Convert 0 to 12 for 12 AM
+    
+    return `${formattedHour}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+  } catch (error) {
+    console.error('Error formatting time:', error);
+    return timeString; // Return original on error
+  }
 };
 
 // Parse time string to HH:mm format for Mermaid
@@ -127,15 +144,14 @@ export const parseTime = (timeString: string): string => {
 
 // Generate Mermaid timeline code from wedding timeline data
 export const generateMermaidTimeline = (data: WeddingTimelineData): string => {
-  // Ensure we have events to display
   if (!data.events || data.events.length === 0) {
     return `gantt
-    title Wedding Day Timeline - ${data.weddingDate || 'Your Wedding Day'}
+    title Wedding Timeline - ${data.weddingDate}
     dateFormat HH:mm
     axisFormat %H:%M
     
     section Timeline
-    No events yet :00:00, 24h`;
+    Wedding Day :00:00, 24h`;
   }
 
   // Sort events by time
@@ -145,32 +161,41 @@ export const generateMermaidTimeline = (data: WeddingTimelineData): string => {
     return timeA.localeCompare(timeB);
   });
 
-  // Generate Mermaid gantt chart
-  let mermaidCode = `gantt
-    title Wedding Day Timeline - ${data.weddingDate || 'Your Wedding Day'}
-    dateFormat HH:mm
-    axisFormat %H:%M
-    `;
-
-  // Add all events in a single section to simplify rendering
-  mermaidCode += `\n    section Wedding Timeline`;
+  // Group events by category
+  const eventsByCategory: Record<string, TimelineEvent[]> = {};
   
-  sortedEvents.forEach((event) => {
-    const startTime = parseTime(event.time);
+  sortedEvents.forEach(event => {
+    const category = event.category || 'Other';
+    if (!eventsByCategory[category]) {
+      eventsByCategory[category] = [];
+    }
+    eventsByCategory[category].push(event);
+  });
+
+  // Generate Mermaid code
+  let mermaidCode = `gantt
+  title Wedding Timeline - ${data.weddingDate}
+  dateFormat HH:mm
+  axisFormat %H:%M
+`;
+
+  // Add events by category
+  Object.entries(eventsByCategory).forEach(([category, events]) => {
+    mermaidCode += `\n  section ${category}\n`;
     
-    // Use a fixed duration of 30 minutes for all events for simplicity
-    const duration = '30m';
-    
-    // Escape special characters in event names
-    const escapedEventName = event.event
-      .replace(/:/g, '\\:')
-      .replace(/,/g, '\\,')
-      .replace(/\(/g, '\\(')
-      .replace(/\)/g, '\\)')
-      .trim();
-    
-    // Add the event to the timeline
-    mermaidCode += `\n    ${escapedEventName.padEnd(25)} :${startTime}, ${duration}`;
+    events.forEach(event => {
+      const startTime = parseTime(event.time);
+      
+      // Default duration of 30 minutes if not specified
+      const duration = '30min';
+      
+      // Escape any colons in the event description
+      const escapedEvent = event.event.replace(/:/g, '\\:');
+      
+      // Add the event to the timeline
+      // Format: Task name :startTime, duration
+      mermaidCode += `  ${escapedEvent} :${startTime}, ${duration}\n`;
+    });
   });
 
   return mermaidCode;
