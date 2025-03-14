@@ -58,68 +58,86 @@ export const formatTime = (time: string): string => {
   return `${formattedHour}:${minutes} ${ampm}`;
 };
 
-// Helper function to parse time (convert 12h to 24h format)
-export const parseTime = (time: string): string => {
-  // Handle empty or invalid input
-  if (!time || typeof time !== 'string') {
-    return '00:00';
+// Parse time string to HH:mm format for Mermaid
+export const parseTime = (timeString: string): string => {
+  if (!timeString || timeString.trim() === '') {
+    console.warn('Empty time string provided to parseTime');
+    return '00:00'; // Default to midnight
   }
-  
-  // If time is already in 24h format (no AM/PM), return it
-  if (!time.includes('AM') && !time.includes('PM') && time.includes(':')) {
-    const [hours, minutes] = time.split(':').map(part => parseInt(part, 10));
-    if (!isNaN(hours) && !isNaN(minutes)) {
+
+  // Try to handle various time formats
+  try {
+    // Remove any non-numeric characters except : and am/pm indicators
+    const cleanedTime = timeString.trim().toLowerCase();
+    
+    // Check if it's already in HH:mm format
+    if (/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(cleanedTime)) {
+      // Ensure two digits for hours
+      const [hours, minutes] = cleanedTime.split(':');
+      return `${hours.padStart(2, '0')}:${minutes}`;
+    }
+    
+    // Handle AM/PM format
+    if (/^([0-9]|1[0-2])(:[0-5][0-9])?\s*(am|pm)$/.test(cleanedTime)) {
+      let [time, period] = cleanedTime.split(/\s+/);
+      let [hours, minutes = '00'] = time.split(':');
+      
+      let hoursNum = parseInt(hours, 10);
+      
+      // Convert to 24-hour format
+      if (period === 'pm' && hoursNum < 12) {
+        hoursNum += 12;
+      } else if (period === 'am' && hoursNum === 12) {
+        hoursNum = 0;
+      }
+      
+      return `${hoursNum.toString().padStart(2, '0')}:${minutes}`;
+    }
+    
+    // Try to parse as a Date object if it's a more complex format
+    const date = new Date(`2023-01-01T${cleanedTime}`);
+    if (!isNaN(date.getTime())) {
+      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    }
+    
+    // Last resort: try to extract numbers
+    const matches = cleanedTime.match(/(\d{1,2})(?::(\d{1,2}))?(?:\s*(am|pm))?/i);
+    if (matches) {
+      let hours = parseInt(matches[1], 10);
+      const minutes = matches[2] ? parseInt(matches[2], 10) : 0;
+      const period = matches[3] ? matches[3].toLowerCase() : null;
+      
+      // Convert to 24-hour format if period is specified
+      if (period === 'pm' && hours < 12) {
+        hours += 12;
+      } else if (period === 'am' && hours === 12) {
+        hours = 0;
+      }
+      
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     }
+    
+    console.warn(`Could not parse time string: ${timeString}, using default`);
+    return '00:00';
+  } catch (error) {
+    console.error(`Error parsing time: ${timeString}`, error);
+    return '00:00';
   }
-  
-  // Handle 12h format with AM/PM
-  const timeUpperCase = time.toUpperCase();
-  const isPM = timeUpperCase.includes('PM');
-  const isAM = timeUpperCase.includes('AM');
-  
-  // Extract time part without AM/PM
-  let timePart = timeUpperCase;
-  if (isPM) {
-    timePart = timePart.replace('PM', '').trim();
-  } else if (isAM) {
-    timePart = timePart.replace('AM', '').trim();
-  }
-  
-  // Parse hours and minutes
-  let hours = 0;
-  let minutes = 0;
-  
-  if (timePart.includes(':')) {
-    const parts = timePart.split(':');
-    hours = parseInt(parts[0], 10);
-    minutes = parseInt(parts[1], 10);
-  } else {
-    // Handle case where only hours are provided
-    hours = parseInt(timePart, 10);
-    minutes = 0;
-  }
-  
-  // Handle NaN values
-  if (isNaN(hours)) hours = 0;
-  if (isNaN(minutes)) minutes = 0;
-  
-  // Convert to 24h format
-  if (isPM && hours < 12) {
-    hours += 12;
-  } else if (isAM && hours === 12) {
-    hours = 0;
-  }
-  
-  // Ensure hours and minutes are in valid range
-  hours = Math.max(0, Math.min(23, hours));
-  minutes = Math.max(0, Math.min(59, minutes));
-  
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 };
 
 // Generate Mermaid timeline code from wedding timeline data
 export const generateMermaidTimeline = (data: WeddingTimelineData): string => {
+  // Ensure we have events to display
+  if (!data.events || data.events.length === 0) {
+    return `gantt
+    title Wedding Day Timeline - ${data.weddingDate || 'Your Wedding Day'}
+    dateFormat HH:mm
+    axisFormat %H:%M
+    
+    section Timeline
+    No events yet :00:00, 24h`;
+  }
+
   // Sort events by time
   const sortedEvents = [...data.events].sort((a, b) => {
     const timeA = parseTime(a.time);
@@ -127,82 +145,32 @@ export const generateMermaidTimeline = (data: WeddingTimelineData): string => {
     return timeA.localeCompare(timeB);
   });
 
-  // Group events by category
-  const eventsByCategory: Record<string, TimelineEvent[]> = {};
-  sortedEvents.forEach(event => {
-    if (!eventsByCategory[event.category]) {
-      eventsByCategory[event.category] = [];
-    }
-    eventsByCategory[event.category].push(event);
-  });
-
   // Generate Mermaid gantt chart
   let mermaidCode = `gantt
     title Wedding Day Timeline - ${data.weddingDate || 'Your Wedding Day'}
     dateFormat HH:mm
     axisFormat %H:%M
-    tickInterval 1hour
     `;
 
-  // Add events by category
-  Object.entries(eventsByCategory).forEach(([category, events]) => {
-    if (events.length === 0) return;
+  // Add all events in a single section to simplify rendering
+  mermaidCode += `\n    section Wedding Timeline`;
+  
+  sortedEvents.forEach((event) => {
+    const startTime = parseTime(event.time);
     
-    mermaidCode += `\n    section ${category}`;
+    // Use a fixed duration of 30 minutes for all events for simplicity
+    const duration = '30m';
     
-    events.forEach((event, index) => {
-      const startTime = parseTime(event.time);
-      
-      // Calculate duration to next event or default to 30 minutes
-      let duration = '30m';
-      if (index < events.length - 1) {
-        const nextStartTime = parseTime(events[index + 1].time);
-        
-        // Parse hours and minutes safely
-        const [startHours, startMinutes] = startTime.split(':').map(part => parseInt(part, 10));
-        const [nextHours, nextMinutes] = nextStartTime.split(':').map(part => parseInt(part, 10));
-        
-        // Ensure we have valid numbers
-        if (!isNaN(startHours) && !isNaN(startMinutes) && !isNaN(nextHours) && !isNaN(nextMinutes)) {
-          const startTotalMinutes = startHours * 60 + startMinutes;
-          const nextTotalMinutes = nextHours * 60 + nextMinutes;
-          
-          // Handle case where next event is on the next day (after midnight)
-          let durationMinutes = nextTotalMinutes - startTotalMinutes;
-          if (durationMinutes < 0) {
-            durationMinutes = (24 * 60) + durationMinutes; // Add 24 hours
-          }
-          
-          // Ensure minimum duration is 15 minutes for visibility
-          durationMinutes = Math.max(15, durationMinutes);
-          
-          if (durationMinutes > 0) {
-            const durationHours = Math.floor(durationMinutes / 60);
-            const remainingMinutes = durationMinutes % 60;
-            
-            if (durationHours > 0) {
-              duration = `${durationHours}h${remainingMinutes > 0 ? remainingMinutes + 'm' : ''}`;
-            } else {
-              duration = `${remainingMinutes}m`;
-            }
-          }
-        }
-      }
-      
-      // Escape colons and other special characters in event names to avoid Mermaid syntax issues
-      const escapedEventName = event.event.replace(/:/g, '\\:').replace(/,/g, '\\,');
-      
-      // Add notes as crit if they exist
-      const critTag = event.notes ? 'crit, ' : '';
-      
-      // Add the event to the timeline
-      mermaidCode += `\n    ${escapedEventName.padEnd(25)} :${critTag}${startTime}, ${duration}`;
-      
-      // Add notes as a comment if they exist
-      if (event.notes) {
-        mermaidCode += `\n    %% ${event.notes.replace(/\n/g, ' ')}`;
-      }
-    });
+    // Escape special characters in event names
+    const escapedEventName = event.event
+      .replace(/:/g, '\\:')
+      .replace(/,/g, '\\,')
+      .replace(/\(/g, '\\(')
+      .replace(/\)/g, '\\)')
+      .trim();
+    
+    // Add the event to the timeline
+    mermaidCode += `\n    ${escapedEventName.padEnd(25)} :${startTime}, ${duration}`;
   });
 
   return mermaidCode;
