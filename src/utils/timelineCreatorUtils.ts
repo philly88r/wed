@@ -12,42 +12,51 @@ export interface WeddingTimelineData {
   venueSame: boolean;
   ceremonyVenue?: string;
   receptionVenue?: string;
-  ceremonyStart: string;
-  ceremonyEnd: string;
-  guestArrival: string;
-  isChurch: boolean;
-  firstLook: boolean;
-  hairMakeup: boolean;
-  numHMU: number;
-  hmuStart: string;
-  hmuEnd: string;
-  hmuArrive: string;
-  readyAtVenue: boolean;
+  ceremonyStart?: string;
+  guestArrival?: string;
+  isChurch?: boolean;
+  hairMakeup?: boolean;
+  numHMU?: number;
+  firstLook?: boolean;
+  photosBeforeCeremony?: boolean;
+  cocktailHour?: boolean;
+  entrance?: boolean;
+  dinnerService?: 'plated' | 'buffet' | 'family' | 'stations';
+  firstDance?: boolean;
+  firstDanceTime?: 'entrance' | 'after_dinner';
+  familyDances?: number;
+  speeches?: number;
+  thankYouToast?: boolean;
+  thankYouTime?: 'toasts' | 'dinner';
+  cake?: boolean;
+  cakeCutting?: boolean;
+  cakeAnnounced?: boolean;
+  bouquetToss?: boolean;
+  garterToss?: boolean;
+  lastDance?: boolean;
+  grandExit?: boolean;
+  exitType?: 'sparklers' | 'bubbles' | 'ribbon' | 'confetti' | 'other';
+  dessert?: boolean;
+  dessertService?: 'table' | 'buffet' | 'passed' | 'other';
+  venueEndTime?: string;
+  vendors: {
+    dayOfCoordinator: boolean;
+    photographer: boolean;
+    videographer: boolean;
+    florist: boolean;
+    dj: boolean;
+    band: boolean;
+    officiant: boolean;
+    rentals: boolean;
+    other: string;
+  };
+  readyAtVenue?: boolean;
   gettingReadyLocation?: string;
   travelTime?: number;
-  photosBeforeCeremony: boolean;
-  photosInCocktailHour: boolean;
-  cocktailHour: boolean;
-  cocktailStart: string;
-  cocktailEnd: string;
-  dinnerStart: string;
-  dinnerService: 'buffet' | 'plated' | 'family';
-  dinnerEnd: string;
-  entrance: boolean;
-  firstDance: boolean;
-  firstDanceTime: 'entrance' | 'after_dinner';
-  familyDances: number;
-  speeches: number;
-  thankYouToast: boolean;
-  thankYouTime: 'toasts' | 'dinner';
-  cake: boolean;
-  cakeAnnounced: boolean;
-  dessert: boolean;
-  dessertService: 'table' | 'buffet' | 'passed' | 'other';
-  venueEndTime: string;
-  transportation: boolean;
-  specialPerformances: string[];
+  photosInCocktailHour?: boolean;
+  transportation?: boolean;
   events: TimelineEvent[];
+  // Vendor information
 }
 
 // Format time string to a more readable format (e.g., "15:30" to "3:30 PM")
@@ -204,57 +213,59 @@ export const generateMermaidTimeline = (data: WeddingTimelineData): string => {
 
 // Generate a default wedding timeline based on inputs
 export const generateDefaultTimeline = (data: Partial<WeddingTimelineData>): WeddingTimelineData => {
-  // Default ceremony time is 5:30 PM if not specified
-  const ceremonyStart = data.ceremonyStart || '17:30';
-  const guestArrival = addMinutesToTime(ceremonyStart, -30);
-  
-  // Calculate ceremony end based on whether it's at a church
-  const ceremonyDuration = data.isChurch ? 60 : 30;
-  const ceremonyEndTime = addMinutesToTime(ceremonyStart, ceremonyDuration);
-  
-  // Default timeline data
   const defaultData: WeddingTimelineData = {
     weddingDate: data.weddingDate || new Date().toISOString().split('T')[0],
     venueSame: data.venueSame !== undefined ? data.venueSame : true,
     ceremonyVenue: data.ceremonyVenue || '',
     receptionVenue: data.receptionVenue || '',
-    ceremonyStart: ceremonyStart,
-    ceremonyEnd: ceremonyEndTime,
-    guestArrival: guestArrival,
+    ceremonyStart: data.ceremonyStart || '17:30',
+    guestArrival: data.guestArrival || '17:00',
     isChurch: data.isChurch || false,
-    firstLook: data.firstLook || false,
     hairMakeup: data.hairMakeup || false,
-    numHMU: data.numHMU || 0,
-    hmuStart: '09:15',
-    hmuEnd: '13:45',
-    hmuArrive: '09:00',
-    readyAtVenue: data.readyAtVenue || true,
-    gettingReadyLocation: data.gettingReadyLocation || '',
-    travelTime: data.travelTime || 0,
+    numHMU: data.numHMU || 1,
+    firstLook: data.firstLook || false,
     photosBeforeCeremony: data.photosBeforeCeremony || false,
-    photosInCocktailHour: data.photosInCocktailHour || false,
     cocktailHour: data.cocktailHour || true,
-    cocktailStart: ceremonyEndTime,
-    cocktailEnd: addMinutesToTime(ceremonyEndTime, 60),
-    dinnerStart: addMinutesToTime(ceremonyEndTime, 60),
+    entrance: data.entrance || true,
     dinnerService: data.dinnerService || 'plated',
-    dinnerEnd: addMinutesToTime(addMinutesToTime(ceremonyEndTime, 60), 120),
-    entrance: data.entrance || false,
-    firstDance: data.firstDance || false,
+    firstDance: data.firstDance || true,
     firstDanceTime: data.firstDanceTime || 'entrance',
     familyDances: data.familyDances || 0,
     speeches: data.speeches || 0,
     thankYouToast: data.thankYouToast || false,
-    thankYouTime: data.thankYouTime || 'toasts',
-    cake: data.cake || false,
+    thankYouTime: data.thankYouTime || 'dinner',
+    cake: data.cake || true,
+    cakeCutting: data.cakeCutting || false,
     cakeAnnounced: data.cakeAnnounced || false,
+    bouquetToss: data.bouquetToss || false,
+    garterToss: data.garterToss || false,
+    lastDance: data.lastDance || false,
+    grandExit: data.grandExit || false,
+    exitType: data.exitType || 'sparklers',
     dessert: data.dessert || false,
     dessertService: data.dessertService || 'table',
-    venueEndTime: '00:00',
+    venueEndTime: data.venueEndTime || '00:00',
+    vendors: {
+      dayOfCoordinator: data.vendors?.dayOfCoordinator || false,
+      photographer: data.vendors?.photographer || false,
+      videographer: data.vendors?.videographer || false,
+      florist: data.vendors?.florist || false,
+      dj: data.vendors?.dj || false,
+      band: data.vendors?.band || false,
+      officiant: data.vendors?.officiant || false,
+      rentals: data.vendors?.rentals || false,
+      other: data.vendors?.other || ''
+    },
+    readyAtVenue: data.readyAtVenue || false,
+    gettingReadyLocation: data.gettingReadyLocation || '',
+    travelTime: data.travelTime || 0,
+    photosInCocktailHour: data.photosInCocktailHour || false,
     transportation: data.transportation || false,
-    specialPerformances: data.specialPerformances || [],
-    events: generateEventsFromData(data),
+    events: []
   };
+  
+  // Generate events after all properties are set
+  defaultData.events = generateEventsFromData(defaultData);
   
   return defaultData;
 };
@@ -566,7 +577,7 @@ export const generateEventsFromData = (data: Partial<WeddingTimelineData>): Time
     events.push({
       time: formatTime(cakeTime),
       event: 'CAKE',
-      notes: `Couple cuts cake${data.cakeAnnounced ? ' (Announced)' : ' (Private)'}`,
+      notes: `Couple cuts cake${data.cakeCutting ? ' (Announced)' : ' (Private)'}`,
       category: 'Reception'
     });
   }
@@ -576,12 +587,14 @@ export const generateEventsFromData = (data: Partial<WeddingTimelineData>): Time
       ? addMinutesToTime(dancePartyStartTime, 20)
       : addMinutesToTime(dancePartyStartTime, 30);
     
-    const dessertServiceText = {
+    const dessertServiceOptions: Record<string, string> = {
       'table': 'served at the table',
       'buffet': 'available at the buffet',
       'passed': 'passed around by servers',
       'other': 'available for guests'
-    }[data.dessertService || 'table'];
+    };
+    
+    const dessertServiceText = dessertServiceOptions[data.dessertService || 'table'];
     
     events.push({
       time: formatTime(dessertTime),

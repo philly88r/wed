@@ -61,7 +61,7 @@ export default function TimelineCreator() {
   
   // State for the current step in the wizard
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 7;
+  const totalSteps = 8; // Increased from 7 to 8 to add vendor step
   
   // Parse shared data if available
   const initialTimelineData = isShareMode && sharedData ? 
@@ -104,6 +104,17 @@ export default function TimelineCreator() {
       transportation: false,
       specialPerformances: [],
       events: [],
+      vendors: {
+        dayOfCoordinator: false,
+        photographer: false,
+        videographer: false,
+        florist: false,
+        dj: false,
+        band: false,
+        officiant: false,
+        rentals: false,
+        other: ''
+      }
     };
   
   // State for the timeline data
@@ -416,8 +427,10 @@ export default function TimelineCreator() {
       case 5:
         return renderFinalDetailsStep();
       case 6:
-        return renderCustomEventsStep();
+        return renderVendorSelectionStep();
       case 7:
+        return renderCustomEventsStep();
+      case 8:
         return renderReviewStep();
       default:
         return null;
@@ -637,19 +650,21 @@ export default function TimelineCreator() {
 
           {timelineData.hairMakeup && (
             <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                type="number"
-                label="How many people are getting hair and makeup?"
-                value={timelineData.numHMU}
-                onChange={(e) => handleInputChange('numHMU', parseInt(e.target.value))}
-                InputProps={{ inputProps: { min: 1 } }}
-              />
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                {timelineData.numHMU >= 4
-                  ? `Recommendation: Hire 2 hair stylists and 2 makeup artists. With ${timelineData.numHMU} people, this will take approximately ${timelineData.numHMU / 2} hours.`
-                  : `This will take approximately ${timelineData.numHMU * 2} hours with 1 hair stylist and 1 makeup artist.`}
-              </Typography>
+              <FormControl fullWidth>
+                <InputLabel id="num-hmu-label">Number of People</InputLabel>
+                <Select
+                  labelId="num-hmu-label"
+                  value={timelineData.numHMU || 1}
+                  label="Number of People"
+                  onChange={(e) => handleInputChange('numHMU', e.target.value)}
+                >
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                    <MenuItem key={num} value={num}>
+                      {num} {num === 1 ? 'person' : 'people'} {(timelineData.numHMU || 1) >= 4 && num >= 4 ? '(multiple artists)' : ''}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
           )}
 
@@ -833,7 +848,7 @@ export default function TimelineCreator() {
             <FormControlLabel
               control={
                 <Switch
-                  checked={timelineData.familyDances > 0}
+                  checked={(timelineData.familyDances || 0) > 0}
                   onChange={(e) => handleInputChange('familyDances', e.target.checked ? 1 : 0)}
                 />
               }
@@ -841,7 +856,7 @@ export default function TimelineCreator() {
             />
           </Grid>
 
-          {timelineData.familyDances > 0 && (
+          {(timelineData.familyDances || 0) > 0 && (
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -858,7 +873,7 @@ export default function TimelineCreator() {
             <FormControlLabel
               control={
                 <Switch
-                  checked={timelineData.speeches > 0}
+                  checked={(timelineData.speeches || 0) > 0}
                   onChange={(e) => handleInputChange('speeches', e.target.checked ? 1 : 0)}
                 />
               }
@@ -866,7 +881,7 @@ export default function TimelineCreator() {
             />
           </Grid>
 
-          {timelineData.speeches > 0 && (
+          {(timelineData.speeches || 0) > 0 && (
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -911,7 +926,7 @@ export default function TimelineCreator() {
             <FormControlLabel
               control={
                 <Switch
-                  checked={timelineData.cake}
+                  checked={!!timelineData.cake}
                   onChange={(e) => handleInputChange('cake', e.target.checked)}
                 />
               }
@@ -924,11 +939,11 @@ export default function TimelineCreator() {
               <FormControlLabel
                 control={
                   <Switch
-                    checked={timelineData.cakeAnnounced}
+                    checked={!!timelineData.cakeAnnounced}
                     onChange={(e) => handleInputChange('cakeAnnounced', e.target.checked)}
                   />
                 }
-                label="Would you like the cake cutting to be announced?"
+                label="Will cake cutting be announced?"
               />
             </Grid>
           )}
@@ -937,26 +952,27 @@ export default function TimelineCreator() {
             <FormControlLabel
               control={
                 <Switch
-                  checked={timelineData.dessert}
+                  checked={!!timelineData.dessert}
                   onChange={(e) => handleInputChange('dessert', e.target.checked)}
                 />
               }
-              label="Are you serving dessert & coffee?"
+              label="Will you be serving dessert?"
             />
           </Grid>
 
           {timelineData.dessert && (
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>How will dessert & coffee be served?</InputLabel>
+                <InputLabel id="dessert-service-label">Dessert Service Style</InputLabel>
                 <Select
-                  value={timelineData.dessertService}
-                  label="How will dessert & coffee be served?"
+                  labelId="dessert-service-label"
+                  value={timelineData.dessertService || 'table'}
+                  label="Dessert Service Style"
                   onChange={(e) => handleInputChange('dessertService', e.target.value)}
                 >
-                  <MenuItem value="table">Served at the table</MenuItem>
+                  <MenuItem value="table">Served at table</MenuItem>
                   <MenuItem value="buffet">Buffet style</MenuItem>
-                  <MenuItem value="passed">Passed</MenuItem>
+                  <MenuItem value="passed">Passed by servers</MenuItem>
                   <MenuItem value="other">Other</MenuItem>
                 </Select>
               </FormControl>
@@ -992,7 +1008,7 @@ export default function TimelineCreator() {
                     ? parse(timelineData.venueEndTime, 'HH:mm', new Date())
                     : null
                 }
-                onChange={(time) => handleTimeChange('venueEndTime', time)}
+                onChange={(time) => time && handleTimeChange('venueEndTime', time)}
                 slotProps={{
                   textField: {
                     fullWidth: true,
@@ -1009,12 +1025,167 @@ export default function TimelineCreator() {
             <FormControlLabel
               control={
                 <Switch
-                  checked={timelineData.transportation}
+                  checked={!!timelineData.transportation}
                   onChange={(e) => handleInputChange('transportation', e.target.checked)}
                 />
               }
-              label="Any transportation at the end of the night?"
+              label="Will you be providing transportation for guests?"
             />
+          </Grid>
+        </Grid>
+      </WizardStep>
+    );
+  };
+
+  // Function to render the vendor selection step
+  const renderVendorSelectionStep = () => {
+    const handleVendorChange = (field: keyof WeddingTimelineData['vendors'], value: boolean | string) => {
+      setTimelineData(prev => ({
+        ...prev,
+        vendors: {
+          ...prev.vendors,
+          [field]: value
+        }
+      }));
+    };
+
+    return (
+      <WizardStep
+        title="Vendor Selection"
+        description="Select the vendors that will be part of your wedding day."
+        currentStep={6}
+        totalSteps={totalSteps}
+        onNext={() => {
+          if (validateCurrentStep()) {
+            handleNext();
+          }
+        }}
+        onBack={handleBack}
+      >
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Typography variant="h6" gutterBottom>
+              Which vendors will be part of your wedding day?
+            </Typography>
+            <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={timelineData.vendors.dayOfCoordinator}
+                        onChange={(e) => handleVendorChange('dayOfCoordinator', e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label="Day of Coordinator"
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={timelineData.vendors.photographer}
+                        onChange={(e) => handleVendorChange('photographer', e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label="Photographer"
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={timelineData.vendors.videographer}
+                        onChange={(e) => handleVendorChange('videographer', e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label="Videographer"
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={timelineData.vendors.florist}
+                        onChange={(e) => handleVendorChange('florist', e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label="Florist"
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={timelineData.vendors.dj}
+                        onChange={(e) => handleVendorChange('dj', e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label="DJ"
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={timelineData.vendors.band}
+                        onChange={(e) => handleVendorChange('band', e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label="Band"
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={timelineData.vendors.officiant}
+                        onChange={(e) => handleVendorChange('officiant', e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label="Officiant"
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={timelineData.vendors.rentals}
+                        onChange={(e) => handleVendorChange('rentals', e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label="Rentals"
+                  />
+                </Grid>
+                
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Other Vendors"
+                    value={timelineData.vendors.other}
+                    onChange={(e) => handleVendorChange('other', e.target.value)}
+                    placeholder="Please list any other vendors you'll have"
+                    multiline
+                    rows={2}
+                  />
+                </Grid>
+              </Grid>
+            </Paper>
           </Grid>
         </Grid>
       </WizardStep>
@@ -1045,7 +1216,7 @@ export default function TimelineCreator() {
       <WizardStep
         title="Special Performances or Traditions"
         description="Add any special performances, traditions, or custom events to your timeline."
-        currentStep={6}
+        currentStep={7}
         totalSteps={totalSteps}
         onNext={() => {
           if (validateCurrentStep()) {
@@ -1138,7 +1309,7 @@ export default function TimelineCreator() {
       <WizardStep
         title="Review & Export"
         description="Review your wedding day timeline and make any final adjustments."
-        currentStep={7}
+        currentStep={8}
         totalSteps={totalSteps}
         onNext={handleNext}
         onBack={handleBack}
