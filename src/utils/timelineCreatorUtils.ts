@@ -35,7 +35,7 @@ export interface WeddingTimelineData {
   dinnerEnd: string;
   entrance: boolean;
   firstDance: boolean;
-  firstDanceTime: 'beginning' | 'end';
+  firstDanceTime: 'entrance' | 'after_dinner';
   familyDances: number;
   speeches: number;
   thankYouToast: boolean;
@@ -43,6 +43,7 @@ export interface WeddingTimelineData {
   cake: boolean;
   cakeAnnounced: boolean;
   dessert: boolean;
+  dessertService: 'table' | 'buffet' | 'passed' | 'other';
   venueEndTime: string;
   transportation: boolean;
   specialPerformances: string[];
@@ -205,7 +206,7 @@ export const generateMermaidTimeline = (data: WeddingTimelineData): string => {
 export const generateDefaultTimeline = (data: Partial<WeddingTimelineData>): WeddingTimelineData => {
   // Default ceremony time is 5:30 PM if not specified
   const ceremonyStart = data.ceremonyStart || '17:30';
-  const guestArrival = data.guestArrival || '17:00';
+  const guestArrival = addMinutesToTime(ceremonyStart, -30);
   
   // Calculate ceremony end based on whether it's at a church
   const ceremonyDuration = data.isChurch ? 60 : 30;
@@ -240,7 +241,7 @@ export const generateDefaultTimeline = (data: Partial<WeddingTimelineData>): Wed
     dinnerEnd: addMinutesToTime(addMinutesToTime(ceremonyEndTime, 60), 120),
     entrance: data.entrance || false,
     firstDance: data.firstDance || false,
-    firstDanceTime: data.firstDanceTime || 'beginning',
+    firstDanceTime: data.firstDanceTime || 'entrance',
     familyDances: data.familyDances || 0,
     speeches: data.speeches || 0,
     thankYouToast: data.thankYouToast || false,
@@ -248,6 +249,7 @@ export const generateDefaultTimeline = (data: Partial<WeddingTimelineData>): Wed
     cake: data.cake || false,
     cakeAnnounced: data.cakeAnnounced || false,
     dessert: data.dessert || false,
+    dessertService: data.dessertService || 'table',
     venueEndTime: '00:00',
     transportation: data.transportation || false,
     specialPerformances: data.specialPerformances || [],
@@ -274,7 +276,7 @@ export const generateEventsFromData = (data: Partial<WeddingTimelineData>): Time
   
   // Default ceremony time is 5:30 PM if not specified
   const ceremonyStart = data.ceremonyStart || '17:30';
-  const guestArrival = data.guestArrival || '17:00';
+  const guestArrival = data.guestArrival || addMinutesToTime(ceremonyStart, -30);
   
   // Calculate ceremony end based on whether it's at a church
   const ceremonyDuration = data.isChurch ? 60 : 30;
@@ -283,7 +285,8 @@ export const generateEventsFromData = (data: Partial<WeddingTimelineData>): Time
   // Pre-ceremony events
   if (data.hairMakeup) {
     const numPeople = data.numHMU || 1;
-    const hmuDuration = numPeople > 9 ? numPeople * 30 : numPeople * 60; // Adjust for multiple artists
+    // New formula: 1-3 people = 2 hours per person, 4+ people = people/2 hours with multiple artists
+    const hmuDuration = numPeople >= 4 ? (numPeople / 2) * 60 : numPeople * 120; // Convert to minutes
     
     const hmuEnd = addMinutesToTime(ceremonyStart, -90); // HMU ends 1.5 hours before ceremony
     const hmuStart = addMinutesToTime(hmuEnd, -hmuDuration);
@@ -299,7 +302,9 @@ export const generateEventsFromData = (data: Partial<WeddingTimelineData>): Time
     events.push({
       time: formatTime(hmuStart),
       event: 'HMU START',
-      notes: `Hair and makeup begins for ${numPeople} people`,
+      notes: numPeople >= 4 
+        ? `Hair and makeup begins for ${numPeople} people (with multiple artists)`
+        : `Hair and makeup begins for ${numPeople} people`,
       category: 'Pre-Ceremony'
     });
     
@@ -445,7 +450,7 @@ export const generateEventsFromData = (data: Partial<WeddingTimelineData>): Time
     });
   }
   
-  if (data.firstDance && data.firstDanceTime === 'beginning') {
+  if (data.firstDance && data.firstDanceTime === 'entrance') {
     const danceTime = data.entrance 
       ? addMinutesToTime(data.cocktailHour ? addMinutesToTime(ceremonyEndTime, 75) : addMinutesToTime(ceremonyEndTime, 15), 5) 
       : addMinutesToTime(data.cocktailHour ? addMinutesToTime(ceremonyEndTime, 60) : ceremonyEndTime, 15);
@@ -458,7 +463,7 @@ export const generateEventsFromData = (data: Partial<WeddingTimelineData>): Time
     });
   }
   
-  const foodServiceTime = data.firstDance && data.firstDanceTime === 'beginning'
+  const foodServiceTime = data.firstDance && data.firstDanceTime === 'entrance'
     ? addMinutesToTime(data.cocktailHour ? addMinutesToTime(ceremonyEndTime, 75) : addMinutesToTime(ceremonyEndTime, 15), 15)
     : addMinutesToTime(data.cocktailHour ? addMinutesToTime(ceremonyEndTime, 60) : ceremonyEndTime, 15);
   
@@ -501,7 +506,7 @@ export const generateEventsFromData = (data: Partial<WeddingTimelineData>): Time
   // Dinner duration based on service type
   let dinnerDuration = 120; // Default 2 hours
   if (data.dinnerService === 'family') {
-    dinnerDuration = 60; // 1 hour for family style
+    dinnerDuration = 90; // 1.5 hours for family style
   }
   
   const dinnerEndTime = addMinutesToTime(foodServiceTime, dinnerDuration);
@@ -522,7 +527,7 @@ export const generateEventsFromData = (data: Partial<WeddingTimelineData>): Time
     });
   }
   
-  if (data.firstDance && data.firstDanceTime === 'end') {
+  if (data.firstDance && data.firstDanceTime === 'after_dinner') {
     events.push({
       time: formatTime(dinnerEndTime),
       event: 'FIRST DANCE',
@@ -532,7 +537,7 @@ export const generateEventsFromData = (data: Partial<WeddingTimelineData>): Time
   }
   
   if (data.familyDances && data.familyDances > 0) {
-    const familyDanceTime = data.firstDance && data.firstDanceTime === 'end'
+    const familyDanceTime = data.firstDance && data.firstDanceTime === 'after_dinner'
       ? addMinutesToTime(dinnerEndTime, 5)
       : dinnerEndTime;
     
@@ -571,10 +576,17 @@ export const generateEventsFromData = (data: Partial<WeddingTimelineData>): Time
       ? addMinutesToTime(dancePartyStartTime, 20)
       : addMinutesToTime(dancePartyStartTime, 30);
     
+    const dessertServiceText = {
+      'table': 'served at the table',
+      'buffet': 'available at the buffet',
+      'passed': 'passed around by servers',
+      'other': 'available for guests'
+    }[data.dessertService || 'table'];
+    
     events.push({
       time: formatTime(dessertTime),
-      event: 'DESSERT',
-      notes: 'Dessert is served',
+      event: 'DESSERT & COFFEE',
+      notes: `Dessert and coffee ${dessertServiceText}`,
       category: 'Reception'
     });
   }
@@ -597,5 +609,14 @@ export const generateEventsFromData = (data: Partial<WeddingTimelineData>): Time
     category: 'Closing'
   });
   
-  return events;
+  // Sort events by time to ensure chronological order
+  return events.sort((a, b) => {
+    const timeA = a.time.split(':').map(Number);
+    const timeB = b.time.split(':').map(Number);
+    
+    if (timeA[0] !== timeB[0]) {
+      return timeA[0] - timeB[0]; // Sort by hour
+    }
+    return timeA[1] - timeB[1]; // Sort by minute
+  });
 };

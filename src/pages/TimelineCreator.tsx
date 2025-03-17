@@ -45,7 +45,7 @@ import TimelineTable from '../components/TimelineTable';
 import { 
   WeddingTimelineData, 
   TimelineEvent,
-  generateDefaultTimeline,
+  generateEventsFromData,
 } from '../utils/timelineCreatorUtils';
 
 // Interface for form validation
@@ -91,7 +91,7 @@ export default function TimelineCreator() {
       dinnerEnd: '19:00',
       entrance: true,
       firstDance: true,
-      firstDanceTime: 'beginning',
+      firstDanceTime: 'entrance',
       familyDances: 2,
       speeches: 3,
       thankYouToast: true,
@@ -99,6 +99,7 @@ export default function TimelineCreator() {
       cake: true,
       cakeAnnounced: false,
       dessert: true,
+      dessertService: 'table',
       venueEndTime: '23:00',
       transportation: false,
       specialPerformances: [],
@@ -135,15 +136,22 @@ export default function TimelineCreator() {
   // Refs for export
   const timelineRef = useRef<HTMLDivElement>(null);
   
-  // Effect to generate events when timeline data changes
+  // Effect to generate events on initial load
   useEffect(() => {
     try {
-      // Ensure we have events to display
+      // Ensure we have events to display on initial load
       if (!timelineData.events || timelineData.events.length === 0) {
-        // Generate default events if none exist
-        const updatedData = generateDefaultTimeline(timelineData);
-        setTimelineData(updatedData);
-        return;
+        // Generate initial events based on default values
+        const initialEvents = generateEventsFromData(timelineData);
+        setTimelineData(prev => ({
+          ...prev,
+          events: initialEvents
+        }));
+      }
+      
+      // If in share mode, skip to the final step
+      if (isShareMode) {
+        setCurrentStep(totalSteps);
       }
     } catch (error) {
       console.error('Error generating timeline:', error);
@@ -153,12 +161,7 @@ export default function TimelineCreator() {
         severity: 'error'
       });
     }
-    
-    // If in share mode, skip to the final step
-    if (isShareMode) {
-      setCurrentStep(totalSteps);
-    }
-  }, [timelineData, isShareMode, totalSteps]);
+  }, [isShareMode, totalSteps]); // Only run on initial load and when share mode changes
   
   // Function to handle next step
   const handleNext = () => {
@@ -166,6 +169,10 @@ export default function TimelineCreator() {
       // Final step - generate the timeline
       generateFinalTimeline();
     } else {
+      // If moving to the review step, regenerate the timeline
+      if (currentStep + 1 === totalSteps) {
+        generateFinalTimeline();
+      }
       setCurrentStep(currentStep + 1);
     }
   };
@@ -190,6 +197,18 @@ export default function TimelineCreator() {
         return newErrors;
       });
     }
+    
+    // Regenerate timeline for key inputs that affect timing
+    const timeAffectingFields: (keyof WeddingTimelineData)[] = [
+      'ceremonyStart', 'guestArrival', 'isChurch', 'hairMakeup', 'numHMU',
+      'firstLook', 'cocktailHour', 'dinnerService', 'firstDance', 'firstDanceTime',
+      'familyDances', 'speeches', 'cake', 'dessert', 'dessertService'
+    ];
+    
+    if (timeAffectingFields.includes(field)) {
+      // Use setTimeout to ensure state is updated before regenerating
+      setTimeout(() => generateFinalTimeline(), 0);
+    }
   };
   
   // Function to handle time input change
@@ -197,6 +216,9 @@ export default function TimelineCreator() {
     if (value) {
       const timeString = format(value, 'HH:mm');
       handleInputChange(field, timeString);
+      
+      // Time changes always affect the timeline
+      setTimeout(() => generateFinalTimeline(), 0);
     }
   };
   
@@ -230,9 +252,26 @@ export default function TimelineCreator() {
   
   // Function to generate the final timeline
   const generateFinalTimeline = () => {
-    // Generate events based on the collected data
-    const updatedData = generateDefaultTimeline(timelineData);
-    setTimelineData(updatedData);
+    // First, regenerate all events based on the latest user inputs
+    const events = generateEventsFromData(timelineData);
+    
+    // Update the timeline data with the newly generated events
+    // while preserving any custom events added by the user
+    const customEvents = timelineData.events.filter(event => event.category === 'Custom');
+    
+    setTimelineData(prev => ({
+      ...prev,
+      events: [...events, ...customEvents].sort((a, b) => {
+        // Sort events by time
+        const timeA = a.time.split(':').map(Number);
+        const timeB = b.time.split(':').map(Number);
+        
+        if (timeA[0] !== timeB[0]) {
+          return timeA[0] - timeB[0]; // Sort by hour
+        }
+        return timeA[1] - timeB[1]; // Sort by minute
+      })
+    }));
   };
   
   // Function to update an event in the timeline
@@ -257,10 +296,24 @@ export default function TimelineCreator() {
   
   // Function to add a new event to the timeline
   const handleAddEvent = (newEvent: TimelineEvent) => {
-    setTimelineData(prev => ({
-      ...prev,
-      events: [...prev.events, newEvent]
-    }));
+    setTimelineData(prev => {
+      // Add the new event and sort all events by time
+      const updatedEvents = [...prev.events, newEvent].sort((a, b) => {
+        // Sort events by time
+        const timeA = a.time.split(':').map(Number);
+        const timeB = b.time.split(':').map(Number);
+        
+        if (timeA[0] !== timeB[0]) {
+          return timeA[0] - timeB[0]; // Sort by hour
+        }
+        return timeA[1] - timeB[1]; // Sort by minute
+      });
+      
+      return {
+        ...prev,
+        events: updatedEvents
+      };
+    });
   };
   
   // Function to export the timeline as PDF
@@ -493,7 +546,7 @@ export default function TimelineCreator() {
                   }}
                 />
               }
-              label="Is your ceremony start time or guest arrival already set?"
+              label="Is your guest arrival or ceremony start time already set?"
             />
           </Grid>
 
@@ -502,13 +555,13 @@ export default function TimelineCreator() {
               <Grid item xs={12} md={6}>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                   <TimePicker
-                    label="Ceremony Start Time"
+                    label="Guest Arrival Time"
                     value={
-                      timelineData.ceremonyStart
-                        ? parse(timelineData.ceremonyStart, 'HH:mm', new Date())
+                      timelineData.guestArrival
+                        ? parse(timelineData.guestArrival, 'HH:mm', new Date())
                         : null
                     }
-                    onChange={(time) => handleTimeChange('ceremonyStart', time)}
+                    onChange={(time) => handleTimeChange('guestArrival', time)}
                     slotProps={{
                       textField: {
                         fullWidth: true,
@@ -520,13 +573,13 @@ export default function TimelineCreator() {
               <Grid item xs={12} md={6}>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                   <TimePicker
-                    label="Guest Arrival Time"
+                    label="Ceremony Start Time"
                     value={
-                      timelineData.guestArrival
-                        ? parse(timelineData.guestArrival, 'HH:mm', new Date())
+                      timelineData.ceremonyStart
+                        ? parse(timelineData.ceremonyStart, 'HH:mm', new Date())
                         : null
                     }
-                    onChange={(time) => handleTimeChange('guestArrival', time)}
+                    onChange={(time) => handleTimeChange('ceremonyStart', time)}
                     slotProps={{
                       textField: {
                         fullWidth: true,
@@ -593,9 +646,9 @@ export default function TimelineCreator() {
                 InputProps={{ inputProps: { min: 1 } }}
               />
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                {timelineData.numHMU > 9
-                  ? `With ${timelineData.numHMU} people, we'll assume 2 artists (${Math.ceil(timelineData.numHMU / 2)} hours)`
-                  : `This will take approximately ${timelineData.numHMU} hours`}
+                {timelineData.numHMU >= 4
+                  ? `Recommendation: Hire 2 hair stylists and 2 makeup artists. With ${timelineData.numHMU} people, this will take approximately ${timelineData.numHMU / 2} hours.`
+                  : `This will take approximately ${timelineData.numHMU * 2} hours with 1 hair stylist and 1 makeup artist.`}
               </Typography>
             </Grid>
           )}
@@ -711,7 +764,7 @@ export default function TimelineCreator() {
               >
                 <MenuItem value="buffet">Buffet (2 hours)</MenuItem>
                 <MenuItem value="plated">Plated (2 hours)</MenuItem>
-                <MenuItem value="family">Family Style (1 hour)</MenuItem>
+                <MenuItem value="family">Family Style (1.5 hours)</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -769,8 +822,8 @@ export default function TimelineCreator() {
                   label="When would you like to have your first dance?"
                   onChange={(e) => handleInputChange('firstDanceTime', e.target.value)}
                 >
-                  <MenuItem value="beginning">Beginning of dinner</MenuItem>
-                  <MenuItem value="end">End of dinner</MenuItem>
+                  <MenuItem value="entrance">Right after entrance</MenuItem>
+                  <MenuItem value="after_dinner">After dinner to kick off dance party</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -891,6 +944,24 @@ export default function TimelineCreator() {
               label="Are you serving dessert & coffee?"
             />
           </Grid>
+
+          {timelineData.dessert && (
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>How will dessert & coffee be served?</InputLabel>
+                <Select
+                  value={timelineData.dessertService}
+                  label="How will dessert & coffee be served?"
+                  onChange={(e) => handleInputChange('dessertService', e.target.value)}
+                >
+                  <MenuItem value="table">Served at the table</MenuItem>
+                  <MenuItem value="buffet">Buffet style</MenuItem>
+                  <MenuItem value="passed">Passed</MenuItem>
+                  <MenuItem value="other">Other</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          )}
         </Grid>
       </WizardStep>
     );
