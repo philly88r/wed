@@ -7,6 +7,10 @@ import Header from './components/Header';
 import Budget from './pages/Budget';
 import Checklist from './pages/Checklist';
 import Vendors from './pages/Vendors';
+import VendorProfile from './pages/VendorProfile';
+import VendorLogin from './pages/VendorLogin';
+import VendorProfileEdit from './pages/VendorProfileEdit';
+import ProtectedVendorRoute from './components/ProtectedVendorRoute';
 import Timeline from './pages/Timeline';
 import TimelineCreator from './pages/TimelineCreator';
 import Guests from './pages/Guests';
@@ -29,6 +33,17 @@ function AppContent() {
         {/* Auth routes */}
         <Route path="/login" element={<Login />} />
         
+        {/* Vendor routes */}
+        <Route path="/vendor/login" element={<VendorLogin />} />
+        <Route 
+          path="/vendor/profile/edit/:vendorId" 
+          element={
+            <ProtectedVendorRoute>
+              <VendorProfileEdit />
+            </ProtectedVendorRoute>
+          } 
+        />
+        
         {/* Put the questionnaire route first to ensure it takes precedence */}
         <Route path="/:weddingName" element={<GuestQuestionnaire />} />
         
@@ -40,6 +55,7 @@ function AppContent() {
         <Route path="/wedding-checklist" element={<WeddingChecklist />} />
         <Route path="/checklist-demo" element={<ChecklistDemo />} />
         <Route path="/vendors" element={<Vendors />} />
+        <Route path="/vendors/:slug" element={<VendorProfile />} />
         <Route path="/timeline" element={<Timeline />} />
         <Route path="/timeline-creator" element={<TimelineCreator />} />
         <Route path="/timeline-share" element={<TimelineCreator />} />
