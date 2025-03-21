@@ -107,13 +107,22 @@ export default function Pricing() {
         <Typography
           component="h1"
           variant="h2"
-          color="text.primary"
+          sx={{
+            color: theme.palette.primary.main,
+            fontWeight: 700,
+          }}
           gutterBottom
-          sx={{ fontWeight: 700 }}
         >
           Simple, Transparent Pricing
         </Typography>
-        <Typography variant="h5" color="text.secondary" component="p">
+        <Typography
+          variant="h5"
+          sx={{
+            color: theme.palette.primary.main,
+            opacity: 0.8,
+          }}
+          component="p"
+        >
           Choose the perfect plan for your perfect day
         </Typography>
         <Box mt={4}>
@@ -126,7 +135,12 @@ export default function Pricing() {
               />
             }
             label={
-              <Typography variant="h6">
+              <Typography
+                variant="h6"
+                sx={{
+                  color: theme.palette.primary.main,
+                }}
+              >
                 {yearly ? 'Yearly (Save 17%)' : 'Monthly'}
               </Typography>
             }
@@ -179,7 +193,9 @@ export default function Pricing() {
                   <Typography
                     component="h2"
                     variant="h3"
-                    color="text.primary"
+                    sx={{
+                      color: theme.palette.primary.main,
+                    }}
                     gutterBottom
                   >
                     {tier.title}
@@ -187,22 +203,30 @@ export default function Pricing() {
                   <Typography
                     component="h3"
                     variant="h3"
-                    color="primary.main"
-                    sx={{ fontWeight: 700 }}
+                    sx={{
+                      color: theme.palette.primary.main,
+                      fontWeight: 700,
+                    }}
                   >
                     ${yearly ? tier.price.yearly : tier.price.monthly}
                     <Typography
                       component="span"
                       variant="h6"
-                      color="text.secondary"
+                      sx={{
+                        color: theme.palette.primary.main,
+                        opacity: 0.8,
+                      }}
                     >
                       {yearly ? '/year' : '/month'}
                     </Typography>
                   </Typography>
                   <Typography
                     variant="subtitle1"
-                    color="text.secondary"
-                    sx={{ mt: 2 }}
+                    sx={{
+                      color: theme.palette.primary.main,
+                      opacity: 0.8,
+                      mt: 2,
+                    }}
                   >
                     {tier.description}
                   </Typography>
@@ -214,7 +238,13 @@ export default function Pricing() {
                       <ListItemIcon sx={{ minWidth: 36 }}>
                         <CheckIcon color="primary" />
                       </ListItemIcon>
-                      <ListItemText primary={feature} />
+                      <ListItemText
+                        primary={feature}
+                        sx={{
+                          color: theme.palette.primary.main,
+                          opacity: 0.8,
+                        }}
+                      />
                     </ListItem>
                   ))}
                 </List>
@@ -236,6 +266,7 @@ export default function Pricing() {
                         bgcolor: 'primary.dark',
                       },
                     }),
+                    color: theme.palette.primary.main,
                   }}
                 >
                   {tier.buttonText}
@@ -247,14 +278,24 @@ export default function Pricing() {
       </Grid>
 
       <Box mt={8} textAlign="center">
-        <Typography variant="h6" color="text.secondary" gutterBottom>
+        <Typography
+          variant="h6"
+          sx={{
+            color: theme.palette.primary.main,
+            opacity: 0.8,
+          }}
+          gutterBottom
+        >
           Need something special?
         </Typography>
         <Button
           variant="outlined"
           color="primary"
           size="large"
-          sx={{ mt: 2 }}
+          sx={{
+            mt: 2,
+            color: theme.palette.primary.main,
+          }}
         >
           Contact Us for Custom Plans
         </Button>

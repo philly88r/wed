@@ -12,7 +12,9 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { supabase } from '../lib/supabase';
+import { supabase, mockVideos } from '../lib/supabase';
+import { JournalPrompts } from '../components/ui/journal-prompts';
+import { Button } from '../components/ui/button';
 
 interface Video {
   id: string;
@@ -22,6 +24,8 @@ interface Video {
   thumbnail_url: string;
   category: string;
   duration: string;
+  has_journal_prompt: boolean;
+  related_feature: string | null;
 }
 
 const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () => void }) => {
@@ -39,14 +43,21 @@ const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () 
           bgcolor: 'black',
           boxShadow: 'none',
           overflow: 'hidden',
-          ...(fullScreen ? {} : {
-            minWidth: '80vw',
-            minHeight: '80vh'
-          })
+          width: '100%',
+          height: '100%',
+          maxWidth: '90vw',
+          maxHeight: '90vh'
         }
       }}
     >
-      <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+      <Box sx={{ 
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
         <IconButton
           onClick={onClose}
           sx={{
@@ -58,30 +69,78 @@ const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () 
             '&:hover': {
               bgcolor: 'rgba(0,0,0,0.7)'
             },
-            zIndex: 1
+            zIndex: 2
           }}
         >
           <CloseIcon />
         </IconButton>
-        <Box
-          sx={{
-            position: 'relative',
-            paddingTop: '56.25%', // 16:9 aspect ratio
+        <Box sx={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          '& iframe': {
+            position: 'absolute',
+            top: 0,
+            left: 0,
             width: '100%',
-            height: '100%'
-          }}
-        >
+            height: '100%',
+            border: 'none'
+          }
+        }}>
           <iframe
-            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&showinfo=0&controls=1`}
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&showinfo=0&color=white&controls=1&iv_load_policy=3&playsinline=1&enablejsapi=1&origin=${window.location.origin}&widget_referrer=${window.location.origin}&cc_load_policy=0&fs=0`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
-            style={{
+          />
+          {/* Top gradient overlay */}
+          <Box
+            sx={{
               position: 'absolute',
               top: 0,
               left: 0,
-              width: '100%',
-              height: '100%',
-              border: 'none'
+              right: 0,
+              height: '120px',
+              background: 'linear-gradient(to bottom, rgba(5,70,151,0.95), rgba(255,232,228,0.6), transparent)',
+              pointerEvents: 'none',
+              zIndex: 1
+            }}
+          />
+          {/* Bottom gradient overlay */}
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '120px',
+              background: 'linear-gradient(to top, rgba(5,70,151,0.95), rgba(255,232,228,0.6), transparent)',
+              pointerEvents: 'none',
+              zIndex: 1
+            }}
+          />
+          {/* Side gradients */}
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              bottom: 0,
+              width: '100px',
+              background: 'linear-gradient(to right, rgba(5,70,151,0.95), rgba(255,232,228,0.6), transparent)',
+              pointerEvents: 'none',
+              zIndex: 1
+            }}
+          />
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width: '100px',
+              background: 'linear-gradient(to left, rgba(5,70,151,0.95), rgba(255,232,228,0.6), transparent)',
+              pointerEvents: 'none',
+              zIndex: 1
             }}
           />
         </Box>
@@ -91,24 +150,33 @@ const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () 
 };
 
 const VideoCard = ({ video, onPlay }: { video: Video; onPlay: (id: string) => void }) => {
+  const theme = useTheme();
+  const [showJournal, setShowJournal] = useState(false);
+
   return (
     <Card 
       sx={{ 
-        cursor: 'pointer',
+        height: '100%', 
+        display: 'flex', 
+        flexDirection: 'column',
         transition: 'transform 0.2s',
         '&:hover': {
-          transform: 'scale(1.02)'
+          transform: 'translateY(-4px)'
         }
       }}
-      onClick={() => onPlay(video.youtube_id)}
     >
       <Box
         sx={{
           position: 'relative',
           paddingTop: '56.25%', // 16:9 aspect ratio
-          backgroundColor: '#000',
-          overflow: 'hidden'
+          cursor: 'pointer',
+          '&:hover': {
+            '& .playOverlay': {
+              opacity: 1
+            }
+          }
         }}
+        onClick={() => onPlay(video.youtube_id)}
       >
         <Box
           component="img"
@@ -124,29 +192,56 @@ const VideoCard = ({ video, onPlay }: { video: Video; onPlay: (id: string) => vo
           }}
         />
         <Box
+          className="playOverlay"
           sx={{
             position: 'absolute',
-            bottom: 8,
-            right: 8,
-            bgcolor: 'rgba(0,0,0,0.8)',
-            color: 'white',
-            px: 1,
-            py: 0.5,
-            borderRadius: 1,
-            fontSize: '0.875rem'
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            bgcolor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: 0,
+            transition: 'opacity 0.2s'
           }}
         >
-          {video.duration}
+          <Box
+            component="img"
+            src="/play-button.svg"
+            alt="Play"
+            sx={{ width: 64, height: 64 }}
+          />
         </Box>
       </Box>
-      <CardContent>
-        <Typography variant="h6" gutterBottom noWrap>
+      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        <Typography 
+          variant="h6" 
+          gutterBottom 
+          sx={{ 
+            color: theme.palette.primary.main,
+            fontWeight: 'medium'
+          }}
+        >
           {video.title}
         </Typography>
         <Typography 
           variant="body2" 
-          color="text.secondary"
+          sx={{ 
+            color: theme.palette.primary.main,
+            opacity: 0.8,
+            mb: 1
+          }}
+        >
+          {video.duration} • {video.category}
+        </Typography>
+        <Typography
+          variant="body2"
           sx={{
+            color: theme.palette.primary.main,
+            opacity: 0.8,
+            mb: 2,
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
@@ -155,6 +250,21 @@ const VideoCard = ({ video, onPlay }: { video: Video; onPlay: (id: string) => vo
         >
           {video.description}
         </Typography>
+        {video.has_journal_prompt && (
+          <Box sx={{ mt: 'auto' }}>
+            {showJournal ? (
+              <JournalPrompts videoId={video.id} />
+            ) : (
+              <Button 
+                variant="outline"
+                className="w-full border-accent-rose text-primary hover:bg-accent-rose/10"
+                onClick={() => setShowJournal(true)}
+              >
+                Open Journal Prompts
+              </Button>
+            )}
+          </Box>
+        )}
       </CardContent>
     </Card>
   );
@@ -165,6 +275,7 @@ export default function Videos() {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const theme = useTheme();
 
   useEffect(() => {
     fetchVideos();
@@ -174,14 +285,22 @@ export default function Videos() {
     try {
       setLoading(true);
       setError(null);
-      const { data, error } = await supabase
+      
+      // Temporarily use mock data until database is running
+      setVideos(mockVideos);
+      setLoading(false);
+      return;
+
+      const { data, error: supabaseError } = await supabase
         .from('videos')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching videos:', error);
-        setError(error.message);
+      // Handle Supabase error
+      const errorMessage = supabaseError?.message ?? 'An error occurred while fetching videos';
+      if (supabaseError) {
+        console.error('Error fetching videos:', errorMessage);
+        setError(errorMessage);
         return;
       }
 
@@ -204,22 +323,35 @@ export default function Videos() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Wedding Planning Videos
+      <Typography 
+        variant="h4" 
+        component="h1" 
+        gutterBottom 
+        sx={{ 
+          color: theme.palette.primary.main,
+          textAlign: 'center',
+          mb: 4
+        }}
+      >
+        Wedding Planning Video Tutorials
       </Typography>
 
       {loading && (
-        <Typography>Loading videos...</Typography>
+        <Typography sx={{ color: theme.palette.primary.main, opacity: 0.8, textAlign: 'center' }}>
+          Loading videos...
+        </Typography>
       )}
 
       {error && (
-        <Typography color="error" gutterBottom>
+        <Typography color="error" gutterBottom sx={{ textAlign: 'center' }}>
           {error}
         </Typography>
       )}
 
       {!loading && !error && videos.length === 0 && (
-        <Typography>No videos available yet.</Typography>
+        <Typography sx={{ color: theme.palette.primary.main, opacity: 0.8, textAlign: 'center' }}>
+          No videos available yet.
+        </Typography>
       )}
 
       <Grid container spacing={3}>

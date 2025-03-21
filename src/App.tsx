@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, Box } from '@mui/material';
-import { theme } from './theme';
+import theme from './theme/theme';
 import ServiceMenu from './pages/ServiceMenu';
 import SeatingChart from './pages/SeatingChart';
 import Header from './components/Header';
@@ -20,14 +20,17 @@ import GuestDirectory from './pages/GuestDirectory';
 import Login from './pages/Login';
 import ChecklistDemo from './pages/ChecklistDemo';
 import WeddingChecklist from './pages/WeddingChecklist';
+import Services from './pages/Services';
+import Videos from './pages/Videos';
 
 function AppContent() {
   const location = useLocation();
   const isQuestionnairePage = !location.pathname.startsWith('/');
   const isLoginPage = location.pathname === '/login';
+  const isServicesPage = location.pathname === '/services';
   
   return (
-    <Box sx={{ minHeight: '100vh', pt: isQuestionnairePage || isLoginPage ? 0 : 8 }}>
+    <Box sx={{ minHeight: '100vh', pt: isQuestionnairePage || isLoginPage || isServicesPage ? 0 : 8 }}>
       {!isQuestionnairePage && !isLoginPage && <Header />}
       <Routes>
         {/* Auth routes */}
@@ -61,8 +64,9 @@ function AppContent() {
         <Route path="/timeline-share" element={<TimelineCreator />} />
         <Route path="/guests" element={<Guests />} />
         <Route path="/directory" element={<GuestDirectory />} />
-        <Route path="/tutorials" element={<ComingSoon />} />
+        <Route path="/tutorials" element={<Videos />} />
         <Route path="/coordination" element={<ComingSoon />} />
+        <Route path="/services" element={<Services />} />
         
         {/* Catch-all route */}
         <Route path="*" element={<Navigate to="/" replace />} />

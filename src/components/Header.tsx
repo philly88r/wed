@@ -80,21 +80,34 @@ export default function Header() {
       }}
     >
       <Toolbar sx={{ justifyContent: 'space-between' }}>
-        <Typography
-          variant="h6"
-          component="div"
-          sx={{
-            fontFamily: "'Playfair Display', serif",
-            fontWeight: 'bold',
-            color: theme.palette.primary.main,
-            cursor: 'pointer'
+        <Box 
+          component="img"
+          src="/Altare Primary-Blanc.svg"
+          alt="Altare Logo"
+          sx={{ 
+            height: '60px',
+            cursor: 'pointer',
+            mr: 2
           }}
           onClick={() => navigate('/')}
-        >
-          Astare
-        </Typography>
+        />
         
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+          <Button
+            onClick={() => navigate('/services')}
+            sx={{
+              color: theme.palette.primary.main,
+              '&:hover': {
+                bgcolor: theme.palette.accent.rose,
+              },
+              textTransform: 'none',
+              fontSize: '1rem',
+              fontWeight: 500
+            }}
+          >
+            Services
+          </Button>
+          
           {user ? (
             <>
               <IconButton

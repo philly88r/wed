@@ -1,3 +1,163 @@
+export type PriceTier = 'budget' | 'mid_range' | 'premium';
+
+export interface PriceRange {
+  min: number;
+  max: number;
+  currency: string;
+}
+
+export interface DepositRequired {
+  percentage: number;
+  amount: number;
+  currency: string;
+}
+
+export interface PricingTier {
+  tier: string;
+  price_range: {
+    min: number;
+    max: number;
+    currency: string;
+  };
+  deposit_required: {
+    percentage: number;
+    amount: number;
+    currency: string;
+  };
+  payment_methods: string[];
+  cancellation_policy: string;
+}
+
+export interface TravelZone {
+  zone: string;
+  radius_miles: number;
+  fee: number;
+}
+
+export interface Availability {
+  lead_time_days: number;
+  peak_season: string[];
+  off_peak_season: string[];
+  travel_zones: TravelZone[];
+  calendar_sync_enabled: boolean;
+  calendar_url: string | null;
+}
+
+export interface Insurance {
+  has_insurance: boolean;
+  coverage_details: string;
+}
+
+export interface Experience {
+  years_in_business: number;
+  weddings_completed: number;
+  awards: string[];
+  certifications: string[];
+  insurance: Insurance;
+  associations: string[];
+  media_features: string[];
+}
+
+export interface Video {
+  url: string;
+  title: string;
+  description: string;
+}
+
+export interface Photo {
+  url: string;
+  caption: string;
+}
+
+export interface Testimonial {
+  client_name: string;
+  date: string;
+  rating: number;
+  text: string;
+  photos: string[];
+}
+
+export interface Portfolio {
+  videos: Video[];
+  photos: Photo[];
+  testimonials: Testimonial[];
+  featured_work: string[];
+  sample_work: string[];
+}
+
+export interface PackageAddon {
+  name: string;
+  price: number;
+  description: string;
+}
+
+export interface MultiDayEvents {
+  available: boolean;
+  details: string;
+}
+
+export interface CustomizationOptions {
+  package_addons: PackageAddon[];
+  special_requests_policy: string;
+  cultural_expertise: string[];
+  multi_day_events: MultiDayEvents;
+  equipment: string[];
+}
+
+export interface TeamMember {
+  name: string;
+  role: string;
+  bio: string;
+  photo_url: string;
+}
+
+export interface TeamInfo {
+  size: number;
+  roles: string[];
+  backup_policy: string;
+  members: TeamMember[];
+  languages: string[];
+  dress_code: string;
+}
+
+export interface Logistics {
+  setup_time_minutes: number;
+  breakdown_time_minutes: number;
+  space_requirements: string;
+  technical_requirements: string[];
+  parking_needs: string;
+  weather_policy: string;
+}
+
+export interface PreferredVendor {
+  name: string;
+  type: string;
+  discount: string;
+}
+
+export interface VenuePartnership {
+  venue: string;
+  benefits: string;
+}
+
+export interface PackageDeal {
+  name: string;
+  includes: string[];
+  discount: string;
+}
+
+export interface Collaboration {
+  preferred_vendors: PreferredVendor[];
+  venue_partnerships: VenuePartnership[];
+  package_deals: PackageDeal[];
+  coordinator_experience: string;
+}
+
+export interface ContactInfo {
+  email: string;
+  phone: string;
+}
+
 export interface SocialMedia {
   instagram?: string;
   facebook?: string;
@@ -5,102 +165,79 @@ export interface SocialMedia {
   website?: string;
 }
 
-export interface Address {
-  street?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  country?: string;
-}
-
-export interface ContactInfo {
-  email?: string;
-  phone?: string;
-  whatsapp?: string;
-  contact_name?: string;
-}
-
-export interface BusinessHours {
-  monday?: string;
-  tuesday?: string;
-  wednesday?: string;
-  thursday?: string;
-  friday?: string;
-  saturday?: string;
-  sunday?: string;
-  notes?: string;
-}
-
-export interface ServicesOffered {
-  name: string;
-  description?: string;
-  price_range?: {
-    min: number;
-    max: number;
-    currency: string;
-  };
-}
-
-export interface PricingDetails {
-  base_price?: number;
-  currency?: string;
-  packages?: Array<{
-    name: string;
-    price: number;
-    description?: string;
-    included_services?: string[];
-  }>;
-}
-
 export interface GalleryImage {
   url: string;
-  caption?: string;
-  alt?: string;
-  order?: number;
-}
-
-export interface Amenity {
-  name: string;
+  title?: string;
   description?: string;
-  icon?: string;
-}
-
-export interface FAQ {
-  question: string;
-  answer: string;
-  category?: string;
   order?: number;
 }
 
 export interface Category {
-  id: string;  // UUID
+  id: string;
   name: string;
   slug: string;
-  icon: string;
-  description: string;
+  icon?: string;
+  description?: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface Vendor {
-  id: string;  // UUID
+  id: string;
   name: string;
   slug: string;
-  category_id: string;  // UUID reference to Category
-  category?: Category;  // Joined data from vendor_categories
-  location: string;
   description?: string;
-  address?: Address;
-  contact_info?: ContactInfo;
-  social_media?: SocialMedia;
-  business_hours?: BusinessHours;
-  services_offered?: ServicesOffered[];
-  pricing_details?: PricingDetails;
-  gallery_images?: GalleryImage[];
-  amenities?: Amenity[];
-  faq?: FAQ[];
+  location: string;
+  category_id: string;
+  category?: Category;
   is_featured: boolean;
-  is_hidden: boolean;
+  contact_info: {
+    email: string;
+    phone: string;
+    website?: string;
+  };
+  social_media?: SocialMedia;
+  gallery_images?: GalleryImage[];
+  pricing_tier?: PricingTier;
+  availability?: {
+    lead_time_days: number;
+    peak_season: string[];
+    off_peak_season: string[];
+    travel_zones: Array<{
+      zone: string;
+      fee?: number;
+    }>;
+  };
+  experience?: {
+    years_in_business: number;
+    weddings_completed: number;
+    awards?: string[];
+    certifications?: string[];
+  };
+  team_info?: {
+    size: number;
+    roles: string[];
+    languages: string[];
+  };
+  logistics?: {
+    setup_time: string;
+    breakdown_time: string;
+    space_requirements?: string;
+    technical_requirements?: string[];
+    weather_contingency?: string;
+  };
+  customization_options?: {
+    packages: Array<{
+      name: string;
+      description: string;
+      price?: number;
+    }>;
+    add_ons: Array<{
+      name: string;
+      description: string;
+      price?: number;
+    }>;
+  };
   created_at: string;
   updated_at: string;
 }

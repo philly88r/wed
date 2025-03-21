@@ -25,6 +25,7 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
@@ -35,31 +36,124 @@ import VerifiedIcon from '@mui/icons-material/Verified';
 
 interface VendorDetails {
   id: string;
-  business_name: string;
+  name: string;
   description: string;
-  short_description: string;
-  logo_url: string;
-  website_url: string;
-  phone: string;
-  email: string;
-  instagram_handle: string;
-  facebook_url: string;
-  starting_price: number;
-  price_range: string;
-  years_in_business: number;
-  is_verified: boolean;
-  average_rating: number;
-  total_reviews: number;
-  images: Array<{ image_url: string; caption: string }>;
-  services: Array<{ name: string; description: string; price_starts_at: number }>;
-  locations: Array<{ address_line1: string; city: string; state: string; zip_code: string }>;
-  reviews: Array<{
-    rating: number;
-    review_text: string;
-    user: { name: string; avatar_url: string };
-    created_at: string;
-  }>;
-  availability: Array<{ date: string; status: string }>;
+  location: string;
+  contact_info: any;
+  social_media: any;
+  category: any;
+  pricing_tier: {
+    tier: string;
+    price_range: {
+      min: number;
+      max: number;
+      currency: string;
+    };
+    deposit_required: {
+      percentage: number;
+      amount: number;
+      currency: string;
+    };
+    payment_methods: string[];
+    cancellation_policy: string;
+  };
+  availability: {
+    lead_time_days: number;
+    peak_season: string[];
+    off_peak_season: string[];
+    travel_zones: Array<{
+      zone: string;
+      radius_miles: number;
+      fee: number;
+    }>;
+    calendar_sync_enabled: boolean;
+    calendar_url: string | null;
+  };
+  experience: {
+    years_in_business: number;
+    weddings_completed: number;
+    awards: string[];
+    certifications: string[];
+    insurance: {
+      has_insurance: boolean;
+      coverage_details: string;
+    };
+    associations: string[];
+    media_features: string[];
+  };
+  portfolio: {
+    videos: Array<{
+      url: string;
+      title: string;
+      description: string;
+    }>;
+    photos: Array<{
+      url: string;
+      caption: string;
+    }>;
+    testimonials: Array<{
+      client_name: string;
+      date: string;
+      rating: number;
+      text: string;
+      photos: string[];
+    }>;
+  };
+  customization_options: {
+    package_addons: Array<{
+      name: string;
+      price: number;
+      description: string;
+    }>;
+    special_requests_policy: string;
+    cultural_expertise: string[];
+    multi_day_events: {
+      available: boolean;
+      details: string;
+    };
+    equipment: string[];
+  };
+  team_info: {
+    size: number;
+    roles: string[];
+    backup_policy: string;
+    members: Array<{
+      name: string;
+      role: string;
+      bio: string;
+      photo_url: string;
+    }>;
+    languages: string[];
+    dress_code: string;
+  };
+  logistics: {
+    setup_time_minutes: number;
+    breakdown_time_minutes: number;
+    space_requirements: string;
+    technical_requirements: string[];
+    parking_needs: string;
+    weather_policy: string;
+  };
+  collaboration: {
+    preferred_vendors: Array<{
+      name: string;
+      type: string;
+      discount: string;
+    }>;
+    venue_partnerships: Array<{
+      venue: string;
+      benefits: string;
+    }>;
+    package_deals: Array<{
+      name: string;
+      includes: string[];
+      discount: string;
+    }>;
+    coordinator_experience: string;
+  };
+  is_featured?: boolean;
+  gallery_images?: Array<{ url: string }>;
+  slug?: string;
 }
 
 interface TabPanelProps {
@@ -87,6 +181,7 @@ export default function VendorDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tabValue, setTabValue] = useState(0);
+  const theme = useTheme();
 
   useEffect(() => {
     fetchVendorDetails();
@@ -97,16 +192,15 @@ export default function VendorDetail() {
       .from('vendors')
       .select(`
         *,
-        images:vendor_images(*),
-        services:vendor_services(*),
-        locations:vendor_locations(*),
-        reviews:vendor_reviews(
-          rating,
-          review_text,
-          created_at,
-          user:users(name, avatar_url)
-        ),
-        availability:vendor_availability(*)
+        category:vendor_categories(*),
+        pricing_tier,
+        availability,
+        experience,
+        portfolio,
+        customization_options,
+        team_info,
+        logistics,
+        collaboration
       `)
       .eq('id', id)
       .single();
@@ -147,27 +241,27 @@ export default function VendorDetail() {
         <Grid item xs={12} md={8}>
           <Box sx={{ mb: 3 }}>
             <Typography variant="h4" gutterBottom>
-              {vendor.business_name}
-              {vendor.is_verified && (
-                <VerifiedIcon color="primary" sx={{ ml: 1 }} />
+              {vendor.name}
+              {vendor.is_featured && (
+                <VerifiedIcon sx={{ color: theme.palette.primary.main, ml: 1 }} />
               )}
             </Typography>
             
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Rating value={vendor.average_rating} readOnly />
+              <Rating value={vendor.experience.years_in_business} readOnly />
               <Typography variant="body2" sx={{ ml: 1 }}>
-                {vendor.average_rating.toFixed(1)} ({vendor.total_reviews} reviews)
+                {vendor.experience.years_in_business} years in business
               </Typography>
             </Box>
 
             <Typography variant="body1" paragraph>
-              {vendor.short_description}
+              {vendor.description}
             </Typography>
 
             <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-              <Chip icon={<LocationOnIcon />} label={vendor.locations[0]?.city + ', ' + vendor.locations[0]?.state} />
-              <Chip label={`Starting at $${vendor.starting_price}`} />
-              <Chip label={`${vendor.years_in_business} years in business`} />
+              <Chip icon={<LocationOnIcon />} label={vendor.location} />
+              <Chip label={`Starting at $${vendor.pricing_tier.price_range.min}`} />
+              <Chip label={`${vendor.experience.years_in_business} years in business`} />
             </Box>
           </Box>
 
@@ -188,7 +282,7 @@ export default function VendorDetail() {
               Locations
             </Typography>
             <List>
-              {vendor.locations.map((location, index) => (
+              {vendor.availability.travel_zones.map((location, index) => (
                 <ListItem key={index}>
                   <ListItemAvatar>
                     <Avatar>
@@ -196,8 +290,8 @@ export default function VendorDetail() {
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
-                    primary={location.address_line1}
-                    secondary={`${location.city}, ${location.state} ${location.zip_code}`}
+                    primary={location.zone}
+                    secondary={`${location.radius_miles} miles`}
                   />
                 </ListItem>
               ))}
@@ -206,7 +300,7 @@ export default function VendorDetail() {
 
           <TabPanel value={tabValue} index={1}>
             <Grid container spacing={3}>
-              {vendor.services.map((service, index) => (
+              {vendor.customization_options.package_addons.map((service, index) => (
                 <Grid item xs={12} sm={6} key={index}>
                   <Card>
                     <CardContent>
@@ -216,8 +310,14 @@ export default function VendorDetail() {
                       <Typography variant="body2" color="text.secondary" paragraph>
                         {service.description}
                       </Typography>
-                      <Typography variant="subtitle1" color="primary">
-                        Starting at ${service.price_starts_at}
+                      <Typography 
+                        variant="subtitle1" 
+                        sx={{ 
+                          color: theme.palette.primary.main,
+                          fontWeight: 600,
+                        }}
+                      >
+                        ${service.price}
                       </Typography>
                     </CardContent>
                   </Card>
@@ -228,37 +328,41 @@ export default function VendorDetail() {
 
           <TabPanel value={tabValue} index={2}>
             <ImageList cols={3} gap={16}>
-              {vendor.images.map((item, index) => (
+              {vendor.gallery_images?.map((item, index) => (
                 <ImageListItem key={index}>
                   <img
-                    src={item.image_url}
-                    alt={item.caption || 'Gallery image'}
+                    src={item.url}
+                    alt="Gallery image"
                     loading="lazy"
                   />
                 </ImageListItem>
-              ))}
+              )) || (
+                <Typography variant="body1" color="text.secondary">
+                  No gallery images available
+                </Typography>
+              )}
             </ImageList>
           </TabPanel>
 
           <TabPanel value={tabValue} index={3}>
-            {vendor.reviews.map((review, index) => (
+            {vendor.portfolio.testimonials.map((review, index) => (
               <Paper key={index} sx={{ p: 2, mb: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Avatar src={review.user.avatar_url} sx={{ mr: 2 }}>
-                    {review.user.name[0]}
+                  <Avatar src={review.photos[0]} sx={{ mr: 2 }}>
+                    {review.client_name[0]}
                   </Avatar>
                   <Box>
                     <Typography variant="subtitle1">
-                      {review.user.name}
+                      {review.client_name}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {new Date(review.created_at).toLocaleDateString()}
+                      {new Date(review.date).toLocaleDateString()}
                     </Typography>
                   </Box>
                 </Box>
                 <Rating value={review.rating} readOnly size="small" />
                 <Typography variant="body2" sx={{ mt: 1 }}>
-                  {review.review_text}
+                  {review.text}
                 </Typography>
               </Paper>
             ))}
@@ -282,7 +386,7 @@ export default function VendorDetail() {
               </Typography>
               
               <List>
-                {vendor.phone && (
+                {vendor.contact_info.phone && (
                   <ListItem>
                     <ListItemAvatar>
                       <Avatar>
@@ -291,12 +395,12 @@ export default function VendorDetail() {
                     </ListItemAvatar>
                     <ListItemText
                       primary="Phone"
-                      secondary={vendor.phone}
+                      secondary={vendor.contact_info.phone}
                     />
                   </ListItem>
                 )}
                 
-                {vendor.email && (
+                {vendor.contact_info.email && (
                   <ListItem>
                     <ListItemAvatar>
                       <Avatar>
@@ -305,7 +409,7 @@ export default function VendorDetail() {
                     </ListItemAvatar>
                     <ListItemText
                       primary="Email"
-                      secondary={vendor.email}
+                      secondary={vendor.contact_info.email}
                     />
                   </ListItem>
                 )}
@@ -314,33 +418,33 @@ export default function VendorDetail() {
               <Divider sx={{ my: 2 }} />
 
               <Box sx={{ display: 'flex', gap: 1 }}>
-                {vendor.website_url && (
+                {vendor.social_media.website_url && (
                   <Button
                     variant="outlined"
                     startIcon={<WebIcon />}
-                    href={vendor.website_url}
+                    href={vendor.social_media.website_url}
                     target="_blank"
                   >
                     Website
                   </Button>
                 )}
                 
-                {vendor.instagram_handle && (
+                {vendor.social_media.instagram_handle && (
                   <Button
                     variant="outlined"
                     startIcon={<InstagramIcon />}
-                    href={`https://instagram.com/${vendor.instagram_handle}`}
+                    href={`https://instagram.com/${vendor.social_media.instagram_handle}`}
                     target="_blank"
                   >
                     Instagram
                   </Button>
                 )}
                 
-                {vendor.facebook_url && (
+                {vendor.social_media.facebook_url && (
                   <Button
                     variant="outlined"
                     startIcon={<FacebookIcon />}
-                    href={vendor.facebook_url}
+                    href={vendor.social_media.facebook_url}
                     target="_blank"
                   >
                     Facebook
@@ -351,9 +455,14 @@ export default function VendorDetail() {
               <Box sx={{ mt: 3 }}>
                 <Button
                   variant="contained"
-                  color="primary"
                   fullWidth
-                  size="large"
+                  sx={{
+                    bgcolor: theme.palette.accent.rose,
+                    color: theme.palette.primary.main,
+                    '&:hover': {
+                      bgcolor: theme.palette.accent.roseDark,
+                    }
+                  }}
                 >
                   Contact Vendor
                 </Button>

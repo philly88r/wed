@@ -24,16 +24,16 @@ import {
   Card,
   CardContent,
   InputAdornment,
+  SelectChangeEvent,
 } from '@mui/material';
 import { 
-  Add as AddIcon, 
-  Delete as DeleteIcon, 
   Edit as EditIcon, 
+  Delete as DeleteIcon, 
+  CheckCircle as CheckCircleIcon,
   FilterList as FilterListIcon,
   Search as SearchIcon,
   CalendarMonth as CalendarMonthIcon,
   ViewList as ViewListIcon,
-  CheckCircle as CheckCircleIcon,
   AccessTime as AccessTimeIcon,
   Category as CategoryIcon,
   AttachMoney as AttachMoneyIcon,
@@ -44,6 +44,7 @@ import { format, isAfter, isBefore } from 'date-fns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { useTheme } from '@mui/material/styles';
 
 // Define the enhanced timeline task interface
 interface TimelineTask {
@@ -79,6 +80,7 @@ const CATEGORIES = [
 ];
 
 export default function TimelineV2() {
+  const theme = useTheme();
   const [tasks, setTasks] = useState<TimelineTask[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<TimelineTask[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
@@ -378,17 +380,6 @@ export default function TimelineV2() {
     }
   };
 
-  const getStatusColor = (status: TimelineTask['status']) => {
-    switch (status) {
-      case 'completed':
-        return 'success';
-      case 'in_progress':
-        return 'info';
-      case 'todo':
-        return 'default';
-    }
-  };
-
   const getPriorityColor = (priority: TimelineTask['priority']) => {
     switch (priority) {
       case 'high':
@@ -452,12 +443,17 @@ export default function TimelineV2() {
             </Button>
             <Button
               variant="contained"
-              startIcon={<AddIcon />}
+              sx={{
+                bgcolor: theme.palette.accent.rose,
+                color: theme.palette.primary.main,
+                '&:hover': {
+                  bgcolor: theme.palette.accent.roseDark,
+                }
+              }}
               onClick={() => {
                 resetForm();
                 setOpenDialog(true);
               }}
-              color="primary"
             >
               Add Task
             </Button>
@@ -500,7 +496,7 @@ export default function TimelineV2() {
                     <Select
                       value={categoryFilter}
                       label="Category"
-                      onChange={(e) => setCategoryFilter(e.target.value as string)}
+                      onChange={(e: SelectChangeEvent<string>) => setCategoryFilter(e.target.value as string)}
                     >
                       <MenuItem value="">All Categories</MenuItem>
                       {CATEGORIES.map((category) => (
@@ -515,7 +511,7 @@ export default function TimelineV2() {
                     <Select
                       value={statusFilter}
                       label="Status"
-                      onChange={(e) => setStatusFilter(e.target.value as string)}
+                      onChange={(e: SelectChangeEvent<string>) => setStatusFilter(e.target.value as string)}
                     >
                       <MenuItem value="">All Statuses</MenuItem>
                       <MenuItem value="todo">To Do</MenuItem>
@@ -530,7 +526,7 @@ export default function TimelineV2() {
                     <Select
                       value={priorityFilter}
                       label="Priority"
-                      onChange={(e) => setPriorityFilter(e.target.value as string)}
+                      onChange={(e: SelectChangeEvent<string>) => setPriorityFilter(e.target.value as string)}
                     >
                       <MenuItem value="">All Priorities</MenuItem>
                       <MenuItem value="low">Low</MenuItem>
@@ -618,7 +614,11 @@ export default function TimelineV2() {
                               task.status !== 'completed'
                             ).length} Upcoming`} 
                             size="small" 
-                            color="primary" 
+                            sx={{ 
+                              bgcolor: theme.palette.accent.rose,
+                              color: theme.palette.primary.main,
+                            }} 
+                            variant="filled" 
                           />
                         )}
                         
@@ -657,8 +657,7 @@ export default function TimelineV2() {
                           >
                             <IconButton
                               onClick={() => handleUpdateStatus(task, getNextStatus(task.status))}
-                              color={getStatusColor(task.status) as any}
-                              sx={{ mt: 0.5 }}
+                              sx={{ color: theme.palette.primary.main }}
                             >
                               {getStatusIcon(task.status)}
                             </IconButton>
@@ -726,15 +725,13 @@ export default function TimelineV2() {
                             <Box sx={{ display: 'flex', gap: 1 }}>
                               <IconButton
                                 onClick={() => handleEditTask(task)}
-                                color="primary"
-                                size="small"
+                                sx={{ color: theme.palette.primary.main }}
                               >
                                 <EditIcon />
                               </IconButton>
                               <IconButton
                                 onClick={() => handleDeleteTask(task.id)}
-                                color="error"
-                                size="small"
+                                sx={{ color: theme.palette.primary.main }}
                               >
                                 <DeleteIcon />
                               </IconButton>
@@ -782,7 +779,7 @@ export default function TimelineV2() {
                 <Select
                   name="category"
                   value={newTask.category}
-                  onChange={handleInputChange}
+                  onChange={(e: SelectChangeEvent<string>) => setNewTask((prev) => ({ ...prev, category: e.target.value }))}
                   label="Category"
                 >
                   {CATEGORIES.map((category) => (
@@ -795,7 +792,7 @@ export default function TimelineV2() {
                 <Select
                   name="priority"
                   value={newTask.priority}
-                  onChange={handleInputChange}
+                  onChange={(e: SelectChangeEvent<string>) => setNewTask((prev) => ({ ...prev, priority: e.target.value }))}
                   label="Priority"
                 >
                   <MenuItem value="low">Low</MenuItem>
@@ -835,7 +832,16 @@ export default function TimelineV2() {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-            <Button onClick={handleAddOrUpdateTask} variant="contained" color="primary">
+            <Button
+              sx={{
+                bgcolor: theme.palette.accent.rose,
+                color: theme.palette.primary.main,
+                '&:hover': {
+                  bgcolor: theme.palette.accent.roseDark,
+                }
+              }}
+              onClick={handleAddOrUpdateTask}
+            >
               {editingTask ? 'Update Task' : 'Add Task'}
             </Button>
           </DialogActions>
