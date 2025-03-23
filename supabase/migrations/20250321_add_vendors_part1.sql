@@ -1,0 +1,58 @@
+-- Add vendors (Part 1)
+insert into vendors (name, category, location, notes, created_at, updated_at) values
+-- VENUES
+('501 UNION', 'VENUES', 'NYC', null, now(), now()),
+('74 WYTHE', 'VENUES', 'NYC', null, now(), now()),
+('ASBURY HOTEL', 'VENUES', 'NEW JERSEY', null, now(), now()),
+('AUDREY''S FARM HOUSE', 'VENUES', 'HUDSON VALLEY', null, now(), now()),
+('BASILICA HUDSON', 'VENUES', 'HUDSON VALLEY', null, now(), now()),
+('BATTELIO', 'VENUES', 'NEW JERSEY', null, now(), now()),
+('BOTTINO', 'VENUES', 'NYC', null, now(), now()),
+('BRIDGEPOINT', 'VENUES', 'NYC', null, now(), now()),
+('BRONX ZOO', 'VENUES', 'NYC', null, now(), now()),
+('BROOKLYN GRANGE', 'VENUES', 'NYC', null, now(), now()),
+('BROOKLYN WINERY', 'VENUES', 'NYC', null, now(), now()),
+('BRUSHLAND EATING HOUSE', 'VENUES', 'HUDSON VALLEY', null, now(), now()),
+('BRYANT PARK GRILL', 'VENUES', 'NYC', null, now(), now()),
+('CHELSEA SQUARE', 'VENUES', 'NYC', null, now(), now()),
+('DEAR MOUNTAIN INN', 'VENUES', 'HUDSON VALLEY', null, now(), now()),
+('DOBBIN ST', 'VENUES', 'NYC', null, now(), now()),
+('DUMBO LOFT', 'VENUES', 'NYC', null, now(), now()),
+('FLOATING FARMHOUSE', 'VENUES', 'HUDSON VALLEY', null, now(), now()),
+('FRANKIES 457', 'VENUES', 'NYC', null, now(), now()),
+('FULL MOON RESORT', 'VENUES', 'HUDSON VALLEY', null, now(), now()),
+
+-- CAKE/DESSERTS
+('CAKE HERO', 'CAKE/DESSERTS', 'NYC', null, now(), now()),
+('NINE CAKES', 'CAKE/DESSERTS', 'NYC', null, now(), now()),
+('LAEL CAKES', 'CAKE/DESSERTS', 'NYC', null, now(), now()),
+('LULU CAKE BOUTIQUE', 'CAKE/DESSERTS', 'NYC', null, now(), now()),
+('LUCKYBIRD BAKERY', 'CAKE/DESSERTS', 'NYC', null, now(), now()),
+('FROM LUCIE', 'CAKE/DESSERTS', 'NYC', null, now(), now()),
+('MIA''S BAKERY', 'CAKE/DESSERTS', 'NYC', null, now(), now()),
+('HUDSON CAKERY', 'CAKE/DESSERTS', 'HUDSON VALLEY', null, now(), now()),
+('AGNES DEVEREUX', 'CAKE/DESSERTS', 'HUDSON VALLEY', null, now(), now()),
+('THE HUDSON CAKE STUDIO', 'CAKE/DESSERTS', 'HUDSON VALLEY', null, now(), now()),
+
+-- OFFICIANTS
+('HONEYBREAK OFFICIANTS', 'OFFICIANTS', 'NYC', null, now(), now()),
+('COMMONGROUND CEREMONIES', 'OFFICIANTS', 'NYC', null, now(), now()),
+('ONCE UPON A VOW', 'OFFICIANTS', 'NYC', null, now(), now()),
+('REV ANNIE', 'OFFICIANTS', 'NYC', null, now(), now()),
+
+-- PHOTOGRAPHERS
+('98 WEDDING CO.', 'PHOTOGRAPHERS', 'NYC', null, now(), now()),
+('ASHLEY SAWTELLE', 'PHOTOGRAPHERS', 'NYC', null, now(), now()),
+('CALEN ROSE', 'PHOTOGRAPHERS', 'NYC', null, now(), now()),
+('CHAZ CRUZ PHOTOGRAPHERS', 'PHOTOGRAPHERS', 'NYC', null, now(), now()),
+('CHELLISE MICHAEL PHOTOGRAPHY', 'PHOTOGRAPHERS', 'NYC', null, now(), now()),
+('CHEYANNA DE NICOLA PHOTOGRAPHY', 'PHOTOGRAPHERS', 'HUDSON VALLEY', null, now(), now()),
+('EDWARD WINTER', 'PHOTOGRAPHERS', 'NYC', null, now(), now()),
+('EILEEN MENY PHOTOGRAPHY', 'PHOTOGRAPHERS', 'NYC', null, now(), now()),
+('ERICA READE PHOTOGRAPHY', 'PHOTOGRAPHERS', 'NYC', null, now(), now()),
+('FORGED IN THE NORTH', 'PHOTOGRAPHERS', 'LONG ISLAND', 'WEDDING WIRE SAYS BROOKLYN', now(), now()),
+('FORGED IN THE NORTH (LI)', 'PHOTOGRAPHERS', 'NYC', 'WEDDING WIRE SAYS BROOKLYN', now(), now()),
+('GIANNA LEO FALCON', 'PHOTOGRAPHERS', 'HUDSON VALLEY', null, now(), now()),
+('IMPRESSENSHI', 'PHOTOGRAPHERS', 'NYC', null, now(), now()),
+('JUSTIN MCCALLUM PHOTOGRAPHY', 'PHOTOGRAPHERS', 'NYC', null, now(), now()),
+('KELLY GIARROCCO', 'PHOTOGRAPHERS', 'NYC', 'PHILADELPHIA', now(), now());

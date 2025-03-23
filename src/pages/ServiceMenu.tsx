@@ -208,10 +208,10 @@ export default function ServiceMenu() {
                 <Box
                   sx={{
                     p: 3,
-                    bgcolor: theme.palette.primary.main,
-                    color: 'white',
+                    bgcolor: theme.palette.accent?.blush,
+                    color: theme.palette.primary.main, // Dark blue text for contrast
                     borderTop: '1px solid',
-                    borderColor: theme.palette.primary.dark,
+                    borderColor: theme.palette.accent?.blush,
                   }}
                 >
                   <Typography 
