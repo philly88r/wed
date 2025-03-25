@@ -201,6 +201,8 @@ export interface Vendor {
   website?: string;
   social_media?: SocialMedia;
   gallery_images?: GalleryImage[];
+  gallery_limit?: number;
+  video_link?: string;
   pricing_tier?: PriceTier;
   pricing_details?: PricingDetails;
   availability?: {

@@ -1,4 +1,4 @@
-import { Box, Card, CardMedia, Chip, CircularProgress, Container, Grid, IconButton, List, ListItem, ListItemIcon, ListItemText, Paper, Tab, Tabs, Typography } from '@mui/material';
+import { Box, Card, CardMedia, Chip, CircularProgress, Container, Grid, IconButton, List, ListItem, ListItemIcon, ListItemText, Paper, Tab, Tabs, Typography, ImageList, ImageListItem, Dialog, DialogContent, Link } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -11,6 +11,8 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
 import LanguageIcon from '@mui/icons-material/Language';
+import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
+import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import Alert from '@mui/material/Alert';
 import { useState, useEffect } from 'react';
 import TabPanel from '../components/TabPanel';
@@ -23,6 +25,8 @@ const VendorProfile: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const { vendor, loading, error } = useVendor(slug);
   const [imageUrl, setImageUrl] = useState<string>('/placeholder-vendor.jpg');
+  const [openImageDialog, setOpenImageDialog] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string>('');
 
   useEffect(() => {
     // Set the gallery image if available
@@ -167,6 +171,7 @@ const VendorProfile: React.FC = () => {
                   <Tab icon={<InfoIcon />} label="Overview" />
                   <Tab icon={<AttachMoneyIcon />} label="Pricing" />
                   <Tab icon={<EventIcon />} label="Availability" />
+                  <Tab icon={<PhotoLibraryIcon />} label="Gallery" />
                   <Tab icon={<GroupIcon />} label="Contact" />
                 </Tabs>
               </Box>
@@ -351,7 +356,114 @@ const VendorProfile: React.FC = () => {
                   )}
                 </TabPanel>
 
+                {/* Gallery Tab */}
                 <TabPanel value={tabValue} index={3}>
+                  <Box>
+                    <Typography variant="h6" sx={{ mb: 2, color: theme.palette.primary.main }}>
+                      Photo Gallery
+                    </Typography>
+                    
+                    {vendor.gallery_images && vendor.gallery_images.length > 0 ? (
+                      <>
+                        <Typography variant="body2" sx={{ mb: 2, color: theme.palette.text.secondary }}>
+                          {vendor.gallery_limit === 2 ? 'Free tier: 2 photos maximum' : 'Premium tier: Up to 10 photos'}
+                        </Typography>
+                        
+                        <ImageList sx={{ width: '100%', height: 'auto' }} cols={2} gap={8}>
+                          {vendor.gallery_images.slice(0, vendor.gallery_limit || 2).map((image, index) => (
+                            <ImageListItem 
+                              key={index} 
+                              onClick={() => {
+                                setSelectedImage(image.url);
+                                setOpenImageDialog(true);
+                              }}
+                              sx={{ 
+                                cursor: 'pointer',
+                                '&:hover': {
+                                  opacity: 0.9,
+                                  transform: 'scale(1.02)',
+                                  transition: 'all 0.3s ease'
+                                }
+                              }}
+                            >
+                              <img
+                                src={image.url}
+                                alt={image.alt_text || `Gallery image ${index + 1}`}
+                                loading="lazy"
+                                style={{ 
+                                  borderRadius: '8px',
+                                  height: '200px',
+                                  width: '100%',
+                                  objectFit: 'cover'
+                                }}
+                              />
+                            </ImageListItem>
+                          ))}
+                        </ImageList>
+                        
+                        {/* Image Dialog for fullscreen view */}
+                        <Dialog
+                          open={openImageDialog}
+                          onClose={() => setOpenImageDialog(false)}
+                          maxWidth="lg"
+                        >
+                          <DialogContent sx={{ p: 0, bgcolor: 'black', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <img
+                              src={selectedImage}
+                              alt="Gallery image fullscreen"
+                              style={{ maxWidth: '100%', maxHeight: '90vh' }}
+                            />
+                          </DialogContent>
+                        </Dialog>
+                      </>
+                    ) : (
+                      <Typography variant="body1" sx={{ color: theme.palette.text.secondary, fontStyle: 'italic', mb: 4 }}>
+                        No gallery images available.
+                      </Typography>
+                    )}
+                    
+                    {/* Video section - only for paid vendors */}
+                    {vendor.gallery_limit && vendor.gallery_limit > 2 && (
+                      <Box sx={{ mt: 4 }}>
+                        <Typography variant="h6" sx={{ mb: 2, color: theme.palette.primary.main }}>
+                          Video Showcase
+                        </Typography>
+                        
+                        {vendor.video_link ? (
+                          <Box sx={{ mt: 2 }}>
+                            <Link 
+                              href={vendor.video_link} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: 1,
+                                color: theme.palette.primary.main,
+                                textDecoration: 'none',
+                                '&:hover': {
+                                  textDecoration: 'underline'
+                                }
+                              }}
+                            >
+                              <VideoLibraryIcon />
+                              <Typography variant="body1">
+                                Watch Video Showcase
+                              </Typography>
+                            </Link>
+                          </Box>
+                        ) : (
+                          <Typography variant="body1" sx={{ color: theme.palette.text.secondary, fontStyle: 'italic' }}>
+                            No video showcase available.
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
+                  </Box>
+                </TabPanel>
+                
+                {/* Contact Tab - index changed from 3 to 4 */}
+                <TabPanel value={tabValue} index={4}>
                   {vendor.contact_info ? (
                     <Box>
                       <Typography variant="h6" sx={{ mb: 2, color: theme.palette.primary.main }}>

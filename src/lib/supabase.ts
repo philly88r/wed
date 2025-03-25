@@ -54,137 +54,159 @@ export type Profile = {
 
 // Types for our enhanced vendor profile
 export interface VendorProfile {
-  id: string
-  name: string
-  category_id: string
-  category: {
-    id: string
-    name: string
-    icon: string
-  }
-  description: string
-  location: string
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  location: string;
+  category_id: string;
+  category?: {
+    id: string;
+    name: string;
+    icon: string;
+    description: string;
+    slug: string;
+    created_at: string;
+    updated_at: string;
+  } | null;
+  is_featured: boolean;
   contact_info: {
-    email: string
-    phone: string
-    website: string
-  }
-  social_media: {
-    instagram: string
-    facebook: string
-  }
-  is_featured: boolean
-  gallery_images: Array<{ url: string }>
-  slug: string
-  pricing_tier: {
-    tier: string
-    price_range: {
-      min: number
-      max: number
-      currency: string
-    }
-    deposit_required: {
-      percentage: number
-      amount: number
-      currency: string
-    }
-    payment_methods: string[]
-    cancellation_policy: string
-  }
+    email: string;
+    phone: string;
+    website?: string;
+  };
+  email: string;
+  phone: string;
+  website?: string;
+  social_media?: {
+    instagram?: string;
+    facebook?: string;
+    twitter?: string;
+    website?: string;
+  };
+  gallery_images?: Array<{
+    id?: string;
+    url: string;
+    alt_text?: string;
+    caption?: string;
+    order?: number;
+    is_featured?: boolean;
+  }>;
+  gallery_limit?: number;
+  video_link?: string;
+  pricing_tier?: {
+    tier: string;
+    avg_price?: number;
+  };
+  pricing_details?: {
+    tier: string;
+    price_range?: {
+      min: number;
+      max: number;
+      currency: string;
+    };
+    deposit_required?: {
+      percentage: number;
+      amount: number;
+      currency: string;
+    };
+    payment_methods?: string[];
+    cancellation_policy?: string;
+  };
   availability: {
-    lead_time_days: number
-    peak_season: string[]
-    off_peak_season: string[]
+    lead_time_days: number;
+    peak_season: string[];
+    off_peak_season: string[];
     travel_zones: Array<{
-      zone: string
-      radius_miles: number
-      fee: number
-    }>
-    calendar_sync_enabled: boolean
-    calendar_url: string | null
-  }
+      zone: string;
+      radius_miles: number;
+      fee: number;
+    }>;
+    calendar_sync_enabled: boolean;
+    calendar_url: string | null;
+  };
   experience: {
-    years_in_business: number
-    weddings_completed: number
-    awards: string[]
-    certifications: string[]
+    years_in_business: number;
+    weddings_completed: number;
+    awards: string[];
+    certifications: string[];
     insurance: {
-      has_insurance: boolean
-      coverage_details: string
-    }
-    associations: string[]
-    media_features: string[]
-  }
+      has_insurance: boolean;
+      coverage_details: string;
+    };
+    associations: string[];
+    media_features: string[];
+  };
   portfolio: {
     videos: Array<{
-      url: string
-      title: string
-      description: string
-    }>
+      url: string;
+      title: string;
+      description: string;
+    }>;
     photos: Array<{
-      url: string
-      caption: string
-    }>
+      url: string;
+      caption: string;
+    }>;
     testimonials: Array<{
-      client_name: string
-      date: string
-      rating: number
-      text: string
-      photos: string[]
-    }>
-  }
+      client_name: string;
+      date: string;
+      rating: number;
+      text: string;
+      photos: string[];
+    }>;
+  };
   customization_options: {
     package_addons: Array<{
-      name: string
-      price: number
-      description: string
-    }>
-    special_requests_policy: string
-    cultural_expertise: string[]
+      name: string;
+      price: number;
+      description: string;
+    }>;
+    special_requests_policy: string;
+    cultural_expertise: string[];
     multi_day_events: {
-      available: boolean
-      details: string
-    }
-    equipment: string[]
-  }
+      available: boolean;
+      details: string;
+    };
+    equipment: string[];
+  };
   team_info: {
-    size: number
-    roles: string[]
-    backup_policy: string
+    size: number;
+    roles: string[];
+    backup_policy: string;
     members: Array<{
-      name: string
-      role: string
-      bio: string
-      photo_url: string
-    }>
-    languages: string[]
-    dress_code: string
-  }
+      name: string;
+      role: string;
+      bio: string;
+      photo_url: string;
+    }>;
+    languages: string[];
+    dress_code: string;
+  };
   logistics: {
-    setup_time_minutes: number
-    breakdown_time_minutes: number
-    space_requirements: string
-    technical_requirements: string[]
-    parking_needs: string
-    weather_policy: string
-  }
+    setup_time_minutes: number;
+    breakdown_time_minutes: number;
+    space_requirements: string;
+    technical_requirements: string[];
+    parking_needs: string;
+    weather_policy: string;
+  };
   collaboration: {
     preferred_vendors: Array<{
-      name: string
-      type: string
-      discount: string
-    }>
+      name: string;
+      type: string;
+      discount: string;
+    }>;
     venue_partnerships: Array<{
-      venue: string
-      benefits: string
-    }>
+      venue: string;
+      benefits: string;
+    }>;
     package_deals: Array<{
-      name: string
-      includes: string[]
-      discount: string
-    }>
-    coordinator_experience: string
-  }
+      name: string;
+      includes: string[];
+      discount: string;
+    }>;
+    coordinator_experience: string;
+  };
 }
 
 export const VENDOR_PHOTOS_BUCKET = 'vendor-photos';

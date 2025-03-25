@@ -3,22 +3,27 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import {
   Box,
-  Container,
-  Grid,
-  Typography,
-  TextField,
   Button,
-  Alert,
-  CircularProgress,
+  Checkbox,
+  Container,
+  Divider,
   FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
+  FormControlLabel,
+  Grid,
+  IconButton,
   InputAdornment,
-  Switch,
-  FormControlLabel
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  SelectChangeEvent,
+  TextField,
+  Typography,
+  Alert,
+  ImageList,
+  ImageListItem,
+  CircularProgress
 } from '@mui/material';
-import { SelectChangeEvent } from '@mui/material/Select';
 import {
   Save as SaveIcon
 } from '@mui/icons-material';
@@ -60,6 +65,15 @@ interface Availability {
   off_peak_season: string[];
 }
 
+interface GalleryImage {
+  id: string;
+  url: string;
+  alt_text?: string;
+  caption?: string;
+  order?: number;
+  is_featured?: boolean;
+}
+
 interface FormData {
   name: string;
   category_id: string;
@@ -74,7 +88,9 @@ interface FormData {
   availability: Availability;
   services_offered: any[];
   amenities: Record<string, any>;
-  gallery_images: any[];
+  gallery_images: GalleryImage[];
+  gallery_limit?: number;
+  video_link?: string;
   faq: any[];
 }
 
@@ -86,8 +102,9 @@ export default function VendorProfileEdit() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [categories, setCategories] = useState<Array<{ id: string; name: string; icon: string }>>([]);
+  const [newImageUrl, setNewImageUrl] = useState('');
   
-  const [formData, setFormData] = useState<FormData>({
+  const initialData: FormData = {
     name: '',
     category_id: '',
     description: '',
@@ -97,36 +114,41 @@ export default function VendorProfileEdit() {
     contact_info: {
       email: '',
       phone: '',
-      website: ''
+      website: '',
     },
     social_media: {
       instagram: '',
       facebook: '',
-      website: ''
+      twitter: '',
+      website: '',
     },
     pricing_tier: {
-      tier: 'budget',
-      avg_price: null
+      tier: '$',
+      avg_price: null,
     },
     pricing_details: {
-      tier: 'unset',
+      tier: '$',
       packages: [],
       price_range: {
         min: 0,
         max: 0,
-        currency: 'USD'
-      }
+        currency: '$',
+      },
     },
     availability: {
-      lead_time_days: 0,
+      lead_time_days: 30,
       peak_season: [],
-      off_peak_season: []
+      off_peak_season: [],
     },
     services_offered: [],
     amenities: {},
     gallery_images: [],
-    faq: []
-  });
+    gallery_limit: 2, 
+    video_link: '',
+    faq: [],
+  };
+
+  const [formData, setFormData] = useState<FormData>(initialData);
 
   const handleNestedChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -153,7 +175,6 @@ export default function VendorProfileEdit() {
   const handleSelectChange = (e: SelectChangeEvent<string>) => {
     const { name, value } = e.target;
     
-    // Handle nested fields
     if (name.includes('.')) {
       handleNestedSelectChange(e);
     } else {
@@ -233,7 +254,6 @@ export default function VendorProfileEdit() {
       if (data) {
         console.log('Raw vendor data:', data);
         
-        // Create a properly structured form data object with all required fields
         const formattedData: FormData = {
           name: data.name || '',
           category_id: data.category_id || '',
@@ -242,14 +262,12 @@ export default function VendorProfileEdit() {
           is_featured: !!data.is_featured,
           is_hidden: !!data.is_hidden,
           
-          // Contact info
           contact_info: {
             email: data.contact_info?.email || '',
             phone: data.contact_info?.phone || '',
             website: data.contact_info?.website || ''
           },
           
-          // Social media
           social_media: {
             instagram: data.social_media?.instagram || '',
             facebook: data.social_media?.facebook || '',
@@ -257,13 +275,11 @@ export default function VendorProfileEdit() {
             twitter: data.social_media?.twitter || ''
           },
           
-          // Pricing tier
           pricing_tier: {
             tier: data.pricing_tier?.tier || 'budget',
             avg_price: data.pricing_tier?.avg_price || null
           },
           
-          // Pricing details
           pricing_details: {
             tier: data.pricing_details?.tier || 'unset',
             packages: Array.isArray(data.pricing_details?.packages) ? data.pricing_details.packages : [],
@@ -274,17 +290,17 @@ export default function VendorProfileEdit() {
             }
           },
           
-          // Availability
           availability: {
             lead_time_days: data.availability?.lead_time_days || 0,
             peak_season: Array.isArray(data.availability?.peak_season) ? data.availability.peak_season : [],
             off_peak_season: Array.isArray(data.availability?.off_peak_season) ? data.availability.off_peak_season : []
           },
           
-          // Services and amenities
           services_offered: Array.isArray(data.services_offered) ? data.services_offered : [],
           amenities: data.amenities || {},
           gallery_images: Array.isArray(data.gallery_images) ? data.gallery_images : [],
+          gallery_limit: data.gallery_limit,
+          video_link: data.video_link,
           faq: Array.isArray(data.faq) ? data.faq : []
         };
 
@@ -336,6 +352,8 @@ export default function VendorProfileEdit() {
           services_offered: formData.services_offered,
           amenities: formData.amenities,
           gallery_images: formData.gallery_images,
+          gallery_limit: formData.gallery_limit,
+          video_link: formData.video_link,
           faq: formData.faq,
           updated_at: new Date()
         })
@@ -574,7 +592,7 @@ export default function VendorProfileEdit() {
           <Grid item xs={12} md={6}>
             <FormControlLabel
               control={
-                <Switch
+                <Checkbox
                   checked={formData.is_featured}
                   onChange={handleCheckboxChange}
                   name="is_featured"
@@ -588,7 +606,7 @@ export default function VendorProfileEdit() {
           <Grid item xs={12} md={6}>
             <FormControlLabel
               control={
-                <Switch
+                <Checkbox
                   checked={formData.is_hidden}
                   onChange={handleCheckboxChange}
                   name="is_hidden"
@@ -597,6 +615,132 @@ export default function VendorProfileEdit() {
               }
               label="Hidden Profile"
             />
+          </Grid>
+          
+          {/* Gallery Section */}
+          <Grid item xs={12}>
+            <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>
+              Photo Gallery & Video
+            </Typography>
+            <Divider sx={{ mb: 2 }} />
+            
+            <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+              {formData.gallery_limit === 2 
+                ? 'Free tier: You can upload up to 2 photos' 
+                : 'Premium tier: You can upload up to 10 photos and add a video link'}
+            </Typography>
+            
+            {/* Gallery Images */}
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Paper sx={{ p: 2, mb: 2, bgcolor: 'background.paper' }}>
+                  <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                    Gallery Images ({formData.gallery_images.length}/{formData.gallery_limit})
+                  </Typography>
+                  
+                  {formData.gallery_images.length > 0 ? (
+                    <ImageList sx={{ width: '100%', height: 'auto' }} cols={3} gap={8}>
+                      {formData.gallery_images.map((image, index) => (
+                        <ImageListItem key={index} sx={{ position: 'relative' }}>
+                          <img
+                            src={image.url}
+                            alt={image.alt_text || `Gallery image ${index + 1}`}
+                            loading="lazy"
+                            style={{ 
+                              height: '120px',
+                              width: '100%',
+                              objectFit: 'cover',
+                              borderRadius: '4px'
+                            }}
+                          />
+                          <IconButton
+                            size="small"
+                            sx={{
+                              position: 'absolute',
+                              top: 5,
+                              right: 5,
+                              bgcolor: 'rgba(255, 255, 255, 0.7)',
+                              '&:hover': {
+                                bgcolor: 'rgba(255, 0, 0, 0.7)',
+                                color: 'white'
+                              }
+                            }}
+                            onClick={() => {
+                              const updatedImages = [...formData.gallery_images];
+                              updatedImages.splice(index, 1);
+                              setFormData({ ...formData, gallery_images: updatedImages });
+                            }}
+                          >
+                            ✕
+                          </IconButton>
+                        </ImageListItem>
+                      ))}
+                    </ImageList>
+                  ) : (
+                    <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                      No gallery images added yet.
+                    </Typography>
+                  )}
+                  
+                  {formData.gallery_images.length < (formData.gallery_limit || 2) && (
+                    <Box sx={{ mt: 2 }}>
+                      <TextField
+                        fullWidth
+                        label="Add Image URL"
+                        placeholder="https://example.com/image.jpg"
+                        margin="normal"
+                        value={newImageUrl}
+                        onChange={(e) => setNewImageUrl(e.target.value)}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <Button 
+                                variant="contained" 
+                                color="primary"
+                                disabled={!newImageUrl}
+                                onClick={() => {
+                                  if (newImageUrl) {
+                                    const newImage: GalleryImage = {
+                                      id: `img-${Date.now()}`,
+                                      url: newImageUrl,
+                                      alt_text: `Gallery image ${formData.gallery_images.length + 1}`,
+                                      order: formData.gallery_images.length
+                                    };
+                                    setFormData({
+                                      ...formData,
+                                      gallery_images: [...formData.gallery_images, newImage]
+                                    });
+                                    setNewImageUrl('');
+                                  }
+                                }}
+                              >
+                                Add
+                              </Button>
+                            </InputAdornment>
+                          )
+                        }}
+                      />
+                    </Box>
+                  )}
+                </Paper>
+              </Grid>
+              
+              {/* Video Link - Only for paid tier */}
+              {formData.gallery_limit && formData.gallery_limit > 2 && (
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Video Showcase Link"
+                    name="video_link"
+                    value={formData.video_link || ''}
+                    onChange={handleInputChange}
+                    placeholder="https://youtube.com/watch?v=example"
+                    helperText="Add a link to your video showcase (YouTube, Vimeo, etc.)"
+                    margin="normal"
+                  />
+                </Grid>
+              )}
+            </Grid>
           </Grid>
           
           <Grid item xs={12}>

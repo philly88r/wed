@@ -45,6 +45,8 @@ export const useVendor = (slug?: string) => {
               updated_at: data.category.updated_at || ''
             } : null,
             gallery_images: data.gallery_images || [],
+            gallery_limit: data.gallery_limit || 2, // Default to 2 for free tier
+            video_link: data.video_link || null,
             social_media: data.social_media || {},
             contact_info: data.contact_info || {},
             pricing_tier: data.pricing_tier || {},
