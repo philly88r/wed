@@ -59,6 +59,7 @@ interface TimelineTask {
   action_text?: string;
   created_at?: string;
   updated_at?: string;
+  order?: number;
 }
 
 // Predefined categories for wedding planning
@@ -258,10 +259,23 @@ export default function TimelineV2() {
         error = result.error;
       }
     } else {
+      // First get the count of existing tasks for ordering
+      const { count, error: countError } = await supabase
+        .from('timeline_tasks')
+        .select('*', { count: 'exact', head: true });
+      
+      if (countError) {
+        console.error('Error getting task count:', countError);
+      }
+      
       // Add new task
       const { error: insertError } = await supabase
         .from('timeline_tasks')
-        .insert([{ ...taskData, status: 'todo' }]);
+        .insert([{ 
+          ...taskData, 
+          status: 'todo',
+          order: count || 0 
+        }]);
       
       if (insertError) {
         console.error('Error inserting to timeline_tasks:', insertError);

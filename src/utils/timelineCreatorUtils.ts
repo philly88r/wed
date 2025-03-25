@@ -5,6 +5,7 @@ export interface TimelineEvent {
   event: string;
   notes: string;
   category: string;
+  order?: number; // Added order field for proper sorting
 }
 
 export interface WeddingTimelineData {
@@ -624,12 +625,28 @@ export const generateEventsFromData = (data: Partial<WeddingTimelineData>): Time
   
   // Sort events by time to ensure chronological order
   return events.sort((a, b) => {
-    const timeA = a.time.split(':').map(Number);
-    const timeB = b.time.split(':').map(Number);
+    // Parse times properly, handling AM/PM format
+    const parseTimeToMinutes = (timeStr: string): number => {
+      // Check if the time is in 12-hour format with AM/PM
+      if (timeStr.includes('AM') || timeStr.includes('PM')) {
+        const [timePart, period] = timeStr.split(' ');
+        let [hours, minutes] = timePart.split(':').map(Number);
+        
+        // Convert 12-hour format to 24-hour
+        if (period === 'PM' && hours < 12) hours += 12;
+        if (period === 'AM' && hours === 12) hours = 0;
+        
+        return hours * 60 + minutes;
+      } else {
+        // Handle 24-hour format
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        return hours * 60 + minutes;
+      }
+    };
     
-    if (timeA[0] !== timeB[0]) {
-      return timeA[0] - timeB[0]; // Sort by hour
-    }
-    return timeA[1] - timeB[1]; // Sort by minute
+    const minutesA = parseTimeToMinutes(a.time);
+    const minutesB = parseTimeToMinutes(b.time);
+    
+    return minutesA - minutesB;
   });
 };
