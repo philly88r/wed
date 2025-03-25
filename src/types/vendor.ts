@@ -1,4 +1,4 @@
-export type PriceTier = 'budget' | 'mid_range' | 'premium';
+export type PriceTier = '$' | '$$' | '$$$';
 
 export interface PriceRange {
   min: number;
@@ -12,7 +12,7 @@ export interface DepositRequired {
   currency: string;
 }
 
-export interface PricingTier {
+export interface PricingDetails {
   tier: string;
   price_range: {
     min: number;
@@ -196,9 +196,13 @@ export interface Vendor {
     phone: string;
     website?: string;
   };
+  email: string;
+  phone: string;
+  website?: string;
   social_media?: SocialMedia;
   gallery_images?: GalleryImage[];
-  pricing_tier?: PricingTier;
+  pricing_tier?: PriceTier;
+  pricing_details?: PricingDetails;
   availability?: {
     lead_time_days: number;
     peak_season: string[];
