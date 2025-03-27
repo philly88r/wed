@@ -1,0 +1,11 @@
+{
+  "name": "floor-plans-fix",
+  "version": "1.0.0",
+  "description": "Fix script for floor plans functionality",
+  "type": "module",
+  "main": "fix_floor_plans.js",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.0.0",
+    "dotenv": "^16.0.0"
+  }
+}

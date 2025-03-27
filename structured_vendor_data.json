@@ -1,0 +1,42 @@
+{
+  "name": "PURSLANE CATERING",
+  "slug": "purslane-catering",
+  "description": "",
+  "location": "NYC",
+  "category_id": "3e8b2d76-1f5a-4c9d-b8e2-f1d3b7a8c9e0",
+  "is_featured": false,
+  "is_hidden": false,
+  "contact_info": {
+    "email": "",
+    "phone": "",
+    "website": ""
+  },
+  "social_media": {
+    "instagram": "",
+    "facebook": "",
+    "website": "",
+    "twitter": ""
+  },
+  "pricing_tier": {
+    "tier": "premium",
+    "avg_price": null
+  },
+  "pricing_details": {
+    "tier": "unset",
+    "packages": [],
+    "price_range": {
+      "min": 0,
+      "max": 0,
+      "currency": "USD"
+    }
+  },
+  "availability": {
+    "lead_time_days": 0,
+    "peak_season": [],
+    "off_peak_season": []
+  },
+  "services_offered": [],
+  "amenities": {},
+  "gallery_images": [],
+  "faq": []
+}

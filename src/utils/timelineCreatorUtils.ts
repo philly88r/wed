@@ -14,19 +14,31 @@ export interface WeddingTimelineData {
   ceremonyVenue?: string;
   receptionVenue?: string;
   ceremonyStart?: string;
+  ceremonyEnd?: string;
+  receptionStart?: string;
+  receptionEnd?: string;
   guestArrival?: string;
   isChurch?: boolean;
   hairMakeup?: boolean;
+  hairMakeupStart?: string;
+  hairMakeupLocation?: string;
   numHMU?: number;
   firstLook?: boolean;
+  firstLookTime?: string;
+  firstLookLocation?: string;
   photosBeforeCeremony?: boolean;
+  photographyStart?: string;
+  photographyEnd?: string;
   cocktailHour?: boolean;
   entrance?: boolean;
   dinnerService?: 'plated' | 'buffet' | 'family' | 'stations';
+  mealServiceStyle?: string;
+  mealDetails?: any;
   firstDance?: boolean;
   firstDanceTime?: 'entrance' | 'after_dinner';
   familyDances?: number;
   speeches?: number;
+  specialMoments?: any;
   thankYouToast?: boolean;
   thankYouTime?: 'toasts' | 'dinner';
   cake?: boolean;
@@ -40,6 +52,8 @@ export interface WeddingTimelineData {
   dessert?: boolean;
   dessertService?: 'table' | 'buffet' | 'passed' | 'other';
   venueEndTime?: string;
+  transportation?: boolean;
+  transportationDetails?: any;
   vendors: {
     dayOfCoordinator: boolean;
     photographer: boolean;
@@ -55,7 +69,6 @@ export interface WeddingTimelineData {
   gettingReadyLocation?: string;
   travelTime?: number;
   photosInCocktailHour?: boolean;
-  transportation?: boolean;
   events: TimelineEvent[];
   // Vendor information
 }
@@ -220,19 +233,31 @@ export const generateDefaultTimeline = (data: Partial<WeddingTimelineData>): Wed
     ceremonyVenue: data.ceremonyVenue || '',
     receptionVenue: data.receptionVenue || '',
     ceremonyStart: data.ceremonyStart || '17:30',
+    ceremonyEnd: data.ceremonyEnd || '18:00',
+    receptionStart: data.receptionStart || '18:00',
+    receptionEnd: data.receptionEnd || '23:00',
     guestArrival: data.guestArrival || '17:00',
     isChurch: data.isChurch || false,
     hairMakeup: data.hairMakeup || false,
+    hairMakeupStart: data.hairMakeupStart || '14:00',
+    hairMakeupLocation: data.hairMakeupLocation || '',
     numHMU: data.numHMU || 1,
     firstLook: data.firstLook || false,
+    firstLookTime: data.firstLookTime || '15:00',
+    firstLookLocation: data.firstLookLocation || '',
     photosBeforeCeremony: data.photosBeforeCeremony || false,
+    photographyStart: data.photographyStart || '15:30',
+    photographyEnd: data.photographyEnd || '17:00',
     cocktailHour: data.cocktailHour || true,
     entrance: data.entrance || true,
     dinnerService: data.dinnerService || 'plated',
+    mealServiceStyle: data.mealServiceStyle || '',
+    mealDetails: data.mealDetails || {},
     firstDance: data.firstDance || true,
     firstDanceTime: data.firstDanceTime || 'entrance',
     familyDances: data.familyDances || 0,
     speeches: data.speeches || 0,
+    specialMoments: data.specialMoments || {},
     thankYouToast: data.thankYouToast || false,
     thankYouTime: data.thankYouTime || 'dinner',
     cake: data.cake || true,
@@ -246,6 +271,8 @@ export const generateDefaultTimeline = (data: Partial<WeddingTimelineData>): Wed
     dessert: data.dessert || false,
     dessertService: data.dessertService || 'table',
     venueEndTime: data.venueEndTime || '00:00',
+    transportation: data.transportation || false,
+    transportationDetails: data.transportationDetails || {},
     vendors: {
       dayOfCoordinator: data.vendors?.dayOfCoordinator || false,
       photographer: data.vendors?.photographer || false,
@@ -261,7 +288,6 @@ export const generateDefaultTimeline = (data: Partial<WeddingTimelineData>): Wed
     gettingReadyLocation: data.gettingReadyLocation || '',
     travelTime: data.travelTime || 0,
     photosInCocktailHour: data.photosInCocktailHour || false,
-    transportation: data.transportation || false,
     events: []
   };
   
@@ -636,6 +662,24 @@ export const generateEventsFromData = (data: Partial<WeddingTimelineData>): Time
         if (period === 'PM' && hours < 12) hours += 12;
         if (period === 'AM' && hours === 12) hours = 0;
         
+        // Special handling for EVENT END and LOAD OUT events
+        // These should always be at the end of the timeline
+        if ((a.event === 'EVENT END' || a.event === 'LOAD OUT') && 
+            (b.event !== 'EVENT END' && b.event !== 'LOAD OUT')) {
+          return 1; // a comes after b
+        }
+        
+        if ((b.event === 'EVENT END' || b.event === 'LOAD OUT') && 
+            (a.event !== 'EVENT END' && a.event !== 'LOAD OUT')) {
+          return -1; // b comes after a
+        }
+        
+        // If both are closing events, maintain their relative order
+        if ((a.event === 'EVENT END' || a.event === 'LOAD OUT') && 
+            (b.event === 'EVENT END' || b.event === 'LOAD OUT')) {
+          return a.event === 'EVENT END' ? -1 : 1;
+        }
+        
         return hours * 60 + minutes;
       } else {
         // Handle 24-hour format
@@ -643,6 +687,24 @@ export const generateEventsFromData = (data: Partial<WeddingTimelineData>): Time
         return hours * 60 + minutes;
       }
     };
+    
+    // Special handling for EVENT END and LOAD OUT events
+    // These should always be at the end of the timeline
+    if ((a.event === 'EVENT END' || a.event === 'LOAD OUT') && 
+        (b.event !== 'EVENT END' && b.event !== 'LOAD OUT')) {
+      return 1; // a comes after b
+    }
+    
+    if ((b.event === 'EVENT END' || b.event === 'LOAD OUT') && 
+        (a.event !== 'EVENT END' && a.event !== 'LOAD OUT')) {
+      return -1; // b comes after a
+    }
+    
+    // If both are closing events, maintain their relative order
+    if ((a.event === 'EVENT END' || a.event === 'LOAD OUT') && 
+        (b.event === 'EVENT END' || b.event === 'LOAD OUT')) {
+      return a.event === 'EVENT END' ? -1 : 1;
+    }
     
     const minutesA = parseTimeToMinutes(a.time);
     const minutesB = parseTimeToMinutes(b.time);

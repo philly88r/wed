@@ -30,6 +30,7 @@ import {
   TableChart as TableChartIcon,
   Email as EmailIcon,
   ContentCopy as ContentCopyIcon,
+  Save as SaveIcon,
 } from '@mui/icons-material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -283,8 +284,37 @@ export default function TimelineCreator() {
         return timeA[1] - timeB[1]; // Sort by minute
       })
     }));
+
+    // Save the timeline data to localStorage
+    saveTimelineToDatabase();
   };
-  
+
+  // Function to save timeline data to localStorage
+  const saveTimelineToDatabase = async () => {
+    try {
+      // Save to localStorage for now since the database tables aren't available
+      localStorage.setItem('wedding_timeline_data', JSON.stringify(timelineData));
+      
+      setNotification({
+        open: true,
+        message: 'Timeline saved successfully!',
+        severity: 'success'
+      });
+      
+      // Also generate timeline events and store them
+      const events = generateEventsFromData(timelineData);
+      localStorage.setItem('wedding_timeline_events', JSON.stringify(events));
+      
+    } catch (error) {
+      console.error('Error saving timeline:', error);
+      setNotification({
+        open: true,
+        message: 'An unexpected error occurred while saving your timeline',
+        severity: 'error'
+      });
+    }
+  };
+
   // Function to update an event in the timeline
   const handleUpdateEvent = (index: number, updatedEvent: TimelineEvent) => {
     const updatedEvents = [...timelineData.events];
@@ -1320,17 +1350,26 @@ export default function TimelineCreator() {
               Wedding Day Timeline - {timelineData.weddingDate}
             </Typography>
             <Box>
-              <Button
-                variant="outlined"
-                startIcon={<DownloadIcon />}
+              <Button 
+                variant="contained" 
+                color="primary" 
+                startIcon={<SaveIcon />}
+                onClick={saveTimelineToDatabase}
+                sx={{ mr: 1 }}
+              >
+                Save Timeline
+              </Button>
+              <Button 
+                variant="outlined" 
+                startIcon={<DownloadIcon />} 
                 onClick={handleExportPDF}
                 sx={{ mr: 1 }}
               >
                 Export PDF
               </Button>
-              <Button
-                variant="outlined"
-                startIcon={<ShareIcon />}
+              <Button 
+                variant="outlined" 
+                startIcon={<ShareIcon />} 
                 onClick={handleShareTimeline}
               >
                 Share

@@ -366,11 +366,11 @@ const VendorProfile: React.FC = () => {
                     {vendor.gallery_images && vendor.gallery_images.length > 0 ? (
                       <>
                         <Typography variant="body2" sx={{ mb: 2, color: theme.palette.text.secondary }}>
-                          {vendor.gallery_limit === 2 ? 'Free tier: 2 photos maximum' : 'Premium tier: Up to 10 photos'}
+                          Showing {vendor.gallery_images.length} of 10 maximum photos
                         </Typography>
                         
                         <ImageList sx={{ width: '100%', height: 'auto' }} cols={2} gap={8}>
-                          {vendor.gallery_images.slice(0, vendor.gallery_limit || 2).map((image, index) => (
+                          {vendor.gallery_images.map((image, index) => (
                             <ImageListItem 
                               key={index} 
                               onClick={() => {
@@ -423,41 +423,39 @@ const VendorProfile: React.FC = () => {
                     )}
                     
                     {/* Video section - only for paid vendors */}
-                    {vendor.gallery_limit && vendor.gallery_limit > 2 && (
+                    {vendor.video_link ? (
                       <Box sx={{ mt: 4 }}>
                         <Typography variant="h6" sx={{ mb: 2, color: theme.palette.primary.main }}>
                           Video Showcase
                         </Typography>
                         
-                        {vendor.video_link ? (
-                          <Box sx={{ mt: 2 }}>
-                            <Link 
-                              href={vendor.video_link} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              sx={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                gap: 1,
-                                color: theme.palette.primary.main,
-                                textDecoration: 'none',
-                                '&:hover': {
-                                  textDecoration: 'underline'
-                                }
-                              }}
-                            >
-                              <VideoLibraryIcon />
-                              <Typography variant="body1">
-                                Watch Video Showcase
-                              </Typography>
-                            </Link>
-                          </Box>
-                        ) : (
-                          <Typography variant="body1" sx={{ color: theme.palette.text.secondary, fontStyle: 'italic' }}>
-                            No video showcase available.
-                          </Typography>
-                        )}
+                        <Box sx={{ mt: 2 }}>
+                          <Link 
+                            href={vendor.video_link} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 1,
+                              color: theme.palette.primary.main,
+                              textDecoration: 'none',
+                              '&:hover': {
+                                textDecoration: 'underline'
+                              }
+                            }}
+                          >
+                            <VideoLibraryIcon />
+                            <Typography variant="body1">
+                              Watch Video Showcase
+                            </Typography>
+                          </Link>
+                        </Box>
                       </Box>
+                    ) : (
+                      <Typography variant="body1" sx={{ color: theme.palette.text.secondary, fontStyle: 'italic' }}>
+                        No video showcase available.
+                      </Typography>
                     )}
                   </Box>
                 </TabPanel>

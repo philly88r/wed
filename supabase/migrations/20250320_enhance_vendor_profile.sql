@@ -109,7 +109,7 @@ CREATE INDEX IF NOT EXISTS idx_reviews_vendor_id ON reviews(vendor_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status);
 
--- Create a function to update vendor pricing tier
+-- Create function to update pricing tier based on average package price
 CREATE OR REPLACE FUNCTION update_vendor_pricing_tier()
 RETURNS trigger AS $$
 BEGIN
@@ -120,11 +120,15 @@ BEGIN
     FROM jsonb_array_elements(NEW.pricing_details->'packages') p
   )
   SELECT
-    CASE
-      WHEN avg_price < 1000 THEN 'budget'
-      WHEN avg_price < 2500 THEN 'mid_range'
-      ELSE 'premium'
-    END INTO NEW.pricing_tier->>'tier'
+    jsonb_build_object(
+      'tier',
+      CASE
+        WHEN avg_price < 3000 THEN 'budget'
+        WHEN avg_price < 10000 THEN 'mid_range'
+        ELSE 'premium'
+      END,
+      'avg_price', avg_price
+    ) INTO NEW.pricing_tier
   FROM package_stats;
   
   RETURN NEW;

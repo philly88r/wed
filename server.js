@@ -3,7 +3,7 @@ import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,6 +20,9 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from the React app's dist directory (built files)
+app.use(express.static(join(__dirname, 'dist')));
 
 // Get all vendors
 app.get('/api/vendors', async (req, res) => {
@@ -92,6 +95,14 @@ app.get('/api/categories', async (req, res) => {
     console.error('Error fetching categories:', error);
     res.status(500).json({ message: 'Failed to fetch categories', error: error.message });
   }
+});
+
+// API routes should be defined before the catchall
+
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(join(__dirname, 'dist', 'index.html'));
 });
 
 const PORT = process.env.PORT || 5001;

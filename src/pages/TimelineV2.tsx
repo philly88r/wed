@@ -162,6 +162,7 @@ export default function TimelineV2() {
     let { data, error } = await supabase
       .from('timeline_tasks')
       .select('*')
+      .order('order', { ascending: true })
       .order('due_date', { ascending: true });
 
     if (error) {
@@ -184,6 +185,33 @@ export default function TimelineV2() {
         priority: task.priority || 'medium',
         status: task.status === 'completed' ? 'completed' : 'todo'
       }));
+    }
+
+    // Custom sorting for EVENT END and LOAD OUT
+    if (data) {
+      data.sort((a, b) => {
+        // Special handling for EVENT END and LOAD OUT
+        if ((a.title === 'EVENT END' || a.title === 'LOAD OUT') && 
+            (b.title !== 'EVENT END' && b.title !== 'LOAD OUT')) {
+          return 1; // a comes after b
+        }
+        
+        if ((b.title === 'EVENT END' || b.title === 'LOAD OUT') && 
+            (a.title !== 'EVENT END' && a.title !== 'LOAD OUT')) {
+          return -1; // b comes after a
+        }
+        
+        // If both are closing events, maintain their relative order
+        if ((a.title === 'EVENT END' || a.title === 'LOAD OUT') && 
+            (b.title === 'EVENT END' || b.title === 'LOAD OUT')) {
+          return a.title === 'EVENT END' ? -1 : 1;
+        }
+        
+        // Otherwise sort by due_date
+        const dateA = new Date(a.due_date);
+        const dateB = new Date(b.due_date);
+        return dateA.getTime() - dateB.getTime();
+      });
     }
 
     setTasks(data || []);

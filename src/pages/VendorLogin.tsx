@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { authenticateVendor } from '../utils/vendorAuth';
+import { useNavigate, useParams } from 'react-router-dom';
+import { verifyVendorAccess } from '../utils/vendorAccess';
 import {
   Box,
   Container,
@@ -15,7 +15,7 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 
 export default function VendorLogin() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
+  const { accessToken } = useParams<{ accessToken: string }>();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,15 +26,20 @@ export default function VendorLogin() {
     setLoading(true);
 
     try {
-      const result = await authenticateVendor(username, password);
+      if (!accessToken) {
+        throw new Error('Invalid access link');
+      }
+
+      const vendorId = await verifyVendorAccess(accessToken, password);
       
-      if (result.success && result.vendorId) {
-        // Store vendor ID in session
-        sessionStorage.setItem('vendorId', result.vendorId);
+      if (vendorId) {
+        // Store vendor ID and access token in session
+        sessionStorage.setItem('vendorId', vendorId);
+        sessionStorage.setItem('vendorAccessToken', accessToken);
         // Redirect to vendor profile edit page
-        navigate(`/vendor/profile/edit/${result.vendorId}`);
+        navigate(`/vendor/profile/edit/${vendorId}`);
       } else {
-        setError(result.error || 'Invalid credentials');
+        setError('Invalid password or expired access link');
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred during login');
@@ -85,19 +90,6 @@ export default function VendorLogin() {
           )}
 
           <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="username"
-              label="Username"
-              name="username"
-              autoComplete="username"
-              autoFocus
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              disabled={loading}
-            />
             <TextField
               margin="normal"
               required

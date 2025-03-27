@@ -39,9 +39,23 @@ interface VendorDetails {
   name: string;
   description: string;
   location: string;
-  contact_info: any;
-  social_media: any;
-  category: any;
+  contact_info: {
+    email: string;
+    phone: string;
+    website?: string;
+  };
+  social_media: {
+    instagram?: string;
+    facebook?: string;
+    website?: string;
+    twitter?: string;
+  };
+  category: {
+    id: string;
+    name: string;
+    icon: string;
+    description: string;
+  };
   pricing_tier: {
     tier: string;
     price_range: {
@@ -49,13 +63,46 @@ interface VendorDetails {
       max: number;
       currency: string;
     };
-    deposit_required: {
-      percentage: number;
-      amount: number;
+  };
+  pricing_details: {
+    tier: string;
+    packages: Array<{
+      name: string;
+      description: string;
+      price: number;
+      currency: string;
+      features: string[];
+    }>;
+    price_range: {
+      min: number;
+      max: number;
       currency: string;
     };
-    payment_methods: string[];
-    cancellation_policy: string;
+    deposit_required?: {
+      percentage?: number;
+      amount?: number;
+      currency?: string;
+    };
+    payment_methods?: string[];
+    cancellation_policy?: string;
+  };
+  services_offered: Array<{
+    name: string;
+    description: string;
+    price?: number;
+    price_range?: {
+      min: number;
+      max: number;
+      currency: string;
+    };
+  }>;
+  experience: {
+    years_in_business: number;
+    established_date?: string;
+    background_story?: string;
+    certifications?: string[];
+    awards?: string[];
+    coordinator_experience?: string;
   };
   availability: {
     lead_time_days: number;
@@ -64,95 +111,25 @@ interface VendorDetails {
     travel_zones: Array<{
       zone: string;
       radius_miles: number;
-      fee: number;
-    }>;
-    calendar_sync_enabled: boolean;
-    calendar_url: string | null;
-  };
-  experience: {
-    years_in_business: number;
-    weddings_completed: number;
-    awards: string[];
-    certifications: string[];
-    insurance: {
-      has_insurance: boolean;
-      coverage_details: string;
-    };
-    associations: string[];
-    media_features: string[];
-  };
-  portfolio: {
-    videos: Array<{
-      url: string;
-      title: string;
-      description: string;
-    }>;
-    photos: Array<{
-      url: string;
-      caption: string;
-    }>;
-    testimonials: Array<{
-      client_name: string;
-      date: string;
-      rating: number;
-      text: string;
-      photos: string[];
+      additional_fee?: number;
     }>;
   };
-  customization_options: {
-    package_addons: Array<{
-      name: string;
-      price: number;
-      description: string;
-    }>;
-    special_requests_policy: string;
-    cultural_expertise: string[];
-    multi_day_events: {
-      available: boolean;
-      details: string;
-    };
-    equipment: string[];
-  };
-  team_info: {
-    size: number;
-    roles: string[];
-    backup_policy: string;
-    members: Array<{
-      name: string;
-      role: string;
-      bio: string;
-      photo_url: string;
-    }>;
-    languages: string[];
-    dress_code: string;
-  };
-  logistics: {
-    setup_time_minutes: number;
-    breakdown_time_minutes: number;
-    space_requirements: string;
-    technical_requirements: string[];
-    parking_needs: string;
-    weather_policy: string;
-  };
-  collaboration: {
-    preferred_vendors: Array<{
-      name: string;
-      type: string;
-      discount: string;
-    }>;
-    venue_partnerships: Array<{
-      venue: string;
-      benefits: string;
-    }>;
-    package_deals: Array<{
-      name: string;
-      includes: string[];
-      discount: string;
-    }>;
-    coordinator_experience: string;
-  };
+  amenities: Array<{
+    name: string;
+    description?: string;
+    included: boolean;
+  }>;
+  gallery_images?: Array<{
+    url: string;
+    caption?: string;
+    order?: number;
+  }>;
+  faq?: Array<{
+    question: string;
+    answer: string;
+    category?: string;
+  }>;
   is_featured?: boolean;
-  gallery_images?: Array<{ url: string }>;
   slug?: string;
 }
 
@@ -194,13 +171,13 @@ export default function VendorDetail() {
         *,
         category:vendor_categories(*),
         pricing_tier,
-        availability,
+        pricing_details,
+        services_offered,
         experience,
-        portfolio,
-        customization_options,
-        team_info,
-        logistics,
-        collaboration
+        availability,
+        amenities,
+        gallery_images,
+        faq
       `)
       .eq('id', id)
       .single();
@@ -211,6 +188,7 @@ export default function VendorDetail() {
       return;
     }
 
+    console.log('Vendor data loaded:', data);
     setVendor(data);
     setLoading(false);
   };
@@ -300,7 +278,7 @@ export default function VendorDetail() {
 
           <TabPanel value={tabValue} index={1}>
             <Grid container spacing={3}>
-              {vendor.customization_options.package_addons.map((service, index) => (
+              {vendor.services_offered.map((service, index) => (
                 <Grid item xs={12} sm={6} key={index}>
                   <Card>
                     <CardContent>
@@ -310,15 +288,17 @@ export default function VendorDetail() {
                       <Typography variant="body2" color="text.secondary" paragraph>
                         {service.description}
                       </Typography>
-                      <Typography 
-                        variant="subtitle1" 
-                        sx={{ 
-                          color: theme.palette.primary.main,
-                          fontWeight: 600,
-                        }}
-                      >
-                        ${service.price}
-                      </Typography>
+                      {service.price && (
+                        <Typography 
+                          variant="subtitle1" 
+                          sx={{ 
+                            color: theme.palette.primary.main,
+                            fontWeight: 600,
+                          }}
+                        >
+                          ${service.price}
+                        </Typography>
+                      )}
                     </CardContent>
                   </Card>
                 </Grid>
@@ -345,36 +325,100 @@ export default function VendorDetail() {
           </TabPanel>
 
           <TabPanel value={tabValue} index={3}>
-            {vendor.portfolio.testimonials.map((review, index) => (
+            {vendor.faq?.map((review, index) => (
               <Paper key={index} sx={{ p: 2, mb: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Avatar src={review.photos[0]} sx={{ mr: 2 }}>
-                    {review.client_name[0]}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="subtitle1">
-                      {review.client_name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {new Date(review.date).toLocaleDateString()}
-                    </Typography>
-                  </Box>
-                </Box>
-                <Rating value={review.rating} readOnly size="small" />
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  {review.text}
+                <Typography variant="h6" gutterBottom>
+                  {review.question}
+                </Typography>
+                <Typography variant="body2">
+                  {review.answer}
                 </Typography>
               </Paper>
             ))}
           </TabPanel>
 
           <TabPanel value={tabValue} index={4}>
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Availability Calendar
-              </Typography>
-              {/* Add calendar component here */}
-            </Box>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Paper sx={{ p: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Lead Time
+                  </Typography>
+                  <Typography variant="body1">
+                    {vendor.availability.lead_time_days} days minimum notice required
+                  </Typography>
+                </Paper>
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <Paper sx={{ p: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Peak Season
+                  </Typography>
+                  {vendor.availability.peak_season.length > 0 ? (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {vendor.availability.peak_season.map((month, i) => (
+                        <Chip key={i} label={month} />
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      No peak season specified
+                    </Typography>
+                  )}
+                </Paper>
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <Paper sx={{ p: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Off-Peak Season
+                  </Typography>
+                  {vendor.availability.off_peak_season.length > 0 ? (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {vendor.availability.off_peak_season.map((month, i) => (
+                        <Chip key={i} label={month} />
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      No off-peak season specified
+                    </Typography>
+                  )}
+                </Paper>
+              </Grid>
+              
+              <Grid item xs={12}>
+                <Paper sx={{ p: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Travel Zones
+                  </Typography>
+                  {vendor.availability.travel_zones.length > 0 ? (
+                    <List>
+                      {vendor.availability.travel_zones.map((zone, index) => (
+                        <ListItem key={index}>
+                          <ListItemAvatar>
+                            <Avatar>
+                              <LocationOnIcon />
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={zone.zone}
+                            secondary={`${zone.radius_miles} miles radius${
+                              zone.additional_fee ? ` (Additional fee: $${zone.additional_fee})` : ''
+                            }`}
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      No travel zones specified
+                    </Typography>
+                  )}
+                </Paper>
+              </Grid>
+            </Grid>
           </TabPanel>
         </Grid>
 
@@ -418,33 +462,33 @@ export default function VendorDetail() {
               <Divider sx={{ my: 2 }} />
 
               <Box sx={{ display: 'flex', gap: 1 }}>
-                {vendor.social_media.website_url && (
+                {vendor.social_media.website && (
                   <Button
                     variant="outlined"
                     startIcon={<WebIcon />}
-                    href={vendor.social_media.website_url}
+                    href={vendor.social_media.website}
                     target="_blank"
                   >
                     Website
                   </Button>
                 )}
                 
-                {vendor.social_media.instagram_handle && (
+                {vendor.social_media.instagram && (
                   <Button
                     variant="outlined"
                     startIcon={<InstagramIcon />}
-                    href={`https://instagram.com/${vendor.social_media.instagram_handle}`}
+                    href={`https://instagram.com/${vendor.social_media.instagram}`}
                     target="_blank"
                   >
                     Instagram
                   </Button>
                 )}
                 
-                {vendor.social_media.facebook_url && (
+                {vendor.social_media.facebook && (
                   <Button
                     variant="outlined"
                     startIcon={<FacebookIcon />}
-                    href={vendor.social_media.facebook_url}
+                    href={vendor.social_media.facebook}
                     target="_blank"
                   >
                     Facebook

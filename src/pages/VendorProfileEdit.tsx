@@ -89,7 +89,7 @@ interface FormData {
   services_offered: any[];
   amenities: Record<string, any>;
   gallery_images: GalleryImage[];
-  gallery_limit?: number;
+  gallery_limit: number; // Change gallery_limit to be a required property
   video_link?: string;
   faq: any[];
 }
@@ -143,7 +143,7 @@ export default function VendorProfileEdit() {
     services_offered: [],
     amenities: {},
     gallery_images: [],
-    gallery_limit: 2, 
+    gallery_limit: 10, 
     video_link: '',
     faq: [],
   };
@@ -299,7 +299,7 @@ export default function VendorProfileEdit() {
           services_offered: Array.isArray(data.services_offered) ? data.services_offered : [],
           amenities: data.amenities || {},
           gallery_images: Array.isArray(data.gallery_images) ? data.gallery_images : [],
-          gallery_limit: data.gallery_limit,
+          gallery_limit: data.gallery_limit || 10, // Ensure gallery_limit is never undefined
           video_link: data.video_link,
           faq: Array.isArray(data.faq) ? data.faq : []
         };
@@ -352,7 +352,7 @@ export default function VendorProfileEdit() {
           services_offered: formData.services_offered,
           amenities: formData.amenities,
           gallery_images: formData.gallery_images,
-          gallery_limit: formData.gallery_limit,
+          gallery_limit: formData.gallery_limit, // Update gallery_limit
           video_link: formData.video_link,
           faq: formData.faq,
           updated_at: new Date()
@@ -625,9 +625,7 @@ export default function VendorProfileEdit() {
             <Divider sx={{ mb: 2 }} />
             
             <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
-              {formData.gallery_limit === 2 
-                ? 'Free tier: You can upload up to 2 photos' 
-                : 'Premium tier: You can upload up to 10 photos and add a video link'}
+              You can upload up to 10 photos and add a video link
             </Typography>
             
             {/* Gallery Images */}
@@ -635,7 +633,7 @@ export default function VendorProfileEdit() {
               <Grid item xs={12}>
                 <Paper sx={{ p: 2, mb: 2, bgcolor: 'background.paper' }}>
                   <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                    Gallery Images ({formData.gallery_images.length}/{formData.gallery_limit})
+                    Gallery Images ({formData.gallery_images.length}/10)
                   </Typography>
                   
                   {formData.gallery_images.length > 0 ? (
@@ -682,11 +680,11 @@ export default function VendorProfileEdit() {
                     </Typography>
                   )}
                   
-                  {formData.gallery_images.length < (formData.gallery_limit || 2) && (
+                  {formData.gallery_images.length < 10 && (
                     <Box sx={{ mt: 2 }}>
                       <TextField
                         fullWidth
-                        label="Add Image URL"
+                        label="Add Image URL (photos only)"
                         placeholder="https://example.com/image.jpg"
                         margin="normal"
                         value={newImageUrl}
@@ -725,21 +723,19 @@ export default function VendorProfileEdit() {
                 </Paper>
               </Grid>
               
-              {/* Video Link - Only for paid tier */}
-              {formData.gallery_limit && formData.gallery_limit > 2 && (
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Video Showcase Link"
-                    name="video_link"
-                    value={formData.video_link || ''}
-                    onChange={handleInputChange}
-                    placeholder="https://youtube.com/watch?v=example"
-                    helperText="Add a link to your video showcase (YouTube, Vimeo, etc.)"
-                    margin="normal"
-                  />
-                </Grid>
-              )}
+              {/* Video Link - Available for all vendors */}
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Video Showcase Link (e.g. https://youtube.com/watch?v=example)"
+                  name="video_link"
+                  value={formData.video_link || ''}
+                  onChange={handleInputChange}
+                  placeholder="https://youtube.com/watch?v=example"
+                  helperText="Add a link to your video showcase (YouTube, Vimeo, etc.)"
+                  margin="normal"
+                />
+              </Grid>
             </Grid>
           </Grid>
           

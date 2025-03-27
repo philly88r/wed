@@ -81,9 +81,47 @@ const ChronoTimeline = ({ events, weddingDate, className = '' }: ChronoTimelineP
       
       // Sort events by time
       const sortedEvents = [...events].sort((a, b) => {
-        const timeA = a.time;
-        const timeB = b.time;
-        return timeA.localeCompare(timeB);
+        // Special handling for EVENT END and LOAD OUT events
+        // These should always be at the end of the timeline
+        if ((a.event === 'EVENT END' || a.event === 'LOAD OUT') && 
+            (b.event !== 'EVENT END' && b.event !== 'LOAD OUT')) {
+          return 1; // a comes after b
+        }
+        
+        if ((b.event === 'EVENT END' || b.event === 'LOAD OUT') && 
+            (a.event !== 'EVENT END' && a.event !== 'LOAD OUT')) {
+          return -1; // b comes after a
+        }
+        
+        // If both are closing events, maintain their relative order
+        if ((a.event === 'EVENT END' || a.event === 'LOAD OUT') && 
+            (b.event === 'EVENT END' || b.event === 'LOAD OUT')) {
+          return a.event === 'EVENT END' ? -1 : 1;
+        }
+        
+        // Parse times properly, handling AM/PM format
+        const parseTimeToMinutes = (timeStr: string): number => {
+          // Check if the time is in 12-hour format with AM/PM
+          if (timeStr.includes('AM') || timeStr.includes('PM')) {
+            const [timePart, period] = timeStr.split(' ');
+            let [hours, minutes] = timePart.split(':').map(Number);
+            
+            // Convert 12-hour format to 24-hour
+            if (period === 'PM' && hours < 12) hours += 12;
+            if (period === 'AM' && hours === 12) hours = 0;
+            
+            return hours * 60 + minutes;
+          } else {
+            // Handle 24-hour format
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+          }
+        };
+        
+        const minutesA = parseTimeToMinutes(a.time);
+        const minutesB = parseTimeToMinutes(b.time);
+        
+        return minutesA - minutesB;
       });
       
       // Convert events to Chrono format
