@@ -153,7 +153,7 @@ const VendorProfile: React.FC = () => {
                     minHeight: 64,
                     '& .MuiTab-root': {
                       minHeight: 64,
-                      color: theme.palette.text.secondary,
+                      color: theme.palette.text.primary,
                       '&.Mui-selected': {
                         color: theme.palette.primary.main,
                       },
@@ -179,7 +179,7 @@ const VendorProfile: React.FC = () => {
               <Box sx={{ p: 4, bgcolor: 'white' }}>
                 <TabPanel value={tabValue} index={0}>
                   {vendor.description ? (
-                    <Typography variant="body1" sx={{ mb: 3, color: theme.palette.primary.main, opacity: 0.8 }}>
+                    <Typography variant="body1" sx={{ mb: 3, color: theme.palette.text.primary }}>
                       {vendor.description}
                     </Typography>
                   ) : (
@@ -365,7 +365,7 @@ const VendorProfile: React.FC = () => {
                     
                     {vendor.gallery_images && vendor.gallery_images.length > 0 ? (
                       <>
-                        <Typography variant="body2" sx={{ mb: 2, color: theme.palette.text.secondary }}>
+                        <Typography variant="body2" sx={{ mb: 2, color: theme.palette.text.primary }}>
                           Showing {vendor.gallery_images.length} of 10 maximum photos
                         </Typography>
                         

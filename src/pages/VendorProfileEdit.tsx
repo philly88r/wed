@@ -27,6 +27,7 @@ import {
 import {
   Save as SaveIcon
 } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 
 // Define interfaces that match the actual vendor structure in the database
 interface PriceRange {
@@ -89,7 +90,7 @@ interface FormData {
   services_offered: any[];
   amenities: Record<string, any>;
   gallery_images: GalleryImage[];
-  gallery_limit: number; // Change gallery_limit to be a required property
+  gallery_limit: number; 
   video_link?: string;
   faq: any[];
 }
@@ -103,6 +104,7 @@ export default function VendorProfileEdit() {
   const [success, setSuccess] = useState('');
   const [categories, setCategories] = useState<Array<{ id: string; name: string; icon: string }>>([]);
   const [newImageUrl, setNewImageUrl] = useState('');
+  const theme = useTheme();
   
   const initialData: FormData = {
     name: '',
@@ -299,7 +301,7 @@ export default function VendorProfileEdit() {
           services_offered: Array.isArray(data.services_offered) ? data.services_offered : [],
           amenities: data.amenities || {},
           gallery_images: Array.isArray(data.gallery_images) ? data.gallery_images : [],
-          gallery_limit: data.gallery_limit || 10, // Ensure gallery_limit is never undefined
+          gallery_limit: data.gallery_limit || 10, 
           video_link: data.video_link,
           faq: Array.isArray(data.faq) ? data.faq : []
         };
@@ -352,7 +354,7 @@ export default function VendorProfileEdit() {
           services_offered: formData.services_offered,
           amenities: formData.amenities,
           gallery_images: formData.gallery_images,
-          gallery_limit: formData.gallery_limit, // Update gallery_limit
+          gallery_limit: formData.gallery_limit, 
           video_link: formData.video_link,
           faq: formData.faq,
           updated_at: new Date()
@@ -619,12 +621,12 @@ export default function VendorProfileEdit() {
           
           {/* Gallery Section */}
           <Grid item xs={12}>
-            <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>
+            <Typography variant="h6" sx={{ mt: 4, mb: 2, color: theme.palette.primary.main }}>
               Photo Gallery & Video
             </Typography>
             <Divider sx={{ mb: 2 }} />
             
-            <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+            <Typography variant="body2" sx={{ mb: 2, color: theme.palette.text.primary }}>
               You can upload up to 10 photos and add a video link
             </Typography>
             
@@ -675,7 +677,7 @@ export default function VendorProfileEdit() {
                       ))}
                     </ImageList>
                   ) : (
-                    <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                    <Typography variant="body2" sx={{ color: theme.palette.text.primary, fontStyle: 'italic' }}>
                       No gallery images added yet.
                     </Typography>
                   )}
@@ -725,6 +727,12 @@ export default function VendorProfileEdit() {
               
               {/* Video Link - Available for all vendors */}
               <Grid item xs={12}>
+                <Typography variant="h6" sx={{ mb: 2, color: theme.palette.primary.main }}>
+                  Video Showcase
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 2, color: theme.palette.text.primary }}>
+                  Add a video link to showcase your work (YouTube, Vimeo, etc.)
+                </Typography>
                 <TextField
                   fullWidth
                   label="Video Showcase Link (e.g. https://youtube.com/watch?v=example)"
