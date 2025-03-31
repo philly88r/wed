@@ -25,6 +25,7 @@ interface GuestContact {
   email?: string;
   created_at: string;
   updated_at: string;
+  user_id: string;
 }
 
 export default function GuestDirectory() {
@@ -46,54 +47,89 @@ export default function GuestDirectory() {
   }, []);
 
   const loadContacts = async () => {
-    const { data, error } = await supabase
-      .from('guest_contacts')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('No authenticated user found');
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from('guest_contacts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
-    if (error) {
+      if (error) {
+        console.error('Error loading contacts:', error);
+        return;
+      }
+
+      if (data) {
+        setContacts(data);
+      }
+    } catch (error) {
       console.error('Error loading contacts:', error);
-      return;
-    }
-
-    if (data) {
-      setContacts(data);
     }
   };
 
   const handleAddContact = async () => {
     if (!newContact.full_name) return;
 
-    const { data, error } = await supabase
-      .from('guest_contacts')
-      .insert([newContact])
-      .select();
+    try {
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('No authenticated user found');
+        return;
+      }
 
-    if (error) {
+      const { data, error } = await supabase
+        .from('guest_contacts')
+        .insert([{ ...newContact, user_id: user.id }])
+        .select();
+
+      if (error) {
+        console.error('Error adding contact:', error);
+        return;
+      }
+
+      if (data) {
+        setContacts([...contacts, data[0]]);
+        setNewContact({
+          full_name: '',
+          phone: '',
+          email: ''
+        });
+      }
+    } catch (error) {
       console.error('Error adding contact:', error);
-      return;
-    }
-
-    if (data) {
-      setContacts([...contacts, data[0]]);
-      setNewContact({
-        full_name: '',
-        phone: '',
-        email: ''
-      });
     }
   };
 
   const handleBulkAdd = async () => {
     try {
       setLoading(true);
+      
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('No authenticated user found');
+        setLoading(false);
+        return;
+      }
+      
       const rows = bulkInput
         .split('\n')
         .map(row => row.trim())
         .filter(row => row)
         .map(row => {
           const [full_name, phone, email] = row.split(',').map(field => field.trim());
-          return { full_name, phone, email };
+          return { full_name, phone, email, user_id: user.id };
         })
         .filter(row => row.full_name); // Only keep rows with names
 
@@ -489,16 +525,38 @@ export default function GuestDirectory() {
             onClick={async () => {
               if (!editingContact) return;
               
-              const { error } = await supabase
-                .from('guest_contacts')
-                .update(newContact)
-                .eq('id', editingContact.id);
+              try {
+                // Get the current user
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (!user) {
+                  console.error('No authenticated user found');
+                  return;
+                }
+                
+                // Make sure we're not changing the user_id
+                const updateData = {
+                  ...newContact,
+                  user_id: editingContact.user_id // Maintain the original user_id
+                };
+                
+                const { error } = await supabase
+                  .from('guest_contacts')
+                  .update(updateData)
+                  .eq('id', editingContact.id)
+                  .eq('user_id', user.id); // Additional security check
 
-              if (!error) {
+                if (error) {
+                  console.error('Error updating contact:', error);
+                  return;
+                }
+                
                 setContacts(contacts.map(c => 
-                  c.id === editingContact.id ? { ...c, ...newContact } : c
+                  c.id === editingContact.id ? { ...c, ...updateData } : c
                 ));
                 setEditingContact(null);
+              } catch (error) {
+                console.error('Error updating contact:', error);
               }
             }}
             variant="contained"

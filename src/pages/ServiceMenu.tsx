@@ -32,7 +32,7 @@ const services: ServiceCard[] = [
   {
     title: 'Address Book',
     price: '$39',
-    path: '/guests',
+    path: '/directory',
     description: 'Organize your guest addresses beautifully',
     longDescription: 'Keep all your guest information in one place. Import contacts, manage RSVPs, track thank-you notes, and export for envelope printing. Makes addressing invitations a breeze!'
   },
