@@ -125,15 +125,17 @@ export default function SeatingChart() {
   const [isUploading, setIsUploading] = useState(false);
   const [floorPlanError, setFloorPlanError] = useState<string | null>(null); // Add error state
 
-  // Add state for zoom and dragging
+  // Add state for zoom
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState<{
-    x: number;
-    y: number;
-    tableX: number;
-    tableY: number;
-  } | null>(null);
+  
+  // Remove unused drag state variables
+  // const [isDragging, setIsDragging] = useState(false);
+  // const [dragStart, setDragStart] = useState<{
+  //   x: number;
+  //   y: number;
+  //   tableX: number;
+  //   tableY: number;
+  // } | null>(null);
 
   // Force navigation to seating-chart to ensure we're on the right page
   useEffect(() => {
@@ -598,101 +600,6 @@ export default function SeatingChart() {
         severity: 'error'
       });
     }
-  };
-
-  const handleMouseDown = (event: React.MouseEvent, table: Table) => {
-    event.stopPropagation();
-    
-    if (selectedFloorPlan) {
-      // In floor plan mode, allow dragging without selecting for editing
-      setSelectedTable(table);
-      setIsDragging(true);
-      
-      // Store the initial mouse position
-      const chartRect = chartAreaRef.current?.getBoundingClientRect();
-      if (!chartRect) return;
-      
-      const initialX = event.clientX - chartRect.left;
-      const initialY = event.clientY - chartRect.top;
-      
-      // Store the initial table position
-      setDragStart({
-        x: initialX,
-        y: initialY,
-        tableX: table.position_x,
-        tableY: table.position_y
-      });
-      
-      // Add event listeners for mouse move and mouse up
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    } else {
-      // In seating chart mode, select the table for editing
-      setSelectedTable(table);
-      setEditMode('edit');
-    }
-  };
-
-  const handleMouseMove = (event: MouseEvent) => {
-    if (!dragStart || !selectedTable || !chartAreaRef.current) return;
-    
-    const chartRect = chartAreaRef.current.getBoundingClientRect();
-    const currentX = event.clientX - chartRect.left;
-    const currentY = event.clientY - chartRect.top;
-    
-    // Calculate the new position
-    const deltaX = currentX - dragStart.x;
-    const deltaY = currentY - dragStart.y;
-    
-    const newX = dragStart.tableX + deltaX;
-    const newY = dragStart.tableY + deltaY;
-    
-    // Update the table position in state
-    setTables(tables.map(table => {
-      if (table.id === selectedTable.id) {
-        return {
-          ...table,
-          position_x: newX,
-          position_y: newY
-        };
-      }
-      return table;
-    }));
-  };
-
-  const handleMouseUp = async () => {
-    // Remove event listeners
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
-    
-    // Save the new position to the database
-    const updatedTable = tables.find(t => t.id === selectedTable?.id);
-    if (updatedTable && isDragging) {
-      try {
-        await getUserId(); // Just verify user is authenticated
-        
-        await supabase
-          .from('seating_tables')
-          .update({ position_x: updatedTable.position_x, position_y: updatedTable.position_y })
-          .eq('id', updatedTable.id);
-          
-        setSnackbar({
-          open: true,
-          message: 'Table position updated',
-          severity: 'success'
-        });
-      } catch (error) {
-        console.error('Error updating table position:', error);
-        setSnackbar({
-          open: true,
-          message: 'Failed to update table position',
-          severity: 'error'
-        });
-      }
-    }
-    
-    // Reset dragging state
-    setIsDragging(false);
   };
 
   const handleChairClick = (chair: Chair) => {
@@ -1312,6 +1219,70 @@ export default function SeatingChart() {
     setZoomLevel(1);
   };
 
+  const handleTableDragStart = (e: React.MouseEvent, table: Table) => {
+    if (!chartAreaRef.current) return;
+    
+    // Prevent default to avoid unwanted behaviors
+    e.preventDefault();
+    
+    const chartRect = chartAreaRef.current.getBoundingClientRect();
+    const initialX = e.clientX - chartRect.left;
+    const initialY = e.clientY - chartRect.top;
+    const offsetX = initialX - table.position_x;
+    const offsetY = initialY - table.position_y;
+    
+    // Set the currently selected table
+    setSelectedTable(table);
+    
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const newX = moveEvent.clientX - chartRect.left - offsetX;
+      const newY = moveEvent.clientY - chartRect.top - offsetY;
+      
+      // Update the table position in state
+      setTables(currentTables => 
+        currentTables.map(t => 
+          t.id === table.id 
+            ? { ...t, position_x: Math.max(0, newX), position_y: Math.max(0, newY) } 
+            : t
+        )
+      );
+    };
+    
+    const handleMouseUp = async () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      
+      // Save the new position to the database
+      const updatedTable = tables.find(t => t.id === table.id);
+      if (updatedTable) {
+        try {
+          await getUserId(); // Just verify user is authenticated
+          
+          await supabase
+            .from('seating_tables')
+            .update({ position_x: updatedTable.position_x, position_y: updatedTable.position_y })
+            .eq('id', table.id);
+            
+          setSnackbar({
+            open: true,
+            message: 'Table position updated',
+            severity: 'success'
+          });
+        } catch (error) {
+          console.error('Error updating table position:', error);
+          setSnackbar({
+            open: true,
+            message: 'Failed to update table position',
+            severity: 'error'
+          });
+        }
+      }
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   const renderTable = (table: Table) => {
     const tableChairs = chairs.filter(chair => chair.table_id === table.id);
     const isSelected = selectedTable?.id === table.id;
@@ -1336,16 +1307,17 @@ export default function SeatingChart() {
           zIndex: isSelected ? 3 : 2,
         }}
         onClick={(e) => {
-          // Only handle click if we weren't dragging
-          if (!isDragging) {
+          if (!selectedFloorPlan) {
             e.stopPropagation();
-            if (!selectedFloorPlan) {
-              setSelectedTable(table);
-              setEditMode('edit');
-            }
+            setSelectedTable(table);
+            setEditMode('edit');
           }
         }}
-        onMouseDown={(e) => handleMouseDown(e, table)}
+        onMouseDown={(e) => {
+          if (selectedFloorPlan) {
+            handleTableDragStart(e, table);
+          }
+        }}
       >
         <Typography variant="body2" sx={{ userSelect: 'none' }}>
           {table.name} ({tableChairs.length})
@@ -1373,7 +1345,7 @@ export default function SeatingChart() {
               userSelect: 'none',
             }}
             onClick={(e) => {
-              if (!selectedFloorPlan && !isDragging) {
+              if (!selectedFloorPlan) {
                 e.stopPropagation();
                 handleChairClick(chairWithPos);
               }
@@ -1487,6 +1459,8 @@ export default function SeatingChart() {
               backgroundPosition: 'center',
               backgroundColor: '#f5f5f5', // Add a light background color
               transition: 'all 0.3s ease',
+              transform: selectedFloorPlan ? `scale(${zoomLevel})` : 'none',
+              transformOrigin: 'center',
             }}
             ref={chartAreaRef}
           >
@@ -1536,13 +1510,12 @@ export default function SeatingChart() {
                 width: '100%',
                 height: '100%',
                 zIndex: 2, // Ensure tables are above the floor plan
-                transform: selectedFloorPlan ? `scale(${zoomLevel})` : 'none',
+                transform: 'none', // Remove zoom from tables
                 transformOrigin: 'center',
                 transition: 'transform 0.3s ease',
               }}
               onClick={() => {
                 setSelectedTable(null);
-                setIsDragging(false);
               }}
             >
               {tables.map((table) => (
