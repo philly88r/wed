@@ -85,6 +85,12 @@ interface FloorPlan {
   scale: number; // Scale in feet per pixel
 }
 
+interface TableFormData {
+  name: string;
+  template_id: string;
+  seats: number;
+}
+
 export default function SeatingChart() {
   const [tables, setTables] = useState<Table[]>([]);
   const [tableTemplates, setTableTemplates] = useState<TableTemplate[]>([]);
@@ -404,147 +410,76 @@ export default function SeatingChart() {
     }
   };
 
-  const handleAddTable = async () => {
+  const handleAddTable = async (data: TableFormData) => {
     try {
-      await getUserId();
-
-      // If using a predefined template
-      if (selectedTemplate) {
-        const template = tableTemplates.find((t: TableTemplate) => t.id === selectedTemplate);
-        if (!template) {
-          throw new Error('Selected template not found');
-        }
-
-        // Insert the table with larger dimensions
-        const { data, error } = await supabase
+      // Verify user is authenticated
+      const userId = await getUserId();
+      
+      // Get the template data
+      const { data: templateData } = await supabase
+        .from('table_templates')
+        .select('*')
+        .eq('id', data.template_id)
+        .single();
+      
+      if (templateData) {
+        // Create a new table with larger default dimensions
+        const { data: newTable, error } = await supabase
           .from('seating_tables')
-          .insert([
-            {
-              name: newTableName || template.name,
-              seats: template.seats,
-              shape: template.shape,
-              template_id: template.id,
-              width: template.width * 1.5, // Make tables 50% larger
-              length: template.length * 1.5, // Make tables 50% larger
-              position_x: 300, // Position in the center of the view
-              position_y: 200, // Position in the center of the view
-              rotation: 0,
-              user_id: await getUserId()
-            }
-          ])
+          .insert({
+            name: data.name,
+            shape: templateData.shape,
+            seats: data.seats,
+            template_id: templateData.id,
+            width: templateData.width * 2, // Make tables twice as large by default
+            length: templateData.length * 2, // Make tables twice as large by default
+            position_x: 300, // Position in the center of the view
+            position_y: 200, // Position in the center of the view
+            rotation: 0,
+            user_id: userId
+          })
           .select()
           .single();
-
+        
         if (error) throw error;
-
-        // Create chairs for the table
-        const chairsToInsert = [];
-        for (let i = 0; i < template.seats; i++) {
-          // Calculate angle for each chair (evenly distributed around the table)
-          const angle = (i * 360) / template.seats;
-          chairsToInsert.push({
-            table_id: data.id,
-            position: i + 1, // Chair positions start at 1
+        
+        // Add the new table to state
+        setTables([...tables, newTable]);
+        
+        // Create chairs for the new table
+        const chairPositions = Array.from({ length: data.seats }, (_, i) => {
+          // Calculate angle for evenly distributed chairs
+          const angle = (i * 360) / data.seats;
+          return {
+            table_id: newTable.id,
+            position: i + 1,
             angle: angle,
-            guest_id: null
-          });
-        }
-
-        const { error: chairError } = await supabase
+            user_id: userId
+          };
+        });
+        
+        // Insert chairs into the database
+        const { data: newChairs, error: chairsError } = await supabase
           .from('table_chairs')
-          .insert(chairsToInsert);
-
-        if (chairError) throw chairError;
-
-        // Refresh tables and chairs
-        await Promise.all([fetchTables(), fetchChairs()]);
-
+          .insert(chairPositions)
+          .select();
+        
+        if (chairsError) throw chairsError;
+        
+        // Add the new chairs to state
+        setChairs([...chairs, ...newChairs]);
+        
+        // Show success message
         setSnackbar({
           open: true,
           message: 'Table added successfully',
           severity: 'success'
         });
-      } 
-      // If creating a custom table
-      else {
-        // First create a custom template
-        const { data: templateData, error: templateError } = await supabase
-          .from('table_templates')
-          .insert([
-            {
-              name: `Custom Table - ${customSeats} Seats`,
-              shape: 'round', // Default shape for custom tables
-              seats: customSeats,
-              width: 150, // Larger default size
-              length: 150, // Larger default size
-              is_predefined: false,
-              created_by: await getUserId()
-            }
-          ])
-          .select()
-          .single();
-
-        if (templateError) throw templateError;
-
-        // Then create the table using the custom template
-        const { data, error } = await supabase
-          .from('seating_tables')
-          .insert([
-            {
-              name: newTableName || `Custom Table - ${customSeats} Seats`,
-              seats: customSeats,
-              shape: 'round',
-              template_id: templateData.id,
-              width: 150, // Larger default size
-              length: 150, // Larger default size
-              position_x: 300, // Position in the center of the view
-              position_y: 200, // Position in the center of the view
-              rotation: 0,
-              user_id: await getUserId()
-            }
-          ])
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        // Create chairs for the table
-        const chairsToInsert = [];
-        for (let i = 0; i < customSeats; i++) {
-          // Calculate angle for each chair (evenly distributed around the table)
-          const angle = (i * 360) / customSeats;
-          chairsToInsert.push({
-            table_id: data.id,
-            position: i + 1, // Chair positions start at 1
-            angle: angle,
-            guest_id: null
-          });
-        }
-
-        const { error: chairError } = await supabase
-          .from('table_chairs')
-          .insert(chairsToInsert);
-
-        if (chairError) throw chairError;
-
-        // Refresh tables and chairs
-        await Promise.all([fetchTables(), fetchChairs()]);
-
-        setTables([...tables, data]);
-        setTableTemplates([...tableTemplates, templateData]);
+        
+        // Close the dialog
         setEditDialogOpen(false);
-        setSnackbar({
-          open: true,
-          message: 'Custom table added successfully',
-          severity: 'success'
-        });
+        setEditMode('add' as const);
       }
-
-      // Chairs will be created automatically via the database trigger
-      // Refresh chairs after a short delay to ensure trigger has completed
-      setTimeout(() => {
-        fetchChairs();
-      }, 500);
     } catch (error) {
       console.error('Error adding table:', error);
       setSnackbar({
@@ -906,7 +841,7 @@ export default function SeatingChart() {
 
   const handleSaveTable = async () => {
     if (editMode === 'add') {
-      await handleAddTable();
+      await handleAddTable({ name: newTableName, template_id: selectedTemplate, seats: customSeats });
     } else if (selectedTable) {
       try {
         await getUserId();
@@ -1224,6 +1159,7 @@ export default function SeatingChart() {
     
     // Prevent default to avoid unwanted behaviors
     e.preventDefault();
+    e.stopPropagation();
     
     const chartRect = chartAreaRef.current.getBoundingClientRect();
     const initialX = e.clientX - chartRect.left;
@@ -1235,6 +1171,8 @@ export default function SeatingChart() {
     setSelectedTable(table);
     
     const handleMouseMove = (moveEvent: MouseEvent) => {
+      moveEvent.preventDefault();
+      
       const newX = moveEvent.clientX - chartRect.left - offsetX;
       const newY = moveEvent.clientY - chartRect.top - offsetY;
       
@@ -1260,7 +1198,10 @@ export default function SeatingChart() {
           
           await supabase
             .from('seating_tables')
-            .update({ position_x: updatedTable.position_x, position_y: updatedTable.position_y })
+            .update({ 
+              position_x: updatedTable.position_x, 
+              position_y: updatedTable.position_y 
+            })
             .eq('id', table.id);
             
           setSnackbar({
@@ -1283,10 +1224,100 @@ export default function SeatingChart() {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
+  const handleResizeStart = (e: React.MouseEvent, table: Table, corner: string) => {
+    if (!chartAreaRef.current) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const chartRect = chartAreaRef.current.getBoundingClientRect();
+    const initialX = e.clientX - chartRect.left;
+    const initialY = e.clientY - chartRect.top;
+    
+    // Store the original table size
+    const originalWidth = table.width;
+    const originalLength = table.length;
+    
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      moveEvent.preventDefault();
+      
+      const currentX = moveEvent.clientX - chartRect.left;
+      const currentY = moveEvent.clientY - chartRect.top;
+      
+      const deltaX = currentX - initialX;
+      const deltaY = currentY - initialY;
+      
+      let newWidth = originalWidth;
+      let newLength = originalLength;
+      
+      // Adjust width and length based on which corner is being dragged
+      if (corner === 'top-left') {
+        newWidth = Math.max(60, originalWidth - deltaX);
+        newLength = Math.max(60, originalLength - deltaY);
+      } else if (corner === 'top-right') {
+        newWidth = Math.max(60, originalWidth + deltaX);
+        newLength = Math.max(60, originalLength - deltaY);
+      } else if (corner === 'bottom-left') {
+        newWidth = Math.max(60, originalWidth - deltaX);
+        newLength = Math.max(60, originalLength + deltaY);
+      } else if (corner === 'bottom-right') {
+        newWidth = Math.max(60, originalWidth + deltaX);
+        newLength = Math.max(60, originalLength + deltaY);
+      }
+      
+      // Update the table dimensions in state
+      setTables(currentTables => 
+        currentTables.map(t => 
+          t.id === table.id 
+            ? { ...t, width: newWidth, length: newLength } 
+            : t
+        )
+      );
+    };
+    
+    const handleMouseUp = async () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      
+      // Save the new dimensions to the database
+      const updatedTable = tables.find(t => t.id === table.id);
+      if (updatedTable) {
+        try {
+          await getUserId(); // Just verify user is authenticated
+          
+          await supabase
+            .from('seating_tables')
+            .update({ 
+              width: updatedTable.width, 
+              length: updatedTable.length 
+            })
+            .eq('id', table.id);
+            
+          setSnackbar({
+            open: true,
+            message: 'Table size updated',
+            severity: 'success'
+          });
+        } catch (error) {
+          console.error('Error updating table size:', error);
+          setSnackbar({
+            open: true,
+            message: 'Failed to update table size',
+            severity: 'error'
+          });
+        }
+      }
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   const renderTable = (table: Table) => {
     const tableChairs = chairs.filter(chair => chair.table_id === table.id);
     const isSelected = selectedTable?.id === table.id;
     const chairsWithPositions = calculateChairPositions(tableChairs, table);
+    const showResizeHandles = isSelected && !selectedFloorPlan;
     
     return (
       <Box
@@ -1303,7 +1334,7 @@ export default function SeatingChart() {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          cursor: selectedFloorPlan ? 'move' : 'pointer',
+          cursor: 'move',
           zIndex: isSelected ? 3 : 2,
         }}
         onClick={(e) => {
@@ -1313,11 +1344,7 @@ export default function SeatingChart() {
             setEditMode('edit');
           }
         }}
-        onMouseDown={(e) => {
-          if (selectedFloorPlan) {
-            handleTableDragStart(e, table);
-          }
-        }}
+        onMouseDown={(e) => handleTableDragStart(e, table)}
       >
         <Typography variant="body2" sx={{ userSelect: 'none' }}>
           {table.name} ({tableChairs.length})
@@ -1354,6 +1381,64 @@ export default function SeatingChart() {
             {chairWithPos.position}
           </Box>
         ))}
+        
+        {/* Resize handles */}
+        {showResizeHandles && (
+          <>
+            <Box
+              sx={{
+                position: 'absolute',
+                left: '-5px',
+                top: '-5px',
+                width: '10px',
+                height: '10px',
+                backgroundColor: 'blue',
+                cursor: 'nwse-resize',
+                zIndex: 4,
+              }}
+              onMouseDown={(e) => handleResizeStart(e, table, 'top-left')}
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                right: '-5px',
+                top: '-5px',
+                width: '10px',
+                height: '10px',
+                backgroundColor: 'blue',
+                cursor: 'nesw-resize',
+                zIndex: 4,
+              }}
+              onMouseDown={(e) => handleResizeStart(e, table, 'top-right')}
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                left: '-5px',
+                bottom: '-5px',
+                width: '10px',
+                height: '10px',
+                backgroundColor: 'blue',
+                cursor: 'nesw-resize',
+                zIndex: 4,
+              }}
+              onMouseDown={(e) => handleResizeStart(e, table, 'bottom-left')}
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                right: '-5px',
+                bottom: '-5px',
+                width: '10px',
+                height: '10px',
+                backgroundColor: 'blue',
+                cursor: 'nwse-resize',
+                zIndex: 4,
+              }}
+              onMouseDown={(e) => handleResizeStart(e, table, 'bottom-right')}
+            />
+          </>
+        )}
       </Box>
     );
   };
