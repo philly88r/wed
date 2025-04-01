@@ -56,10 +56,8 @@ interface Table {
   color?: string;
   width: number;
   length: number;
-  position: {
-    x: number;
-    y: number;
-  };
+  position_x: number;
+  position_y: number;
   rotation: number;
   guests?: Guest[];
 }
@@ -107,12 +105,12 @@ export default function SeatingChart() {
   const [filter, setFilter] = useState('all');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
-  const [guestDialogOpen, setGuestDialogOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedChair, setSelectedChair] = useState<Chair | null>(null);
   const [assignGuestDialogOpen, setAssignGuestDialogOpen] = useState(false);
   const [guestSearchTerm, setGuestSearchTerm] = useState('');
+  const [guestDialogOpen, setGuestDialogOpen] = useState(false); // Add back the guestDialogOpen state
   const chartAreaRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -124,12 +122,18 @@ export default function SeatingChart() {
   const [floorPlanScale, setFloorPlanScale] = useState('1');
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null); // Add support for image files
-  const [resizingTable, setResizingTable] = useState<Table | null>(null);
-  const [resizeStartPosition, setResizeStartPosition] = useState({ x: 0, y: 0 });
-  const [originalTableSize, setOriginalTableSize] = useState({ width: 0, length: 0 });
   const [isUploading, setIsUploading] = useState(false);
   const [floorPlanError, setFloorPlanError] = useState<string | null>(null); // Add error state
+
+  // Add state for zoom and dragging
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{
+    x: number;
+    y: number;
+    tableX: number;
+    tableY: number;
+  } | null>(null);
 
   // Force navigation to seating-chart to ensure we're on the right page
   useEffect(() => {
@@ -420,7 +424,8 @@ export default function SeatingChart() {
               template_id: template.id,
               width: template.width * 1.5, // Make tables 50% larger
               length: template.length * 1.5, // Make tables 50% larger
-              position: { x: 300, y: 200 }, // Position in the center of the view
+              position_x: 300, // Position in the center of the view
+              position_y: 200, // Position in the center of the view
               rotation: 0,
               user_id: await getUserId()
             }
@@ -490,7 +495,8 @@ export default function SeatingChart() {
               template_id: templateData.id,
               width: 150, // Larger default size
               length: 150, // Larger default size
-              position: { x: 300, y: 200 }, // Position in the center of the view
+              position_x: 300, // Position in the center of the view
+              position_y: 200, // Position in the center of the view
               rotation: 0,
               user_id: await getUserId()
             }
@@ -594,68 +600,99 @@ export default function SeatingChart() {
     }
   };
 
-  const handleTableDragStart = (e: React.MouseEvent, table: Table) => {
-    if (!chartAreaRef.current) return;
+  const handleMouseDown = (event: React.MouseEvent, table: Table) => {
+    event.stopPropagation();
     
-    // Prevent default to avoid unwanted behaviors
-    e.preventDefault();
+    if (selectedFloorPlan) {
+      // In floor plan mode, allow dragging without selecting for editing
+      setSelectedTable(table);
+      setIsDragging(true);
+      
+      // Store the initial mouse position
+      const chartRect = chartAreaRef.current?.getBoundingClientRect();
+      if (!chartRect) return;
+      
+      const initialX = event.clientX - chartRect.left;
+      const initialY = event.clientY - chartRect.top;
+      
+      // Store the initial table position
+      setDragStart({
+        x: initialX,
+        y: initialY,
+        tableX: table.position_x,
+        tableY: table.position_y
+      });
+      
+      // Add event listeners for mouse move and mouse up
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    } else {
+      // In seating chart mode, select the table for editing
+      setSelectedTable(table);
+      setEditMode('edit');
+    }
+  };
+
+  const handleMouseMove = (event: MouseEvent) => {
+    if (!dragStart || !selectedTable || !chartAreaRef.current) return;
     
     const chartRect = chartAreaRef.current.getBoundingClientRect();
-    const initialX = e.clientX - chartRect.left;
-    const initialY = e.clientY - chartRect.top;
-    const offsetX = initialX - table.position.x;
-    const offsetY = initialY - table.position.y;
+    const currentX = event.clientX - chartRect.left;
+    const currentY = event.clientY - chartRect.top;
     
-    // Set the currently selected table
-    setSelectedTable(table);
+    // Calculate the new position
+    const deltaX = currentX - dragStart.x;
+    const deltaY = currentY - dragStart.y;
     
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      const newX = moveEvent.clientX - chartRect.left - offsetX;
-      const newY = moveEvent.clientY - chartRect.top - offsetY;
-      
-      // Update the table position in state
-      setTables(currentTables => 
-        currentTables.map(t => 
-          t.id === table.id 
-            ? { ...t, position: { x: Math.max(0, newX), y: Math.max(0, newY) } } 
-            : t
-        )
-      );
-    };
+    const newX = dragStart.tableX + deltaX;
+    const newY = dragStart.tableY + deltaY;
     
-    const handleMouseUp = async () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      
-      // Save the new position to the database
-      const updatedTable = tables.find(t => t.id === table.id);
-      if (updatedTable) {
-        try {
-          await getUserId(); // Just verify user is authenticated
-          
-          await supabase
-            .from('seating_tables')
-            .update({ position: updatedTable.position })
-            .eq('id', table.id);
-            
-          setSnackbar({
-            open: true,
-            message: 'Table position updated',
-            severity: 'success'
-          });
-        } catch (error) {
-          console.error('Error updating table position:', error);
-          setSnackbar({
-            open: true,
-            message: 'Failed to update table position',
-            severity: 'error'
-          });
-        }
+    // Update the table position in state
+    setTables(tables.map(table => {
+      if (table.id === selectedTable.id) {
+        return {
+          ...table,
+          position_x: newX,
+          position_y: newY
+        };
       }
-    };
+      return table;
+    }));
+  };
+
+  const handleMouseUp = async () => {
+    // Remove event listeners
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
     
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    // Save the new position to the database
+    const updatedTable = tables.find(t => t.id === selectedTable?.id);
+    if (updatedTable && isDragging) {
+      try {
+        await getUserId(); // Just verify user is authenticated
+        
+        await supabase
+          .from('seating_tables')
+          .update({ position_x: updatedTable.position_x, position_y: updatedTable.position_y })
+          .eq('id', updatedTable.id);
+          
+        setSnackbar({
+          open: true,
+          message: 'Table position updated',
+          severity: 'success'
+        });
+      } catch (error) {
+        console.error('Error updating table position:', error);
+        setSnackbar({
+          open: true,
+          message: 'Failed to update table position',
+          severity: 'error'
+        });
+      }
+    }
+    
+    // Reset dragging state
+    setIsDragging(false);
   };
 
   const handleChairClick = (chair: Chair) => {
@@ -694,14 +731,9 @@ export default function SeatingChart() {
       if (error) throw error;
 
       // Update local state with proper type handling
-      setChairs(chairs.map(chair => {
-        if (chair.id === chairId) {
-          const updatedChair: Chair = { ...chair };
-          updatedChair.guest_id = undefined;
-          return updatedChair;
-        }
-        return chair;
-      }));
+      setChairs(chairs.map(chair => 
+        chair.id === chairId ? { ...chair, guest_id: undefined } : chair
+      ));
 
       setSnackbar({
         open: true,
@@ -738,189 +770,6 @@ export default function SeatingChart() {
         y: tableLength / 2 + y
       };
     });
-  };
-
-  const renderTable = (table: Table) => {
-    const tableChairs = chairs.filter(chair => chair.table_id === table.id);
-    const isSelected = selectedTable?.id === table.id;
-    const isFloorPlanMode = !!selectedFloorPlan;
-    const showResizeHandles = isFloorPlanMode && isSelected;
-    
-    // Calculate chair positions
-    const chairsWithPositions = isFloorPlanMode ? [] : calculateChairPositions(tableChairs, table);
-
-    // Determine table color based on shape
-    const tableColor = isFloorPlanMode ? 'rgba(200, 200, 200, 0.7)' : 
-                      (table.shape === 'round' ? '#f0f0f0' : '#e6e6e6');
-
-    return (
-      <Box
-        key={table.id}
-        sx={{
-          position: 'absolute',
-          left: `${table.position.x}px`,
-          top: `${table.position.y}px`,
-          width: `${table.width}px`,
-          height: `${table.length}px`,
-          borderRadius: table.shape === 'round' ? '50%' : '4px',
-          backgroundColor: tableColor,
-          border: isSelected ? '2px solid #1976d2' : '1px solid #ccc',
-          boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: isFloorPlanMode ? 'move' : 'pointer',
-          zIndex: isSelected ? 2 : 1,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          handleTableClick(table);
-        }}
-        onMouseDown={(e) => {
-          if (isFloorPlanMode) {
-            handleTableDragStart(e, table);
-          }
-        }}
-      >
-        <Typography
-          variant="body2"
-          sx={{
-            textAlign: 'center',
-            fontWeight: 'bold',
-            fontSize: '0.9rem',
-            color: '#333'
-          }}
-        >
-          {table.name}
-          <br />
-          {table.seats} seats
-        </Typography>
-        
-        {/* Only show chairs in regular mode, not in floor plan mode */}
-        {!isFloorPlanMode && chairsWithPositions.map((chair) => {
-          const chairGuest = guests.find(g => g.id === chair.guest_id);
-          const chairSize = 40; // Increased chair size
-          
-          return (
-            <Box
-              key={chair.id}
-              sx={{
-                position: 'absolute',
-                left: `${chair.x - chairSize/2}px`,
-                top: `${chair.y - chairSize/2}px`,
-                width: `${chairSize}px`,
-                height: `${chairSize}px`,
-                borderRadius: '50%',
-                backgroundColor: chair.guest_id ? '#4caf50' : '#f5f5f5',
-                border: '1px solid #ccc',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                fontSize: '12px',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  transform: 'scale(1.1)',
-                  boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-                },
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleChairClick(chair);
-              }}
-            >
-              {chairGuest ? (
-                <>
-                  <Typography variant="caption" sx={{ fontWeight: 'bold', fontSize: '10px' }}>
-                    {chairGuest.first_name.charAt(0)}{chairGuest.last_name.charAt(0)}
-                  </Typography>
-                  <Typography variant="caption" sx={{ fontSize: '8px' }}>
-                    Seat {chair.position}
-                  </Typography>
-                </>
-              ) : (
-                <>
-                  <Typography variant="caption" sx={{ fontSize: '10px' }}>
-                    Empty
-                  </Typography>
-                  <Typography variant="caption" sx={{ fontSize: '8px' }}>
-                    Seat {chair.position}
-                  </Typography>
-                </>
-              )}
-            </Box>
-          );
-        })}
-        
-        {/* Only show resize handles in floor plan mode */}
-        {showResizeHandles && (
-          <>
-            <Box
-              sx={{
-                position: 'absolute',
-                left: '-5px',
-                top: '-5px',
-                width: '10px',
-                height: '10px',
-                backgroundColor: '#1976d2',
-                cursor: 'nwse-resize',
-              }}
-              onMouseDown={(e) => handleResizeStart(e, table, 'top-left')}
-            />
-            <Box
-              sx={{
-                position: 'absolute',
-                right: '-5px',
-                top: '-5px',
-                width: '10px',
-                height: '10px',
-                backgroundColor: '#1976d2',
-                cursor: 'nesw-resize',
-              }}
-              onMouseDown={(e) => handleResizeStart(e, table, 'top-right')}
-            />
-            <Box
-              sx={{
-                position: 'absolute',
-                left: '-5px',
-                bottom: '-5px',
-                width: '10px',
-                height: '10px',
-                backgroundColor: '#1976d2',
-                cursor: 'nesw-resize',
-              }}
-              onMouseDown={(e) => handleResizeStart(e, table, 'bottom-left')}
-            />
-            <Box
-              sx={{
-                position: 'absolute',
-                right: '-5px',
-                bottom: '-5px',
-                width: '10px',
-                height: '10px',
-                backgroundColor: '#1976d2',
-                cursor: 'nwse-resize',
-              }}
-              onMouseDown={(e) => handleResizeStart(e, table, 'bottom-right')}
-            />
-          </>
-        )}
-      </Box>
-    );
-  };
-
-  const handleTableClick = (table: Table) => {
-    setSelectedTable(table);
-    
-    // Show dialog to assign guests to this table
-    setEditMode('edit');
-    setNewTableName(table.name);
-    setEditDialogOpen(true);
   };
 
   const handleAssignGuestToTable = async (tableId: string, guestId: string) => {
@@ -1216,122 +1065,6 @@ export default function SeatingChart() {
     // but we need this to satisfy the DragDropContext requirement
   };
 
-  const handleResizeStart = (e: React.MouseEvent | React.TouchEvent, table: Table, corner: string) => {
-    if (!chartAreaRef.current) return;
-    
-    e.stopPropagation(); // Prevent triggering drag
-    
-    // Set resizing state
-    setResizingTable(table);
-    setOriginalTableSize({ width: table.width, length: table.length });
-    
-    // Get initial position
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    setResizeStartPosition({ x: clientX, y: clientY });
-    
-    // Add event listeners for resize
-    const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
-      const moveClientX = 'touches' in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
-      const moveClientY = 'touches' in moveEvent ? moveEvent.touches[0].clientY : moveEvent.clientY;
-      
-      // Calculate the delta
-      const deltaX = moveClientX - resizeStartPosition.x;
-      const deltaY = moveClientY - resizeStartPosition.y;
-      
-      // Update table size based on which corner is being dragged
-      let newWidth = originalTableSize.width;
-      let newLength = originalTableSize.length;
-      
-      if (corner.includes('right')) {
-        newWidth = Math.max(60, originalTableSize.width + deltaX);
-      } else if (corner.includes('left')) {
-        newWidth = Math.max(60, originalTableSize.width - deltaX);
-      }
-      
-      if (corner.includes('bottom')) {
-        newLength = Math.max(60, originalTableSize.length + deltaY);
-      } else if (corner.includes('top')) {
-        newLength = Math.max(60, originalTableSize.length - deltaY);
-      }
-      
-      // Update the table in state
-      setTables(currentTables => 
-        currentTables.map(t => 
-          t.id === table.id 
-            ? { ...t, width: newWidth, length: newLength } 
-            : t
-        )
-      );
-    };
-    
-    const handleEnd = async () => {
-      // Remove event listeners
-      document.removeEventListener('mousemove', handleMove);
-      document.removeEventListener('touchmove', handleMove);
-      document.removeEventListener('mouseup', handleEnd);
-      document.removeEventListener('touchend', handleEnd);
-      
-      // Reset resizing state
-      setResizingTable(null);
-      
-      // Save the new size to the database
-      const updatedTable = tables.find(t => t.id === resizingTable?.id);
-      if (updatedTable) {
-        try {
-          await getUserId(); // Just verify user is authenticated
-          
-          await supabase
-            .from('seating_tables')
-            .update({ 
-              width: updatedTable.width,
-              length: updatedTable.length
-            })
-            .eq('id', updatedTable.id);
-            
-          setSnackbar({
-            open: true,
-            message: 'Table size updated',
-            severity: 'success'
-          });
-        } catch (error) {
-          console.error('Error updating table size:', error);
-          setSnackbar({
-            open: true,
-            message: 'Failed to update table size',
-            severity: 'error'
-          });
-        }
-      }
-      
-      setResizingTable(null);
-    };
-    
-    document.addEventListener('mousemove', handleMove);
-    document.addEventListener('touchmove', handleMove);
-    document.addEventListener('mouseup', handleEnd);
-    document.addEventListener('touchend', handleEnd);
-  };
-
-  const toggleFloorPlanMode = () => {
-    if (selectedFloorPlan) {
-      // Switching back to regular mode
-      setSelectedFloorPlan(null);
-      setZoomLevel(1); // Reset zoom
-    } else {
-      // If there are floor plans, select the first one
-      if (floorPlans.length > 0) {
-        setSelectedFloorPlan(floorPlans[0]);
-        setZoomLevel(1); // Reset zoom
-      } else {
-        // No floor plans available, show upload dialog
-        setUploadDialogOpen(true);
-      }
-    }
-    // Clear selected table when switching modes
-    setSelectedTable(null);
-  };
-
   const handleAssignGuestToChair = async (chairId: string, guestId: string) => {
     try {
       // Assign guest to the chair
@@ -1548,6 +1281,25 @@ export default function SeatingChart() {
     }
   };
 
+  const toggleFloorPlanMode = () => {
+    if (selectedFloorPlan) {
+      // Switching back to regular mode
+      setSelectedFloorPlan(null);
+      setZoomLevel(1); // Reset zoom
+    } else {
+      // If there are floor plans, select the first one
+      if (floorPlans.length > 0) {
+        setSelectedFloorPlan(floorPlans[0]);
+        setZoomLevel(1); // Reset zoom
+      } else {
+        // No floor plans available, show upload dialog
+        setUploadDialogOpen(true);
+      }
+    }
+    // Clear selected table when switching modes
+    setSelectedTable(null);
+  };
+
   const handleZoomIn = () => {
     setZoomLevel(prev => Math.min(prev + 0.1, 2)); // Max zoom 2x
   };
@@ -1558,6 +1310,80 @@ export default function SeatingChart() {
 
   const handleResetZoom = () => {
     setZoomLevel(1);
+  };
+
+  const renderTable = (table: Table) => {
+    const tableChairs = chairs.filter(chair => chair.table_id === table.id);
+    const isSelected = selectedTable?.id === table.id;
+    const chairsWithPositions = calculateChairPositions(tableChairs, table);
+    
+    return (
+      <Box
+        key={table.id}
+        sx={{
+          position: 'absolute',
+          left: `${table.position_x}px`,
+          top: `${table.position_y}px`,
+          width: `${table.width}px`,
+          height: `${table.length}px`,
+          border: isSelected ? '2px solid blue' : '1px solid black',
+          borderRadius: table.shape === 'round' ? '50%' : 0,
+          backgroundColor: 'rgba(255, 255, 255, 0.7)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          cursor: selectedFloorPlan ? 'move' : 'pointer',
+          zIndex: isSelected ? 3 : 2,
+        }}
+        onClick={(e) => {
+          // Only handle click if we weren't dragging
+          if (!isDragging) {
+            e.stopPropagation();
+            if (!selectedFloorPlan) {
+              setSelectedTable(table);
+              setEditMode('edit');
+            }
+          }
+        }}
+        onMouseDown={(e) => handleMouseDown(e, table)}
+      >
+        <Typography variant="body2" sx={{ userSelect: 'none' }}>
+          {table.name} ({tableChairs.length})
+        </Typography>
+        
+        {/* Render chairs */}
+        {chairsWithPositions.map((chairWithPos) => (
+          <Box
+            key={chairWithPos.id}
+            sx={{
+              position: 'absolute',
+              left: `${chairWithPos.x}px`,
+              top: `${chairWithPos.y}px`,
+              width: '20px',
+              height: '20px',
+              backgroundColor: chairWithPos.guest_id ? 'green' : 'gray',
+              borderRadius: '50%',
+              cursor: selectedFloorPlan ? 'default' : 'pointer',
+              border: selectedChair?.id === chairWithPos.id ? '2px solid blue' : 'none',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              color: 'white',
+              fontSize: '10px',
+              userSelect: 'none',
+            }}
+            onClick={(e) => {
+              if (!selectedFloorPlan && !isDragging) {
+                e.stopPropagation();
+                handleChairClick(chairWithPos);
+              }
+            }}
+          >
+            {chairWithPos.position}
+          </Box>
+        ))}
+      </Box>
+    );
   };
 
   return (
@@ -1577,7 +1403,7 @@ export default function SeatingChart() {
             
             <Button 
               variant="outlined" 
-              onClick={toggleFloorPlanMode}
+              onClick={() => toggleFloorPlanMode()}
               startIcon={<PictureAsPdfIcon />}
             >
               {selectedFloorPlan ? 'Exit Floor Plan Mode' : 'Enter Floor Plan Mode'}
@@ -1656,7 +1482,7 @@ export default function SeatingChart() {
               position: 'relative', 
               overflow: 'hidden',
               backgroundImage: selectedFloorPlan ? `url(${selectedFloorPlan.image_url})` : 'none',
-              backgroundSize: 'contain',
+              backgroundSize: selectedFloorPlan ? 'contain' : 'cover',
               backgroundRepeat: 'no-repeat',
               backgroundPosition: 'center',
               backgroundColor: '#f5f5f5', // Add a light background color
@@ -1714,7 +1540,10 @@ export default function SeatingChart() {
                 transformOrigin: 'center',
                 transition: 'transform 0.3s ease',
               }}
-              onClick={() => setSelectedTable(null)}
+              onClick={() => {
+                setSelectedTable(null);
+                setIsDragging(false);
+              }}
             >
               {tables.map((table) => (
                 renderTable(table)
