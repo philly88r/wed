@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../utils/supabaseClient';
 import { Link } from 'react-router-dom';
 import {
   Box,
@@ -54,13 +54,20 @@ export default function VendorDirectory() {
 
   const fetchCategories = async () => {
     try {
+      setLoading(true);
       const { data: categories, error } = await supabase
         .from('vendor_categories')
         .select('*')
         .order('name');
 
       if (error) {
-        throw error;
+        console.error('Error fetching categories:', error);
+        setSnackbar({
+          open: true,
+          message: `Error loading categories: ${error.message}`,
+          severity: 'error'
+        });
+        return;
       }
 
       if (categories) {
@@ -68,22 +75,49 @@ export default function VendorDirectory() {
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
+      setSnackbar({
+        open: true,
+        message: 'Unexpected error loading categories',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchVendors = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('vendors')
         .select(`
           *,
           category:vendor_categories(*)
-        `)
-        .order('name');
+        `);
+
+      // Apply filters
+      if (selectedCategory !== 'all') {
+        query = query.eq('category_id', selectedCategory);
+      }
+
+      if (selectedLocation !== 'all') {
+        query = query.eq('location', selectedLocation);
+      }
+
+      if (searchTerm) {
+        query = query.ilike('name', `%${searchTerm}%`);
+      }
+
+      const { data, error } = await query.order('name');
 
       if (error) {
-        throw error;
+        console.error('Database error fetching vendors:', error);
+        setSnackbar({
+          open: true,
+          message: `Error loading vendors: ${error.message}`,
+          severity: 'error'
+        });
+        return;
       }
 
       if (data) {
@@ -93,7 +127,7 @@ export default function VendorDirectory() {
         setLocations(uniqueLocations);
       }
     } catch (error) {
-      console.error('Error fetching vendors:', error);
+      console.error('Unexpected error fetching vendors:', error);
       setSnackbar({
         open: true,
         message: 'Error loading vendors. Please try again.',
