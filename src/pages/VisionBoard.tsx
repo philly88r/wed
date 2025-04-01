@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Plus, Image as ImageIcon, X, ExternalLink, Download } from 'lucide-react';
+import { supabase } from '../supabaseClient';
+import { createCustomLink } from '../utils/customLinksHelper';
 
 interface InspirationImage {
   id: string;
@@ -30,7 +32,24 @@ export default function VisionBoard() {
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Create a custom link for the current path to fix the 406 error
   useEffect(() => {
+    const setupCustomLink = async () => {
+      try {
+        // Create a custom link for both paths to ensure they work
+        await createCustomLink('vision-board', 'Mood Board');
+        await createCustomLink('mood-board', 'Mood Board');
+        console.log('Custom links created successfully');
+      } catch (error) {
+        console.error('Error creating custom links:', error);
+      }
+    };
+    
+    setupCustomLink();
+  }, []);
+
+  useEffect(() => {
+    // Try to load from mood-board key first, then fall back to vision-board for backward compatibility
     const savedImages = localStorage.getItem('wedding-mood-board') || localStorage.getItem('wedding-vision-board');
     if (savedImages) {
       setImages(JSON.parse(savedImages));
@@ -38,7 +57,34 @@ export default function VisionBoard() {
   }, []);
 
   useEffect(() => {
+    // Save to the new mood-board key
     localStorage.setItem('wedding-mood-board', JSON.stringify(images));
+  }, [images]);
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      const { data, error } = await supabase
+        .from('images')
+        .select('*');
+      if (error) {
+        console.error(error);
+      } else {
+        setImages(data);
+      }
+    };
+    fetchImages();
+  }, []);
+
+  useEffect(() => {
+    const saveImages = async () => {
+      const { error } = await supabase
+        .from('images')
+        .upsert(images);
+      if (error) {
+        console.error(error);
+      }
+    };
+    saveImages();
   }, [images]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
