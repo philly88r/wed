@@ -3,7 +3,7 @@ import App from './App';
 import ServiceMenu from './pages/ServiceMenu';
 import AddVendor from './pages/admin/add-vendor';
 import SeatingChart from './pages/SeatingChart';
-import MoodBoard from './pages/MoodBoard';
+import VisionBoard from './pages/VisionBoard';
 
 const router = createBrowserRouter([
   {
@@ -23,8 +23,8 @@ const router = createBrowserRouter([
         element: <SeatingChart />,
       },
       {
-        path: 'mood-board',
-        element: <MoodBoard />,
+        path: 'vision-board',
+        element: <VisionBoard />,
       },
     ],
   },
