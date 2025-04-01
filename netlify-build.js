@@ -1,5 +1,5 @@
 // Custom Netlify build script
-const { execSync } = require('child_process');
+import { execSync } from 'child_process';
 
 // Helper function to run commands and log output
 function runCommand(command) {

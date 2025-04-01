@@ -1,5 +1,5 @@
 [build]
-  command = "node netlify-build.js"
+  command = "npm install --no-audit --no-fund --legacy-peer-deps && npm run build"
   publish = "dist"
 
 [build.environment]
@@ -25,7 +25,3 @@
 
 [functions]
   directory = "functions"
-
-[dev]
-  framework = "vite"
-  targetPort = 5173
