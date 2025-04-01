@@ -119,10 +119,12 @@ export default function SeatingChart() {
   const [floorPlanName, setFloorPlanName] = useState('');
   const [floorPlanScale, setFloorPlanScale] = useState('1');
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null); // Add support for image files
   const [resizingTable, setResizingTable] = useState<Table | null>(null);
   const [resizeStartPosition, setResizeStartPosition] = useState({ x: 0, y: 0 });
   const [originalTableSize, setOriginalTableSize] = useState({ width: 0, length: 0 });
   const [isUploading, setIsUploading] = useState(false);
+  const [floorPlanError, setFloorPlanError] = useState<string | null>(null); // Add error state
 
   // Force navigation to seating-chart to ensure we're on the right page
   useEffect(() => {
@@ -1286,7 +1288,7 @@ export default function SeatingChart() {
   };
 
   const handleFloorPlanUpload = async () => {
-    if (!pdfFile || !floorPlanName || !floorPlanScale) {
+    if ((!pdfFile && !imageFile) || !floorPlanName || !floorPlanScale) {
       setSnackbar({
         open: true,
         message: 'Please provide a name, scale, and file for the floor plan',
@@ -1296,6 +1298,7 @@ export default function SeatingChart() {
     }
 
     setIsUploading(true);
+    setFloorPlanError(null);
 
     try {
       await getUserId();
@@ -1303,15 +1306,22 @@ export default function SeatingChart() {
       // Create the bucket if it doesn't exist
       await createFloorPlansBucket();
       
+      // Use the image file if provided, otherwise use the PDF
+      const fileToUpload = imageFile || pdfFile;
+      if (!fileToUpload) {
+        throw new Error('No file selected');
+      }
+      
       // Upload the file to storage
-      const fileName = `${await getUserId()}_${Date.now()}_${pdfFile.name.replace(/\s+/g, '%20')}`;
+      const fileName = `${await getUserId()}_${Date.now()}_${fileToUpload.name.replace(/\s+/g, '_')}`;
       const { error: uploadError } = await supabase
         .storage
         .from('floor_plans')
-        .upload(fileName, pdfFile);
+        .upload(fileName, fileToUpload);
 
       if (uploadError) {
         console.error('Error uploading floor plan:', uploadError);
+        setFloorPlanError('Failed to upload file. Please try again with a smaller file or a different format.');
         setSnackbar({
           open: true,
           message: 'Failed to upload floor plan',
@@ -1328,7 +1338,7 @@ export default function SeatingChart() {
         .getPublicUrl(fileName);
 
       // Save the floor plan details to the database
-      const { error: insertError } = await supabase
+      const { data, error: insertError } = await supabase
         .from('floor_plans')
         .insert([
           {
@@ -1337,10 +1347,13 @@ export default function SeatingChart() {
             scale: parseFloat(floorPlanScale),
             created_by: await getUserId()
           }
-        ]);
+        ])
+        .select()
+        .single();
 
       if (insertError) {
         console.error('Error saving floor plan details:', insertError);
+        setFloorPlanError('Failed to save floor plan details in the database.');
         setSnackbar({
           open: true,
           message: 'Failed to save floor plan details',
@@ -1351,12 +1364,18 @@ export default function SeatingChart() {
       }
 
       // Refresh the floor plans list
-      fetchFloorPlans();
+      await fetchFloorPlans();
+
+      // Automatically select the newly uploaded floor plan
+      if (data) {
+        setSelectedFloorPlan(data);
+      }
 
       // Reset the form
       setFloorPlanName('');
       setFloorPlanScale('1');
       setPdfFile(null);
+      setImageFile(null);
       setUploadDialogOpen(false);
       setSnackbar({
         open: true,
@@ -1365,6 +1384,7 @@ export default function SeatingChart() {
       });
     } catch (error) {
       console.error('Error uploading floor plan:', error);
+      setFloorPlanError('An unexpected error occurred during upload.');
       setSnackbar({
         open: true,
         message: 'Failed to upload floor plan',
@@ -1563,15 +1583,58 @@ export default function SeatingChart() {
             backgroundSize: 'contain',
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center',
+            backgroundColor: '#f5f5f5', // Add a light background color
           }}
+          ref={chartAreaRef}
         >
-          {/* Note: Using the scale from the floor plan for measurements */}
+          {/* Floor plan container */}
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 0,
+            }}
+          >
+            {selectedFloorPlan && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                {/* This is a transparent overlay to ensure the floor plan is clickable */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    zIndex: 1,
+                  }}
+                />
+              </Box>
+            )}
+          </Box>
+          
+          {/* Tables container with higher z-index */}
           <Box
             sx={{
               position: 'relative',
               width: '100%',
               height: '100%',
+              zIndex: 2, // Ensure tables are above the floor plan
             }}
+            onClick={() => setSelectedTable(null)}
           >
             {tables.map((table) => (
               renderTable(table)
@@ -1649,7 +1712,7 @@ export default function SeatingChart() {
           <DialogTitle>Upload Floor Plan</DialogTitle>
           <DialogContent sx={{ minWidth: 400 }}>
             <Typography variant="body2" sx={{ mb: 2 }}>
-              Upload a PDF file to use as a floor plan.
+              Upload an image file (JPG, PNG) or PDF to use as a floor plan.
             </Typography>
             <TextField
               fullWidth
@@ -1658,12 +1721,43 @@ export default function SeatingChart() {
               value={floorPlanName}
               onChange={(e) => setFloorPlanName(e.target.value)}
               margin="normal"
+              required
             />
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
-            />
+            <Box sx={{ my: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Floor Plan Image (Recommended)
+              </Typography>
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png"
+                onChange={(e) => {
+                  setImageFile(e.target.files?.[0] || null);
+                  // Clear PDF if image is selected
+                  if (e.target.files?.[0]) {
+                    setPdfFile(null);
+                  }
+                }}
+              />
+              <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
+                Recommended: Use JPG or PNG for better compatibility
+              </Typography>
+            </Box>
+            <Box sx={{ my: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                OR PDF File
+              </Typography>
+              <input
+                type="file"
+                accept=".pdf"
+                onChange={(e) => {
+                  setPdfFile(e.target.files?.[0] || null);
+                  // Clear image if PDF is selected
+                  if (e.target.files?.[0]) {
+                    setImageFile(null);
+                  }
+                }}
+              />
+            </Box>
             <TextField
               fullWidth
               label="Scale (feet per pixel)"
@@ -1671,15 +1765,21 @@ export default function SeatingChart() {
               value={floorPlanScale}
               onChange={(e) => setFloorPlanScale(e.target.value)}
               margin="normal"
+              required
             />
+            {floorPlanError && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {floorPlanError}
+              </Alert>
+            )}
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setUploadDialogOpen(false)}>Cancel</Button>
             <Button 
               onClick={handleFloorPlanUpload} 
               variant="contained"
-              disabled={!floorPlanName || !pdfFile || isUploading}
-              startIcon={isUploading ? <CircularProgress size={20} /> : undefined}
+              disabled={(!floorPlanName || (!pdfFile && !imageFile) || isUploading)}
+              startIcon={isUploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
             >
               {isUploading ? 'Uploading...' : 'Upload'}
             </Button>
