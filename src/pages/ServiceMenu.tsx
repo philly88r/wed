@@ -74,7 +74,7 @@ const services: ServiceCard[] = [
   {
     title: 'Mood Board',
     price: '$29',
-    path: '/vision-board',
+    path: '/mood-board',
     description: 'Visualize your wedding style and inspiration',
     longDescription: 'Create a beautiful digital mood board for your wedding. Collect and organize inspiration images for decor, flowers, attire, and more. Share with vendors to communicate your vision clearly.'
   },

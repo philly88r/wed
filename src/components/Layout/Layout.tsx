@@ -42,7 +42,7 @@ const menuItems = [
   { text: 'Checklist', icon: <ChecklistIcon />, path: '/checklist' },
   { text: 'Videos', icon: <VideoLibraryIcon />, path: '/videos' },
   { text: 'Timeline', icon: <TimelineIcon />, path: '/timeline' },
-  { text: 'Mood Board', icon: <ImageIcon />, path: '/vision-board' },
+  { text: 'Mood Board', icon: <ImageIcon />, path: '/mood-board' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 
