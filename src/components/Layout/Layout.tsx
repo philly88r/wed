@@ -26,6 +26,7 @@ import ChecklistIcon from '@mui/icons-material/Checklist';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import SettingsIcon from '@mui/icons-material/Settings';
+import ImageIcon from '@mui/icons-material/Image';
 
 const drawerWidth = 240;
 
@@ -41,6 +42,7 @@ const menuItems = [
   { text: 'Checklist', icon: <ChecklistIcon />, path: '/checklist' },
   { text: 'Videos', icon: <VideoLibraryIcon />, path: '/videos' },
   { text: 'Timeline', icon: <TimelineIcon />, path: '/timeline' },
+  { text: 'Mood Board', icon: <ImageIcon />, path: '/mood-board' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 

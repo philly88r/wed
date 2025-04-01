@@ -3,6 +3,7 @@ import App from './App';
 import ServiceMenu from './pages/ServiceMenu';
 import AddVendor from './pages/admin/add-vendor';
 import SeatingChart from './pages/SeatingChart';
+import MoodBoard from './pages/MoodBoard';
 
 const router = createBrowserRouter([
   {
@@ -20,6 +21,10 @@ const router = createBrowserRouter([
       {
         path: 'seating-chart',
         element: <SeatingChart />,
+      },
+      {
+        path: 'mood-board',
+        element: <MoodBoard />,
       },
     ],
   },
