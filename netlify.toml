@@ -1,5 +1,5 @@
 [build]
-  command = "npm install --no-audit --no-fund --legacy-peer-deps && npm run build"
+  command = "npm install react-colorful --no-audit --no-fund --legacy-peer-deps && npm run build"
   publish = "dist"
 
 [build.environment]
@@ -11,6 +11,7 @@
   NPM_CONFIG_PREFER_OFFLINE = "true"
   VITE_SUPABASE_URL = "https://yemkduykvfdjmldxfphq.supabase.co"
   VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllbWtkdXlrdmZkam1sZHhmcGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODA1NjY0MDAsImV4cCI6MTk5NjE0MjQwMH0.S3-NxrP3OqcXJhKYOv6XPBu1NlOvJmQnSEw6BPrLsXQ"
+  VITE_FAL_KEY = "3c1da0ce-87a4-48ec-88ff-b5c6bd4ae167:b8715ba5d4cf5e4313ecf49a963ccf2b"
 
 [[redirects]]
   from = "/*"
