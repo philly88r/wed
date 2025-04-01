@@ -105,10 +105,9 @@ export default function SeatingChart() {
   const [filter, setFilter] = useState('all');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [guestDialogOpen, setGuestDialogOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showGrid, setShowGrid] = useState(true);
-  const [guestDialogOpen, setGuestDialogOpen] = useState(false);
   const [selectedChair, setSelectedChair] = useState<Chair | null>(null);
   const [assignGuestDialogOpen, setAssignGuestDialogOpen] = useState(false);
   const [guestSearchTerm, setGuestSearchTerm] = useState('');
@@ -369,14 +368,30 @@ export default function SeatingChart() {
         return;
       }
 
-      setFloorPlans(data || []);
+      if (data && data.length > 0) {
+        // Process the data to handle different column names
+        const processedData = data.map(plan => {
+          // Create a normalized object with consistent properties
+          const normalizedPlan = { ...plan };
+          
+          // Handle different column names for image URL
+          if (plan.image_url) {
+            normalizedPlan.image_url = plan.image_url;
+          } else if (plan.imageUrl) {
+            // If the column is named imageUrl, copy it to image_url for consistency
+            normalizedPlan.image_url = plan.imageUrl;
+          }
+          
+          return normalizedPlan;
+        });
+        
+        console.log('Fetched floor plans:', processedData);
+        setFloorPlans(processedData);
+      } else {
+        setFloorPlans([]);
+      }
     } catch (error) {
       console.error('Error fetching floor plans:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to load floor plans',
-        severity: 'error'
-      });
     }
   };
 
@@ -1237,211 +1252,6 @@ export default function SeatingChart() {
     // but we need this to satisfy the DragDropContext requirement
   };
 
-  const handleTableTouchStart = (e: React.TouchEvent, table: Table) => {
-    if (!chartAreaRef.current) return;
-    
-    // Prevent default to avoid scrolling while dragging
-    e.preventDefault();
-    
-    const chartRect = chartAreaRef.current.getBoundingClientRect();
-    const touch = e.touches[0];
-    const initialX = touch.clientX - chartRect.left;
-    const initialY = touch.clientY - chartRect.top;
-    const offsetX = initialX - table.position.x;
-    const offsetY = initialY - table.position.y;
-    
-    // Set the currently selected table
-    setSelectedTable(table);
-    
-    const handleTouchMove = (moveEvent: TouchEvent) => {
-      const touchMove = moveEvent.touches[0];
-      const newX = touchMove.clientX - chartRect.left - offsetX;
-      const newY = touchMove.clientY - chartRect.top - offsetY;
-      
-      // Update the table position in state
-      setTables(currentTables => 
-        currentTables.map(t => 
-          t.id === table.id 
-            ? { ...t, position: { x: Math.max(0, newX), y: Math.max(0, newY) } } 
-            : t
-        )
-      );
-    };
-    
-    const handleTouchEnd = async () => {
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
-      
-      // Save the new position to the database
-      const updatedTable = tables.find(t => t.id === table.id);
-      if (updatedTable) {
-        try {
-          await getUserId(); // Just verify user is authenticated
-          
-          await supabase
-            .from('seating_tables')
-            .update({ position: updatedTable.position })
-            .eq('id', updatedTable.id);
-            
-          setSnackbar({
-            open: true,
-            message: 'Table position updated',
-            severity: 'success'
-          });
-        } catch (error) {
-          console.error('Error updating table position:', error);
-        }
-      }
-    };
-    
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-    document.addEventListener('touchend', handleTouchEnd);
-  };
-
-  const handleFloorPlanSelect = (planId: string) => {
-    const plan = floorPlans.find(p => p.id === planId);
-    if (plan) {
-      setSelectedFloorPlan(plan);
-    }
-  };
-
-  const createFloorPlansBucket = async () => {
-    try {
-      // Ensure user is authenticated before proceeding
-      await getUserId();
-      
-      // Check if the bucket exists
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-
-      if (bucketsError) {
-        console.error('Error checking storage buckets:', bucketsError);
-        return false;
-      }
-
-      const bucketExists = buckets.some(bucket => bucket.name === 'floor_plans');
-
-      if (!bucketExists) {
-        // Instead of trying to create the bucket directly (which might fail due to RLS),
-        // we'll use a simpler approach - just check if it exists
-        console.log('Floor plans bucket does not exist in this session');
-        return true;
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Unexpected error checking floor plans bucket:', error);
-      return false;
-    }
-  };
-
-  const handleFloorPlanUpload = async () => {
-    if ((!pdfFile && !imageFile) || !floorPlanName || !floorPlanScale) {
-      setSnackbar({
-        open: true,
-        message: 'Please provide a name, scale, and file for the floor plan',
-        severity: 'error'
-      });
-      return;
-    }
-
-    setIsUploading(true);
-    setFloorPlanError(null);
-
-    try {
-      await getUserId();
-
-      // Create the bucket if it doesn't exist
-      await createFloorPlansBucket();
-      
-      // Use the image file if provided, otherwise use the PDF
-      const fileToUpload = imageFile || pdfFile;
-      if (!fileToUpload) {
-        throw new Error('No file selected');
-      }
-      
-      // Upload the file to storage
-      const fileName = `${await getUserId()}_${Date.now()}_${fileToUpload.name.replace(/\s+/g, '_')}`;
-      const { error: uploadError } = await supabase
-        .storage
-        .from('floor_plans')
-        .upload(fileName, fileToUpload);
-
-      if (uploadError) {
-        console.error('Error uploading floor plan:', uploadError);
-        setFloorPlanError('Failed to upload file. Please try again with a smaller file or a different format.');
-        setSnackbar({
-          open: true,
-          message: 'Failed to upload floor plan',
-          severity: 'error'
-        });
-        setIsUploading(false);
-        return;
-      }
-
-      // Get the public URL for the uploaded file
-      const { data: { publicUrl } } = supabase
-        .storage
-        .from('floor_plans')
-        .getPublicUrl(fileName);
-
-      // Save the floor plan details to the database
-      const { data, error: insertError } = await supabase
-        .from('floor_plans')
-        .insert([
-          {
-            name: floorPlanName,
-            image_url: publicUrl,
-            scale: parseFloat(floorPlanScale),
-            created_by: await getUserId()
-          }
-        ])
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Error saving floor plan details:', insertError);
-        setFloorPlanError('Failed to save floor plan details in the database.');
-        setSnackbar({
-          open: true,
-          message: 'Failed to save floor plan details',
-          severity: 'error'
-        });
-        setIsUploading(false);
-        return;
-      }
-
-      // Refresh the floor plans list
-      await fetchFloorPlans();
-
-      // Automatically select the newly uploaded floor plan
-      if (data) {
-        setSelectedFloorPlan(data);
-      }
-
-      // Reset the form
-      setFloorPlanName('');
-      setFloorPlanScale('1');
-      setPdfFile(null);
-      setImageFile(null);
-      setUploadDialogOpen(false);
-      setSnackbar({
-        open: true,
-        message: 'Floor plan uploaded successfully',
-        severity: 'success'
-      });
-    } catch (error) {
-      console.error('Error uploading floor plan:', error);
-      setFloorPlanError('An unexpected error occurred during upload.');
-      setSnackbar({
-        open: true,
-        message: 'Failed to upload floor plan',
-        severity: 'error'
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const handleResizeStart = (e: React.MouseEvent | React.TouchEvent, table: Table, corner: string) => {
     if (!chartAreaRef.current) return;
     
@@ -1594,40 +1404,181 @@ export default function SeatingChart() {
     }
   };
 
-  const handleRemoveGuestFromChair = async (chairId: string) => {
+  const handleAssignGuestToChairDialog = (chairId: string, guestId: string) => {
+    handleAssignGuestToChair(chairId, guestId);
+  };
+
+  const createFloorPlansBucket = async () => {
     try {
-      // Just verify user is authenticated
+      // Ensure user is authenticated before proceeding
       await getUserId();
       
-      const { error } = await supabase
-        .from('table_chairs')
-        .update({ guest_id: null })
-        .eq('id', chairId);
+      // Check if the bucket exists
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
 
-      if (error) throw error;
+      if (bucketsError) {
+        console.error('Error checking storage buckets:', bucketsError);
+        return false;
+      }
 
-      // Update local state with proper type handling
-      setChairs(chairs.map(chair => {
-        if (chair.id === chairId) {
-          const updatedChair: Chair = { ...chair };
-          updatedChair.guest_id = undefined;
-          return updatedChair;
-        }
-        return chair;
-      }));
+      const bucketExists = buckets.some(bucket => bucket.name === 'floor_plans');
 
+      if (!bucketExists) {
+        // Instead of trying to create the bucket directly (which might fail due to RLS),
+        // we'll use a simpler approach - just check if it exists
+        console.log('Floor plans bucket does not exist in this session');
+        return true;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Unexpected error checking floor plans bucket:', error);
+      return false;
+    }
+  };
+
+  const handleFloorPlanUpload = async () => {
+    if ((!pdfFile && !imageFile) || !floorPlanName || !floorPlanScale) {
       setSnackbar({
         open: true,
-        message: 'Guest removed from chair',
+        message: 'Please provide a name, scale, and file for the floor plan',
+        severity: 'error'
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    setFloorPlanError(null);
+
+    try {
+      await getUserId();
+
+      // Create the bucket if it doesn't exist
+      await createFloorPlansBucket();
+      
+      // Use the image file if provided, otherwise use the PDF
+      const fileToUpload = imageFile || pdfFile;
+      if (!fileToUpload) {
+        throw new Error('No file selected');
+      }
+      
+      // Upload the file to storage
+      const fileName = `${await getUserId()}_${Date.now()}_${fileToUpload.name.replace(/\s+/g, '_')}`;
+      const { error: uploadError } = await supabase
+        .storage
+        .from('floor_plans')
+        .upload(fileName, fileToUpload);
+
+      if (uploadError) {
+        console.error('Error uploading floor plan:', uploadError);
+        setFloorPlanError('Failed to upload file. Please try again with a smaller file or a different format.');
+        setSnackbar({
+          open: true,
+          message: 'Failed to upload floor plan',
+          severity: 'error'
+        });
+        setIsUploading(false);
+        return;
+      }
+
+      // Get the public URL for the uploaded file
+      const { data: { publicUrl } } = supabase
+        .storage
+        .from('floor_plans')
+        .getPublicUrl(fileName);
+
+      console.log('Saving floor plan with URL:', publicUrl);
+      
+      // Try to save with image_url first
+      try {
+        const { data, error: insertError } = await supabase
+          .from('floor_plans')
+          .insert([
+            {
+              name: floorPlanName,
+              image_url: publicUrl,
+              scale: parseFloat(floorPlanScale),
+              created_by: await getUserId()
+            }
+          ])
+          .select()
+          .single();
+
+        if (insertError) {
+          throw insertError;
+        }
+
+        // Success with image_url
+        console.log('Successfully saved floor plan with image_url column');
+        
+        // Refresh the floor plans list
+        await fetchFloorPlans();
+
+        // Automatically select the newly uploaded floor plan
+        if (data) {
+          setSelectedFloorPlan(data);
+        }
+      } catch (error) {
+        console.log('Failed with image_url, trying imageUrl column instead:', error);
+        
+        // Try with imageUrl if image_url fails
+        const { data, error: insertError2 } = await supabase
+          .from('floor_plans')
+          .insert([
+            {
+              name: floorPlanName,
+              imageUrl: publicUrl,
+              scale: parseFloat(floorPlanScale),
+              created_by: await getUserId()
+            }
+          ])
+          .select()
+          .single();
+
+        if (insertError2) {
+          console.error('Error saving floor plan details with both column names:', insertError2);
+          setFloorPlanError('Failed to save floor plan details in the database.');
+          setSnackbar({
+            open: true,
+            message: 'Failed to save floor plan details',
+            severity: 'error'
+          });
+          setIsUploading(false);
+          return;
+        }
+
+        console.log('Successfully saved floor plan with imageUrl column');
+        
+        // Refresh the floor plans list
+        await fetchFloorPlans();
+
+        // Automatically select the newly uploaded floor plan
+        if (data) {
+          setSelectedFloorPlan(data);
+        }
+      }
+
+      // Reset the form
+      setFloorPlanName('');
+      setFloorPlanScale('1');
+      setPdfFile(null);
+      setImageFile(null);
+      setUploadDialogOpen(false);
+      setSnackbar({
+        open: true,
+        message: 'Floor plan uploaded successfully',
         severity: 'success'
       });
     } catch (error) {
-      console.error('Error removing guest from chair:', error);
+      console.error('Error uploading floor plan:', error);
+      setFloorPlanError('An unexpected error occurred during upload.');
       setSnackbar({
         open: true,
-        message: 'Failed to remove guest from chair',
+        message: 'Failed to upload floor plan',
         severity: 'error'
       });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -1994,7 +1945,7 @@ export default function SeatingChart() {
                     sx={{ cursor: 'pointer' }}
                     onClick={() => {
                       if (selectedChair) {
-                        handleAssignGuestToChair(selectedChair.id, guest.id);
+                        handleAssignGuestToChairDialog(selectedChair.id, guest.id);
                       }
                     }}
                   >
