@@ -26,6 +26,10 @@ const router = createBrowserRouter([
         path: 'vision-board',
         element: <VisionBoard />,
       },
+      {
+        path: 'mood-board',
+        element: <VisionBoard />,
+      },
     ],
   },
 ]);

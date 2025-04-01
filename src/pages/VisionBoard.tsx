@@ -31,14 +31,14 @@ export default function VisionBoard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const savedImages = localStorage.getItem('wedding-vision-board');
+    const savedImages = localStorage.getItem('wedding-mood-board') || localStorage.getItem('wedding-vision-board');
     if (savedImages) {
       setImages(JSON.parse(savedImages));
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('wedding-vision-board', JSON.stringify(images));
+    localStorage.setItem('wedding-mood-board', JSON.stringify(images));
   }, [images]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,31 +83,63 @@ export default function VisionBoard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'wedding-vision-board.json';
+    a.download = 'wedding-mood-board.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        try {
+          const importedData = JSON.parse(reader.result as string);
+          setImages(importedData);
+          localStorage.setItem('wedding-mood-board', JSON.stringify(importedData));
+          alert('Mood board imported successfully!');
+        } catch (error) {
+          alert('Error importing mood board. Please check the file format.');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Vision Board</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">Mood Board</h1>
         <div className="flex space-x-3">
           <button
             onClick={downloadBoard}
-            className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
           >
             <Download className="w-5 h-5 mr-2" />
-            Export Board
+            Export Mood Board
           </button>
+          <button
+            onClick={() => document.getElementById('import-board')?.click()}
+            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+          >
+            <ExternalLink className="w-5 h-5 mr-2" />
+            Import Mood Board
+          </button>
+          <input
+            type="file"
+            id="import-board"
+            accept=".json"
+            className="hidden"
+            onChange={handleImport}
+          />
           <button
             onClick={() => {
               setNewImage({ category: categories[0] });
               setShowForm(true);
             }}
-            className="inline-flex items-center px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700"
+            className="flex items-center px-4 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700"
           >
             <Plus className="w-5 h-5 mr-2" />
             Add Image
@@ -134,9 +166,14 @@ export default function VisionBoard() {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Add Inspiration Image</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Add to Mood Board</h2>
+              <button onClick={() => setShowForm(false)} className="text-gray-500 hover:text-gray-700">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -276,13 +313,15 @@ export default function VisionBoard() {
 
       {filteredImages.length === 0 && (
         <div className="text-center py-12">
-          <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No images yet</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {images.length === 0
-              ? "Get started by adding your first inspiration image."
-              : "No images found in this category."}
-          </p>
+          <ImageIcon className="w-16 h-16 mx-auto text-gray-400" />
+          <h3 className="mt-4 text-lg font-medium text-gray-900">No images yet</h3>
+          <p className="mt-1 text-gray-500">Get started by adding images to your mood board.</p>
+          <button
+            onClick={() => setShowForm(true)}
+            className="mt-6 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+          >
+            Add Your First Image
+          </button>
         </div>
       )}
     </div>
