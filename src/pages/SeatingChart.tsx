@@ -40,7 +40,13 @@ import { Guest } from '../types/Guest';
 // Create a Supabase client with the correct credentials
 const supabaseUrl = 'https://yemkduykvfdjmldxfphq.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllbWtkdXlrdmZkam1sZHhmcGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODA1NjY0MDAsImV4cCI6MTk5NjE0MjQwMH0.S3-NxrP3OqcXJhKYOv6XPBu1NlOvJmQnSEw6BPrLsXQ';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
 
 interface TableTemplate {
   id: string;
@@ -162,11 +168,19 @@ export default function SeatingChart() {
 
   const checkUserAuth = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('Error getting user:', userError);
+        setLoginDialogOpen(true);
+        return;
+      }
+      
       const isAuthenticated = !!user;
       setIsLoggedIn(isAuthenticated);
       
       if (isAuthenticated) {
+        console.log('User authenticated:', user.email);
         // Only fetch data if user is authenticated
         fetchTableTemplates();
         fetchTables();
@@ -190,32 +204,43 @@ export default function SeatingChart() {
 
   const handleLogin = async () => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('Attempting login with:', email);
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Login error:', error.message);
+        setSnackbar({
+          open: true,
+          message: `Login failed: ${error.message}`,
+          severity: 'error'
+        });
+        return;
+      }
 
+      console.log('Login successful:', data);
       setIsLoggedIn(true);
       setLoginDialogOpen(false);
-      setSnackbar({
-        open: true,
-        message: 'Logged in successfully',
-        severity: 'success'
-      });
-
-      // Refresh data after login
+      
+      // Fetch data after successful login
       fetchTableTemplates();
       fetchTables();
       fetchChairs();
       fetchGuests();
       fetchFloorPlans();
-    } catch (error) {
-      console.error('Error logging in:', error);
+      
       setSnackbar({
         open: true,
-        message: 'Failed to log in',
+        message: 'Login successful!',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Unexpected login error:', error);
+      setSnackbar({
+        open: true,
+        message: 'An unexpected error occurred during login',
         severity: 'error'
       });
     }
@@ -223,12 +248,28 @@ export default function SeatingChart() {
 
   // Get the current user ID or throw an error if not authenticated
   const getUserId = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (user) {
-      return user.id;
-    } else {
-      throw new Error('User not authenticated');
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error) {
+        console.error('Error getting user ID:', error);
+        throw new Error('Failed to get user: ' + error.message);
+      }
+      
+      if (user) {
+        console.log('User ID retrieved:', user.id);
+        return user.id;
+      } else {
+        console.error('No user found in session');
+        setIsLoggedIn(false);
+        setLoginDialogOpen(true);
+        throw new Error('User not authenticated');
+      }
+    } catch (error) {
+      console.error('Unexpected error in getUserId:', error);
+      setIsLoggedIn(false);
+      setLoginDialogOpen(true);
+      throw new Error('Authentication error');
     }
   };
 
@@ -295,11 +336,19 @@ export default function SeatingChart() {
 
   const fetchTables = async () => {
     try {
+      // Get the current user ID
+      const userId = await getUserId();
+      
+      // Query tables for the current user
       const { data, error } = await supabase
         .from('seating_tables')
-        .select('*');
+        .select('*')
+        .eq('user_id', userId);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Database error fetching tables:', error);
+        throw error;
+      }
       
       if (data) {
         // Ensure all tables have position_x and position_y properties
@@ -311,6 +360,11 @@ export default function SeatingChart() {
         }));
         
         setTables(formattedTables);
+        
+        // Create chairs for tables that don't have them
+        for (const table of formattedTables) {
+          await createChairsForTable(table.id, table.seats);
+        }
       }
     } catch (error) {
       console.error('Error fetching tables:', error);
@@ -324,11 +378,39 @@ export default function SeatingChart() {
 
   const fetchChairs = async () => {
     try {
+      // Get the current user ID
+      const userId = await getUserId();
+      
+      // First get all tables for this user
+      const { data: userTables, error: tablesError } = await supabase
+        .from('seating_tables')
+        .select('id')
+        .eq('user_id', userId);
+      
+      if (tablesError) {
+        console.error('Error fetching tables for chairs:', tablesError);
+        throw tablesError;
+      }
+      
+      if (!userTables || userTables.length === 0) {
+        // No tables found, so no chairs to fetch
+        setChairs([]);
+        return;
+      }
+      
+      // Get all table IDs
+      const tableIds = userTables.map(table => table.id);
+      
+      // Fetch chairs for these tables
       const { data, error } = await supabase
         .from('table_chairs')
-        .select('*');
+        .select('*')
+        .in('table_id', tableIds);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching chairs:', error);
+        throw error;
+      }
       
       setChairs(data || []);
     } catch (error) {
@@ -343,11 +425,19 @@ export default function SeatingChart() {
 
   const fetchGuests = async () => {
     try {
+      // Get the current user ID
+      const userId = await getUserId();
+      
+      // Query guests for the current user
       const { data, error } = await supabase
         .from('guests')
-        .select('*');
-
-      if (error) throw error;
+        .select('*')
+        .eq('created_by', userId);
+      
+      if (error) {
+        console.error('Database error fetching guests:', error);
+        throw error;
+      }
 
       setGuests(data || []);
     } catch (error) {
