@@ -26,6 +26,7 @@ import WeddingChecklist from './pages/WeddingChecklist';
 import Services from './pages/Services';
 import Videos from './pages/Videos';
 import AddVendor from './pages/admin/add-vendor';
+import VisionBoard from './pages/VisionBoard';
 
 // Define app routes to check against
 const APP_ROUTES = [
@@ -42,7 +43,9 @@ const APP_ROUTES = [
   '/directory',
   '/tutorials',
   '/coordination',
-  '/services'
+  '/services',
+  '/vision-board',
+  '/mood-board'
 ];
 
 // Component to handle wedding name routes
@@ -108,6 +111,8 @@ function AppContent() {
         <Route path="/tutorials" element={<Videos />} />
         <Route path="/coordination" element={<ComingSoon />} />
         <Route path="/services" element={<Services />} />
+        <Route path="/vision-board" element={<VisionBoard />} />
+        <Route path="/mood-board" element={<VisionBoard />} />
         
         {/* Wedding name route - use a separate component to handle the logic */}
         <Route path="/:weddingName" element={<WeddingNameHandler />} />
