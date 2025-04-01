@@ -30,7 +30,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext } from 'react-beautiful-dnd';
 import { supabase } from '../supabaseClient';
 import GuestList from '../components/SeatingChart/GuestList';
 import { Guest } from '../types/Guest';
@@ -109,6 +109,9 @@ export default function SeatingChart() {
   const [password, setPassword] = useState('');
   const [showGrid, setShowGrid] = useState(true);
   const [guestDialogOpen, setGuestDialogOpen] = useState(false);
+  const [selectedChair, setSelectedChair] = useState<Chair | null>(null);
+  const [assignGuestDialogOpen, setAssignGuestDialogOpen] = useState(false);
+  const [guestSearchTerm, setGuestSearchTerm] = useState('');
   const chartAreaRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -388,7 +391,7 @@ export default function SeatingChart() {
           throw new Error('Selected template not found');
         }
 
-        // Insert the table
+        // Insert the table with larger dimensions
         const { data, error } = await supabase
           .from('seating_tables')
           .insert([
@@ -397,8 +400,8 @@ export default function SeatingChart() {
               seats: template.seats,
               shape: template.shape,
               template_id: template.id,
-              width: template.width,
-              length: template.length,
+              width: template.width * 1.5, // Make tables 50% larger
+              length: template.length * 1.5, // Make tables 50% larger
               position: { x: 300, y: 200 }, // Position in the center of the view
               rotation: 0,
               user_id: await getUserId()
@@ -447,8 +450,8 @@ export default function SeatingChart() {
               name: `Custom Table - ${customSeats} Seats`,
               shape: 'round', // Default shape for custom tables
               seats: customSeats,
-              width: 100,
-              length: 100,
+              width: 150, // Larger default size
+              length: 150, // Larger default size
               is_predefined: false,
               created_by: await getUserId()
             }
@@ -467,8 +470,8 @@ export default function SeatingChart() {
               seats: customSeats,
               shape: 'round',
               template_id: templateData.id,
-              width: 100,
-              length: 100,
+              width: 150, // Larger default size
+              length: 150, // Larger default size
               position: { x: 300, y: 200 }, // Position in the center of the view
               rotation: 0,
               user_id: await getUserId()
@@ -649,11 +652,15 @@ export default function SeatingChart() {
 
       if (error) throw error;
 
-      // Update local state
-      const updatedChairs = chairs.map(chair => 
-        chair.id === chairId ? { ...chair, guest_id: undefined } : chair
-      );
-      setChairs(updatedChairs);
+      // Update local state with proper type handling
+      setChairs(chairs.map(chair => {
+        if (chair.id === chairId) {
+          const updatedChair: Chair = { ...chair };
+          updatedChair.guest_id = undefined;
+          return updatedChair;
+        }
+        return chair;
+      }));
 
       setSnackbar({
         open: true,
@@ -696,10 +703,15 @@ export default function SeatingChart() {
 
       if (error) throw error;
 
-      // Update local state
-      setChairs(chairs.map(c => 
-        c.id === chair.id ? { ...c, guest_id: null } : c
-      ));
+      // Update local state with proper type handling
+      setChairs(chairs.map(c => {
+        if (c.id === chair.id) {
+          const updatedChair: Chair = { ...c };
+          updatedChair.guest_id = undefined;
+          return updatedChair;
+        }
+        return c;
+      }));
 
       setSnackbar({
         open: true,
@@ -721,11 +733,8 @@ export default function SeatingChart() {
     // This could set some state and open a dialog
     console.log('Opening assign guest dialog for chair:', chair);
     // For now, just show a message
-    setSnackbar({
-      open: true,
-      message: 'Guest assignment feature coming soon',
-      severity: 'info'
-    });
+    setSelectedChair(chair);
+    setAssignGuestDialogOpen(true);
   };
 
   // Calculate chair positions based on table dimensions and chair angles
@@ -733,8 +742,9 @@ export default function SeatingChart() {
     return tableChairs.map(chair => {
       // Calculate chair position based on angle and table dimensions
       const tableWidth = table.width;
-      const tableHeight = table.length || table.height;
-      const radius = Math.min(tableWidth, tableHeight) / 2 + 20; // Add 20px padding
+      const tableLength = table.length;
+      // Increase the radius to position chairs farther from the table edge
+      const radius = Math.min(tableWidth, tableLength) / 2 + 30; // Increased padding for larger chairs
       
       // Calculate x and y based on angle (in degrees)
       const angleInRadians = (chair.angle * Math.PI) / 180;
@@ -745,7 +755,7 @@ export default function SeatingChart() {
       return {
         ...chair,
         x: tableWidth / 2 + x,
-        y: tableHeight / 2 + y
+        y: tableLength / 2 + y
       };
     });
   };
@@ -760,6 +770,10 @@ export default function SeatingChart() {
     // Calculate chair positions
     const chairsWithPositions = isFloorPlanMode ? [] : calculateChairPositions(tableChairs, table);
 
+    // Determine table color based on shape
+    const tableColor = isFloorPlanMode ? 'rgba(200, 200, 200, 0.7)' : 
+                      (table.shape === 'round' ? '#f0f0f0' : '#e6e6e6');
+
     return (
       <Box
         key={table.id}
@@ -770,8 +784,9 @@ export default function SeatingChart() {
           width: `${table.width}px`,
           height: `${table.length}px`,
           borderRadius: table.shape === 'round' ? '50%' : '4px',
-          backgroundColor: isFloorPlanMode ? 'rgba(200, 200, 200, 0.7)' : 'white',
+          backgroundColor: tableColor,
           border: isSelected ? '2px solid #1976d2' : '1px solid #ccc',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -792,43 +807,73 @@ export default function SeatingChart() {
           variant="body2"
           sx={{
             textAlign: 'center',
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            fontSize: '0.9rem',
+            color: '#333'
           }}
         >
           {table.name}
+          <br />
+          {table.seats} seats
         </Typography>
         
         {/* Only show chairs in regular mode, not in floor plan mode */}
         {!isFloorPlanMode && chairsWithPositions.map((chair) => {
           const chairGuest = guests.find(g => g.id === chair.guest_id);
+          const chairSize = 40; // Increased chair size
           
           return (
             <Box
               key={chair.id}
               sx={{
                 position: 'absolute',
-                left: `${chair.x}px`,
-                top: `${chair.y}px`,
-                width: '30px',
-                height: '30px',
+                left: `${chair.x - chairSize/2}px`,
+                top: `${chair.y - chairSize/2}px`,
+                width: `${chairSize}px`,
+                height: `${chairSize}px`,
                 borderRadius: '50%',
                 backgroundColor: chair.guest_id ? '#4caf50' : '#f5f5f5',
                 border: '1px solid #ccc',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                 display: 'flex',
+                flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
-                fontSize: '10px',
+                fontSize: '12px',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
                 cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  transform: 'scale(1.1)',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                },
               }}
               onClick={(e) => {
                 e.stopPropagation();
                 handleChairClick(chair);
               }}
             >
-              {chairGuest?.name?.charAt(0) || ''}
+              {chairGuest ? (
+                <>
+                  <Typography variant="caption" sx={{ fontWeight: 'bold', fontSize: '10px' }}>
+                    {chairGuest.first_name.charAt(0)}{chairGuest.last_name.charAt(0)}
+                  </Typography>
+                  <Typography variant="caption" sx={{ fontSize: '8px' }}>
+                    Seat {chair.position}
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <Typography variant="caption" sx={{ fontSize: '10px' }}>
+                    Empty
+                  </Typography>
+                  <Typography variant="caption" sx={{ fontSize: '8px' }}>
+                    Seat {chair.position}
+                  </Typography>
+                </>
+              )}
             </Box>
           );
         })}
@@ -987,7 +1032,9 @@ export default function SeatingChart() {
       // Get unassigned guests when dialog opens
       if (editDialogOpen) {
         const unassignedGuests = guests.filter(guest => 
-          !chairs.some(chair => chair.guest_id === guest.id)
+          !chairs.some(chair => 
+            chair.guest_id === guest.id
+          )
         );
         setAvailableGuests(unassignedGuests);
       }
@@ -1509,6 +1556,81 @@ export default function SeatingChart() {
     setSelectedTable(null);
   };
 
+  const handleAssignGuestToChair = async (chairId: string, guestId: string) => {
+    try {
+      // Assign guest to the chair
+      const { error } = await supabase
+        .from('table_chairs')
+        .update({ guest_id: guestId })
+        .eq('id', chairId);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setChairs(chairs.map(chair => 
+        chair.id === chairId ? { ...chair, guest_id: guestId } : chair
+      ));
+      
+      setSnackbar({
+        open: true,
+        message: 'Guest assigned to seat',
+        severity: 'success'
+      });
+      
+      // Close the dialog
+      setAssignGuestDialogOpen(false);
+      setSelectedChair(null);
+      
+      // Refresh chairs data
+      await fetchChairs();
+      
+    } catch (error) {
+      console.error('Error assigning guest to chair:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to assign guest to seat',
+        severity: 'error'
+      });
+    }
+  };
+
+  const handleRemoveGuestFromChair = async (chairId: string) => {
+    try {
+      // Just verify user is authenticated
+      await getUserId();
+      
+      const { error } = await supabase
+        .from('table_chairs')
+        .update({ guest_id: null })
+        .eq('id', chairId);
+
+      if (error) throw error;
+
+      // Update local state with proper type handling
+      setChairs(chairs.map(chair => {
+        if (chair.id === chairId) {
+          const updatedChair: Chair = { ...chair };
+          updatedChair.guest_id = undefined;
+          return updatedChair;
+        }
+        return chair;
+      }));
+
+      setSnackbar({
+        open: true,
+        message: 'Guest removed from chair',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error removing guest from chair:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to remove guest from chair',
+        severity: 'error'
+      });
+    }
+  };
+
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <Container maxWidth="xl" sx={{ py: 4, height: 'calc(100vh - 64px)' }}>
@@ -1821,7 +1943,6 @@ export default function SeatingChart() {
             <Button onClick={() => setGuestDialogOpen(false)}>Cancel</Button>
             <Button variant="contained" onClick={() => {
               // Add guest logic would go here
-              setGuestDialogOpen(false);
               setSnackbar({
                 open: true,
                 message: 'Guest added successfully',
@@ -1830,6 +1951,77 @@ export default function SeatingChart() {
             }}>
               Add Guest
             </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Assign Guest to Chair Dialog */}
+        <Dialog 
+          open={assignGuestDialogOpen} 
+          onClose={() => setAssignGuestDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            Assign Guest to Seat {selectedChair?.position}
+          </DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Search Guests"
+              type="text"
+              fullWidth
+              value={guestSearchTerm}
+              onChange={(e) => setGuestSearchTerm(e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            
+            <List sx={{ maxHeight: '300px', overflow: 'auto' }}>
+              {guests
+                .filter(guest => 
+                  // Filter out guests already assigned to chairs
+                  !chairs.some(chair => 
+                    chair.id !== selectedChair?.id && chair.guest_id === guest.id
+                  ) &&
+                  // Filter by search term
+                  (guestSearchTerm === '' || 
+                   `${guest.first_name} ${guest.last_name}`.toLowerCase().includes(guestSearchTerm.toLowerCase()))
+                )
+                .map(guest => (
+                  <ListItem 
+                    key={guest.id}
+                    component="div"
+                    sx={{ cursor: 'pointer' }}
+                    onClick={() => {
+                      if (selectedChair) {
+                        handleAssignGuestToChair(selectedChair.id, guest.id);
+                      }
+                    }}
+                  >
+                    <ListItemText 
+                      primary={`${guest.first_name} ${guest.last_name}`}
+                    />
+                  </ListItem>
+                ))}
+              
+              {guests.filter(guest => 
+                !chairs.some(chair => 
+                  chair.id !== selectedChair?.id && chair.guest_id === guest.id
+                ) &&
+                (guestSearchTerm === '' || 
+                 `${guest.first_name} ${guest.last_name}`.toLowerCase().includes(guestSearchTerm.toLowerCase()))
+              ).length === 0 && (
+                <ListItem>
+                  <ListItemText 
+                    primary="No available guests found"
+                    secondary="All guests are already assigned or no guests match your search"
+                  />
+                </ListItem>
+              )}
+            </List>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setAssignGuestDialogOpen(false)}>Cancel</Button>
           </DialogActions>
         </Dialog>
 
