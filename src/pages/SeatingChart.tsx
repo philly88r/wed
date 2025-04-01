@@ -52,7 +52,7 @@ interface Table {
   name: string;
   seats: number;
   shape: string;
-  template_id?: string;
+  template_id: string;
   color?: string;
   width: number;
   length: number;
@@ -293,23 +293,26 @@ export default function SeatingChart() {
       const { data, error } = await supabase
         .from('seating_tables')
         .select('*');
-
-      if (error) throw error;
-
-      setTables(data || []);
       
-      // Create chairs for tables that don't have them
+      if (error) throw error;
+      
       if (data) {
-        for (const table of data) {
-          await createChairsForTable(table.id, table.seats);
-        }
+        // Ensure all tables have position_x and position_y properties
+        const formattedTables = data.map((table: any) => ({
+          ...table,
+          // If the table has position.x and position.y, map them to position_x and position_y
+          position_x: table.position_x || (table.position ? table.position.x : 300),
+          position_y: table.position_y || (table.position ? table.position.y : 200)
+        }));
+        
+        setTables(formattedTables);
       }
     } catch (error) {
       console.error('Error fetching tables:', error);
       setSnackbar({
         open: true,
-        message: 'Failed to load tables',
-        severity: 'error',
+        message: 'Failed to fetch tables',
+        severity: 'error'
       });
     }
   };
@@ -327,7 +330,7 @@ export default function SeatingChart() {
       console.error('Error fetching chairs:', error);
       setSnackbar({
         open: true,
-        message: 'Failed to load chairs',
+        message: 'Failed to fetch chairs',
         severity: 'error'
       });
     }
@@ -346,7 +349,7 @@ export default function SeatingChart() {
       console.error('Error fetching guests:', error);
       setSnackbar({
         open: true,
-        message: 'Failed to load guests',
+        message: 'Failed to fetch guests',
         severity: 'error'
       });
     }
@@ -376,7 +379,7 @@ export default function SeatingChart() {
           console.error('Error fetching floor plans:', error);
           setSnackbar({
             open: true,
-            message: 'Failed to load floor plans',
+            message: 'Failed to fetch floor plans',
             severity: 'error'
           });
         }
@@ -1155,30 +1158,34 @@ export default function SeatingChart() {
   };
 
   const handleTableDragStart = (e: React.MouseEvent, table: Table) => {
-    if (!chartAreaRef.current) return;
-    
-    // Prevent default to avoid unwanted behaviors
     e.preventDefault();
     e.stopPropagation();
     
-    const chartRect = chartAreaRef.current.getBoundingClientRect();
-    const initialX = e.clientX - chartRect.left;
-    const initialY = e.clientY - chartRect.top;
-    const offsetX = initialX - table.position_x;
-    const offsetY = initialY - table.position_y;
+    if (!chartAreaRef.current) return;
     
     // Set the currently selected table
     setSelectedTable(table);
     
+    // Get the initial mouse position
+    const chartRect = chartAreaRef.current.getBoundingClientRect();
+    const startX = e.clientX - chartRect.left;
+    const startY = e.clientY - chartRect.top;
+    
+    // Calculate the offset from the mouse to the table's top-left corner
+    const offsetX = startX - table.position_x;
+    const offsetY = startY - table.position_y;
+    
+    // Define the move handler
     const handleMouseMove = (moveEvent: MouseEvent) => {
       moveEvent.preventDefault();
       
+      // Calculate the new position
       const newX = moveEvent.clientX - chartRect.left - offsetX;
       const newY = moveEvent.clientY - chartRect.top - offsetY;
       
       // Update the table position in state
-      setTables(currentTables => 
-        currentTables.map(t => 
+      setTables(prevTables => 
+        prevTables.map(t => 
           t.id === table.id 
             ? { ...t, position_x: Math.max(0, newX), position_y: Math.max(0, newY) } 
             : t
@@ -1186,29 +1193,29 @@ export default function SeatingChart() {
       );
     };
     
+    // Define the mouse up handler
     const handleMouseUp = async () => {
+      // Remove event listeners
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
       
-      // Save the new position to the database
+      // Get the updated table from state
       const updatedTable = tables.find(t => t.id === table.id);
+      
       if (updatedTable) {
         try {
-          await getUserId(); // Just verify user is authenticated
-          
-          await supabase
+          // Update the table position in the database
+          const { error } = await supabase
             .from('seating_tables')
             .update({ 
               position_x: updatedTable.position_x, 
               position_y: updatedTable.position_y 
             })
             .eq('id', table.id);
-            
-          setSnackbar({
-            open: true,
-            message: 'Table position updated',
-            severity: 'success'
-          });
+          
+          if (error) throw error;
+          
+          console.log('Table position updated successfully');
         } catch (error) {
           console.error('Error updating table position:', error);
           setSnackbar({
@@ -1220,6 +1227,7 @@ export default function SeatingChart() {
       }
     };
     
+    // Add event listeners
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
   };
@@ -1336,6 +1344,8 @@ export default function SeatingChart() {
           alignItems: 'center',
           cursor: 'move',
           zIndex: isSelected ? 3 : 2,
+          userSelect: 'none', // Prevent text selection during drag
+          touchAction: 'none', // Prevent touch actions during drag
         }}
         onClick={(e) => {
           if (!selectedFloorPlan) {

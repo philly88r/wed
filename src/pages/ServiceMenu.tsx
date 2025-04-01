@@ -72,6 +72,13 @@ const services: ServiceCard[] = [
     longDescription: 'Build a detailed timeline for your wedding day. Account for hair & makeup, photos, ceremony, reception, and more. Share with vendors and wedding party to keep everyone on schedule.'
   },
   {
+    title: 'Mood Board',
+    price: '$29',
+    path: '/mood-board',
+    description: 'Visualize your wedding style and inspiration',
+    longDescription: 'Create a beautiful digital mood board for your wedding. Collect and organize inspiration images for decor, flowers, attire, and more. Share with vendors to communicate your vision clearly.'
+  },
+  {
     title: 'Floor Plan + Seating Chart Creator',
     price: '$59',
     path: '/seating-chart',
