@@ -1,15 +1,39 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Image as ImageIcon, X, ExternalLink, Download } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { createCustomLink } from '../utils/customLinksHelper';
+import MoodboardGenerator from '../components/MoodboardGenerator';
+import { Tabs, Tab, Box } from '@mui/material';
 
 interface InspirationImage {
   id: string;
-  url: string;
   title: string;
   description?: string;
+  url: string;
   category: string;
   source?: string;
+}
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`moodboard-tabpanel-${index}`}
+      aria-labelledby={`moodboard-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  );
 }
 
 const categories = [
@@ -31,6 +55,8 @@ export default function VisionBoard() {
     category: categories[0]
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [tabValue, setTabValue] = useState(0);
+  const [falApiKey, setFalApiKey] = useState<string>('');
 
   // Create a custom link for the current path to fix the 406 error
   useEffect(() => {
@@ -86,6 +112,13 @@ export default function VisionBoard() {
     };
     saveImages();
   }, [images]);
+
+  useEffect(() => {
+    // Get FAL API key from environment variables
+    if (import.meta.env.VITE_FAL_KEY) {
+      setFalApiKey(import.meta.env.VITE_FAL_KEY as string);
+    }
+  }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -154,6 +187,10 @@ export default function VisionBoard() {
     }
   };
 
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8">
@@ -210,6 +247,69 @@ export default function VisionBoard() {
           ))}
         </div>
       </div>
+
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-semibold text-gray-900">Mood Board Generator</h1>
+        <div className="flex space-x-3">
+          <Tabs value={tabValue} onChange={handleTabChange} centered>
+            <Tab label="Classic Mood Board" />
+            <Tab label="AI Mood Board Generator" />
+          </Tabs>
+        </div>
+      </div>
+
+      <TabPanel value={tabValue} index={0}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredImages.map(image => (
+            <div
+              key={image.id}
+              className="bg-white rounded-xl shadow-sm overflow-hidden group"
+            >
+              <div className="relative aspect-w-16 aspect-h-9">
+                <img
+                  src={image.url}
+                  alt={image.title}
+                  className="object-cover w-full h-full"
+                />
+                <button
+                  onClick={() => deleteImage(image.id)}
+                  className="absolute top-2 right-2 p-1 bg-white rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-4 h-4 text-gray-500" />
+                </button>
+              </div>
+              <div className="p-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    {image.title}
+                  </h3>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    {image.category}
+                  </span>
+                </div>
+                {image.description && (
+                  <p className="mt-2 text-sm text-gray-500">{image.description}</p>
+                )}
+                {image.source && (
+                  <a
+                    href={image.source}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center text-sm text-rose-600 hover:text-rose-700"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-1" />
+                    Source
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </TabPanel>
+
+      <TabPanel value={tabValue} index={1}>
+        <MoodboardGenerator falApiKey={falApiKey} />
+      </TabPanel>
 
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -309,53 +409,6 @@ export default function VisionBoard() {
           </div>
         </div>
       )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredImages.map(image => (
-          <div
-            key={image.id}
-            className="bg-white rounded-xl shadow-sm overflow-hidden group"
-          >
-            <div className="relative aspect-w-16 aspect-h-9">
-              <img
-                src={image.url}
-                alt={image.title}
-                className="object-cover w-full h-full"
-              />
-              <button
-                onClick={() => deleteImage(image.id)}
-                className="absolute top-2 right-2 p-1 bg-white rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X className="w-4 h-4 text-gray-500" />
-              </button>
-            </div>
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900">
-                  {image.title}
-                </h3>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                  {image.category}
-                </span>
-              </div>
-              {image.description && (
-                <p className="mt-2 text-sm text-gray-500">{image.description}</p>
-              )}
-              {image.source && (
-                <a
-                  href={image.source}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center text-sm text-rose-600 hover:text-rose-700"
-                >
-                  <ExternalLink className="w-4 h-4 mr-1" />
-                  Source
-                </a>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
 
       {filteredImages.length === 0 && (
         <div className="text-center py-12">
