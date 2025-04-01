@@ -1,10 +1,16 @@
 [build]
-  command = "npm ci && npm run build"
+  command = "node netlify-build.js"
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "18.16.0"
   SECRETS_SCAN_ENABLED = "false"
+  NPM_CONFIG_REGISTRY = "https://registry.npmjs.org/"
+  NPM_CONFIG_LOGLEVEL = "verbose"
+  NPM_CONFIG_LEGACY_PEER_DEPS = "true"
+  NPM_CONFIG_PREFER_OFFLINE = "true"
+  VITE_SUPABASE_URL = "https://yemkduykvfdjmldxfphq.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllbWtkdXlrdmZkam1sZHhmcGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODA1NjY0MDAsImV4cCI6MTk5NjE0MjQwMH0.S3-NxrP3OqcXJhKYOv6XPBu1NlOvJmQnSEw6BPrLsXQ"
 
 [[redirects]]
   from = "/*"
