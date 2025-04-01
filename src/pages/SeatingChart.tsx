@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Container, 
   Box, 
@@ -33,9 +32,15 @@ import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import { DragDropContext } from 'react-beautiful-dnd';
-import { supabase } from '../supabaseClient';
+import { createClient } from '@supabase/supabase-js';
 import GuestList from '../components/SeatingChart/GuestList';
+import { useNavigate } from 'react-router-dom';
 import { Guest } from '../types/Guest';
+
+// Create a Supabase client with the correct credentials
+const supabaseUrl = 'https://yemkduykvfdjmldxfphq.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllbWtkdXlrdmZkam1sZHhmcGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODA1NjY0MDAsImV4cCI6MTk5NjE0MjQwMH0.S3-NxrP3OqcXJhKYOv6XPBu1NlOvJmQnSEw6BPrLsXQ';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface TableTemplate {
   id: string;
@@ -1204,6 +1209,8 @@ export default function SeatingChart() {
       
       if (updatedTable) {
         try {
+          console.log('Updating table position:', updatedTable.id, updatedTable.position_x, updatedTable.position_y);
+          
           // Update the table position in the database
           const { error } = await supabase
             .from('seating_tables')
@@ -1211,9 +1218,12 @@ export default function SeatingChart() {
               position_x: updatedTable.position_x, 
               position_y: updatedTable.position_y 
             })
-            .eq('id', table.id);
+            .eq('id', updatedTable.id);
           
-          if (error) throw error;
+          if (error) {
+            console.error('Database error:', error);
+            throw error;
+          }
           
           console.log('Table position updated successfully');
         } catch (error) {
@@ -1238,6 +1248,7 @@ export default function SeatingChart() {
     e.preventDefault();
     e.stopPropagation();
     
+    // Get the chart area dimensions
     const chartRect = chartAreaRef.current.getBoundingClientRect();
     const initialX = e.clientX - chartRect.left;
     const initialY = e.clientY - chartRect.top;
@@ -1246,6 +1257,7 @@ export default function SeatingChart() {
     const originalWidth = table.width;
     const originalLength = table.length;
     
+    // Define the mouse move handler
     const handleMouseMove = (moveEvent: MouseEvent) => {
       moveEvent.preventDefault();
       
@@ -1274,8 +1286,8 @@ export default function SeatingChart() {
       }
       
       // Update the table dimensions in state
-      setTables(currentTables => 
-        currentTables.map(t => 
+      setTables(prevTables => 
+        prevTables.map(t => 
           t.id === table.id 
             ? { ...t, width: newWidth, length: newLength } 
             : t
@@ -1283,29 +1295,34 @@ export default function SeatingChart() {
       );
     };
     
+    // Define the mouse up handler
     const handleMouseUp = async () => {
+      // Remove event listeners
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
       
-      // Save the new dimensions to the database
+      // Get the updated table from state
       const updatedTable = tables.find(t => t.id === table.id);
+      
       if (updatedTable) {
         try {
-          await getUserId(); // Just verify user is authenticated
+          console.log('Updating table size:', updatedTable.id, updatedTable.width, updatedTable.length);
           
-          await supabase
+          // Update the table dimensions in the database
+          const { error } = await supabase
             .from('seating_tables')
             .update({ 
               width: updatedTable.width, 
               length: updatedTable.length 
             })
-            .eq('id', table.id);
-            
-          setSnackbar({
-            open: true,
-            message: 'Table size updated',
-            severity: 'success'
-          });
+            .eq('id', updatedTable.id);
+          
+          if (error) {
+            console.error('Database error:', error);
+            throw error;
+          }
+          
+          console.log('Table size updated successfully');
         } catch (error) {
           console.error('Error updating table size:', error);
           setSnackbar({
@@ -1317,6 +1334,7 @@ export default function SeatingChart() {
       }
     };
     
+    // Add event listeners
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
   };
