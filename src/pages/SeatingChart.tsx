@@ -30,6 +30,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import { DragDropContext } from 'react-beautiful-dnd';
 import { supabase } from '../supabaseClient';
 import GuestList from '../components/SeatingChart/GuestList';
@@ -127,6 +129,7 @@ export default function SeatingChart() {
   const [originalTableSize, setOriginalTableSize] = useState({ width: 0, length: 0 });
   const [isUploading, setIsUploading] = useState(false);
   const [floorPlanError, setFloorPlanError] = useState<string | null>(null); // Add error state
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   // Force navigation to seating-chart to ensure we're on the right page
   useEffect(() => {
@@ -655,6 +658,29 @@ export default function SeatingChart() {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
+  const handleChairClick = (chair: Chair) => {
+    if (!isLoggedIn) {
+      setLoginDialogOpen(true);
+      return;
+    }
+
+    // Don't handle chair clicks in floor plan mode
+    if (selectedFloorPlan) {
+      return;
+    }
+    
+    setSelectedChair(chair);
+    
+    // If chair already has a guest, show option to remove
+    if (chair.guest_id) {
+      // Implementation for removing a guest from chair
+      handleRemoveGuestFromChair(chair.id);
+    } else {
+      // Implementation for assigning a guest to chair
+      setAssignGuestDialogOpen(true);
+    }
+  };
+
   const handleRemoveGuestFromChair = async (chairId: string) => {
     try {
       // Just verify user is authenticated
@@ -692,67 +718,6 @@ export default function SeatingChart() {
     }
   };
 
-  const handleChairClick = (chair: Chair) => {
-    if (!isLoggedIn) {
-      setLoginDialogOpen(true);
-      return;
-    }
-
-    // If chair already has a guest, show option to remove
-    if (chair.guest_id) {
-      // Implementation for removing a guest from chair
-      removeGuestFromChair(chair);
-    } else {
-      // Implementation for assigning a guest to chair
-      // This could open a dialog to select a guest
-      openAssignGuestDialog(chair);
-    }
-  };
-
-  const removeGuestFromChair = async (chair: Chair) => {
-    try {
-      const { error } = await supabase
-        .from('table_chairs')
-        .update({ guest_id: null })
-        .eq('id', chair.id);
-
-      if (error) throw error;
-
-      // Update local state with proper type handling
-      setChairs(chairs.map(c => {
-        if (c.id === chair.id) {
-          const updatedChair: Chair = { ...c };
-          updatedChair.guest_id = undefined;
-          return updatedChair;
-        }
-        return c;
-      }));
-
-      setSnackbar({
-        open: true,
-        message: 'Guest removed from seat',
-        severity: 'success'
-      });
-    } catch (error) {
-      console.error('Error removing guest from chair:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to remove guest from seat',
-        severity: 'error'
-      });
-    }
-  };
-
-  const openAssignGuestDialog = (chair: Chair) => {
-    // Implementation for opening a dialog to select a guest
-    // This could set some state and open a dialog
-    console.log('Opening assign guest dialog for chair:', chair);
-    // For now, just show a message
-    setSelectedChair(chair);
-    setAssignGuestDialogOpen(true);
-  };
-
-  // Calculate chair positions based on table dimensions and chair angles
   const calculateChairPositions = (tableChairs: Chair[], table: Table) => {
     return tableChairs.map(chair => {
       // Calculate chair position based on angle and table dimensions
@@ -775,7 +740,6 @@ export default function SeatingChart() {
     });
   };
 
-  // Render a table with its chairs
   const renderTable = (table: Table) => {
     const tableChairs = chairs.filter(chair => chair.table_id === table.id);
     const isSelected = selectedTable?.id === table.id;
@@ -1353,10 +1317,12 @@ export default function SeatingChart() {
     if (selectedFloorPlan) {
       // Switching back to regular mode
       setSelectedFloorPlan(null);
+      setZoomLevel(1); // Reset zoom
     } else {
       // If there are floor plans, select the first one
       if (floorPlans.length > 0) {
         setSelectedFloorPlan(floorPlans[0]);
+        setZoomLevel(1); // Reset zoom
       } else {
         // No floor plans available, show upload dialog
         setUploadDialogOpen(true);
@@ -1582,6 +1548,18 @@ export default function SeatingChart() {
     }
   };
 
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.1, 2)); // Max zoom 2x
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.1, 0.5)); // Min zoom 0.5x
+  };
+
+  const handleResetZoom = () => {
+    setZoomLevel(1);
+  };
+
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <Container maxWidth="xl" sx={{ py: 4, height: 'calc(100vh - 64px)' }}>
@@ -1615,6 +1593,29 @@ export default function SeatingChart() {
                   Upload Floor Plan
                 </Button>
                 
+                <Button 
+                  variant="outlined" 
+                  onClick={handleZoomIn}
+                  startIcon={<ZoomInIcon />}
+                >
+                  Zoom In
+                </Button>
+                
+                <Button 
+                  variant="outlined" 
+                  onClick={handleZoomOut}
+                  startIcon={<ZoomOutIcon />}
+                >
+                  Zoom Out
+                </Button>
+                
+                <Button 
+                  variant="outlined" 
+                  onClick={handleResetZoom}
+                >
+                  Reset Zoom
+                </Button>
+                
                 <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
                   <InputLabel>Floor Plan</InputLabel>
                   <Select
@@ -1646,45 +1647,35 @@ export default function SeatingChart() {
           </Box>
         </Box>
         
-        <Paper 
-          elevation={3} 
-          sx={{ 
-            height: 'calc(100% - 60px)', 
-            position: 'relative', 
-            overflow: 'hidden',
-            backgroundImage: selectedFloorPlan ? `url(${selectedFloorPlan.image_url})` : 'none',
-            backgroundSize: 'contain',
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center',
-            backgroundColor: '#f5f5f5', // Add a light background color
-          }}
-          ref={chartAreaRef}
-        >
-          {/* Floor plan container */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 0,
+        <Box sx={{ display: 'flex', height: 'calc(100% - 60px)' }}>
+          <Paper 
+            elevation={3} 
+            sx={{ 
+              height: '100%',
+              width: selectedFloorPlan ? '100%' : 'calc(100% - 320px)', 
+              position: 'relative', 
+              overflow: 'hidden',
+              backgroundImage: selectedFloorPlan ? `url(${selectedFloorPlan.image_url})` : 'none',
+              backgroundSize: 'contain',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center',
+              backgroundColor: '#f5f5f5', // Add a light background color
+              transition: 'all 0.3s ease',
             }}
+            ref={chartAreaRef}
           >
-            {selectedFloorPlan && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                {/* This is a transparent overlay to ensure the floor plan is clickable */}
+            {/* Floor plan container */}
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 0,
+              }}
+            >
+              {selectedFloorPlan && (
                 <Box
                   sx={{
                     position: 'absolute',
@@ -1692,38 +1683,57 @@ export default function SeatingChart() {
                     left: 0,
                     width: '100%',
                     height: '100%',
-                    zIndex: 1,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
                   }}
-                />
-              </Box>
-            )}
-          </Box>
+                >
+                  {/* This is a transparent overlay to ensure the floor plan is clickable */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      zIndex: 1,
+                    }}
+                  />
+                </Box>
+              )}
+            </Box>
+            
+            {/* Tables container with higher z-index */}
+            <Box
+              sx={{
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+                zIndex: 2, // Ensure tables are above the floor plan
+                transform: selectedFloorPlan ? `scale(${zoomLevel})` : 'none',
+                transformOrigin: 'center',
+                transition: 'transform 0.3s ease',
+              }}
+              onClick={() => setSelectedTable(null)}
+            >
+              {tables.map((table) => (
+                renderTable(table)
+              ))}
+            </Box>
+          </Paper>
           
-          {/* Tables container with higher z-index */}
-          <Box
-            sx={{
-              position: 'relative',
-              width: '100%',
-              height: '100%',
-              zIndex: 2, // Ensure tables are above the floor plan
-            }}
-            onClick={() => setSelectedTable(null)}
-          >
-            {tables.map((table) => (
-              renderTable(table)
-            ))}
-          </Box>
-        </Paper>
-        
-        {/* Guest list sidebar - moved to the right */}
-        <Paper sx={{ width: 300, ml: 2, p: 2, height: '100%', overflow: 'auto' }}>
-          <GuestList 
-            guests={guests} 
-            onAddGuest={handleAddGuest}
-            filter={filter}
-            onFilterChange={setFilter}
-          />
-        </Paper>
+          {/* Guest list sidebar - only show in seating chart mode */}
+          {!selectedFloorPlan && (
+            <Paper sx={{ width: 300, ml: 2, p: 2, height: '100%', overflow: 'auto' }}>
+              <GuestList 
+                guests={guests} 
+                onAddGuest={handleAddGuest}
+                filter={filter}
+                onFilterChange={setFilter}
+              />
+            </Paper>
+          )}
+        </Box>
         
         {/* Add/Edit table dialog */}
         <EditTableDialog />
