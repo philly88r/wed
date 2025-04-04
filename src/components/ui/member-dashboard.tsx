@@ -50,7 +50,7 @@ function MemberDashboard() {
     },
     {
       title: "Seating Chart",
-      description: "Create and manage your reception seating plan",
+      description: "Design your reception seating arrangement with grid layout",
       icon: <Map className="w-6 h-6 text-[#054697]" />,
       href: "/seating"
     },
