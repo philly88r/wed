@@ -96,6 +96,21 @@ export default function Header() {
             />
           </Box>
           <Box sx={{ flexGrow: 1 }} />
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              mr: 2, 
+              cursor: 'pointer',
+              color: theme.palette.primary.main,
+              fontFamily: "'Playfair Display', serif",
+              fontWeight: 600,
+              '&:hover': { opacity: 0.8 }
+            }}
+            onClick={() => navigate('/pricing')}
+          >
+            Pricing
+          </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <IconButton
               size="large"

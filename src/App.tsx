@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, Box } from '@mui/material';
 import theme from './theme/theme';
-// import ServiceMenu from './pages/ServiceMenu';
+import ServiceMenu from './pages/ServiceMenu';
 import Seating from './pages/Seating';
 import Header from './components/Header';
 import Budget from './pages/Budget';
@@ -45,7 +45,8 @@ const APP_ROUTES = [
   '/coordination',
   '/services',
   '/vision-board',
-  '/mood-board'
+  '/mood-board',
+  '/pricing'
 ];
 
 // Component to handle wedding name routes
@@ -113,6 +114,7 @@ function AppContent() {
         <Route path="/services" element={<Services />} />
         <Route path="/vision-board" element={<VisionBoard />} />
         <Route path="/mood-board" element={<VisionBoard />} />
+        <Route path="/pricing" element={<ServiceMenu />} />
         
         {/* Wedding name route - use a separate component to handle the logic */}
         <Route path="/:weddingName" element={<WeddingNameHandler />} />
