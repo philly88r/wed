@@ -85,17 +85,15 @@ function MemberDashboard() {
       <div className="container mx-auto">
         <div className="flex flex-col gap-12">
           {/* Welcome Section with Photo Upload */}
-          <div className="flex flex-col md:flex-row items-center gap-8 bg-gradient-to-r from-[#FFE8E4]/20 to-[#FFE8E4]/5 p-8 rounded-lg">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-gradient-to-r from-[#FFE8E4]/20 to-[#FFE8E4]/5 p-8 rounded-lg">
             <div className="flex flex-col gap-2">
               <h1 className="text-3xl md:text-4xl font-semibold text-[#054697]">Welcome, Lara</h1>
               <p className="text-[#054697]/80">Your wedding is in 187 days</p>
             </div>
             
-            <div className="flex-1"></div>
-            
             <div className="flex flex-col items-center gap-3">
               <div 
-                className="w-32 h-32 rounded-full border-2 border-[#FFE8E4] flex items-center justify-center overflow-hidden bg-[#FFE8E4]/20 cursor-pointer"
+                className="w-32 h-32 rounded-full border-4 border-[#FFE8E4] flex items-center justify-center overflow-hidden bg-[#FFE8E4]/20 cursor-pointer relative"
                 onClick={triggerFileInput}
               >
                 {profileImage ? (
@@ -105,7 +103,10 @@ function MemberDashboard() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <UploadCloud className="w-10 h-10 text-[#054697]/50" />
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <UploadCloud className="w-10 h-10 text-[#054697]" />
+                    <span className="text-xs text-[#054697] mt-1">Upload Photo</span>
+                  </div>
                 )}
               </div>
               <input 
@@ -117,10 +118,10 @@ function MemberDashboard() {
               />
               <Button 
                 variant="outline" 
-                className="text-sm border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
+                className="text-sm border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10 font-medium"
                 onClick={triggerFileInput}
               >
-                {profileImage ? "Change Photo" : "Upload Photo"}
+                {profileImage ? "Change Photo" : "Upload Couple Photo"}
               </Button>
             </div>
           </div>
