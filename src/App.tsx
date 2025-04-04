@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, Box } from '@mui/material';
 import theme from './theme/theme';
-import ServiceMenu from './pages/ServiceMenu';
+// import ServiceMenu from './pages/ServiceMenu';
 import Seating from './pages/Seating';
 import Header from './components/Header';
 import Budget from './pages/Budget';
@@ -95,7 +95,7 @@ function AppContent() {
         />
         
         {/* App routes - EXACT paths first */}
-        <Route path="/" element={<ServiceMenu />} />
+        <Route path="/" element={<Services />} />
         <Route path="/seating-chart" element={<Seating />} />
         <Route path="/budget" element={<Budget />} />
         <Route path="/checklist" element={<Checklist />} />
