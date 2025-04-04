@@ -1,4 +1,4 @@
-import { UploadCloud, Calendar, Users, DollarSign, Map, FileText, MessageSquare, Settings, PenTool } from "lucide-react";
+import { UploadCloud, Users, DollarSign, Map, FileText, MessageSquare, Settings, PenTool, Calendar } from "lucide-react";
 import { useState, useRef } from "react";
 import { Button } from "./button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
@@ -31,12 +31,6 @@ function MemberDashboard() {
   
   const dashboardTools: DashboardTool[] = [
     {
-      title: "Timeline",
-      description: "Plan and manage your wedding day schedule",
-      icon: <Calendar className="w-6 h-6 text-[#054697]" />,
-      href: "/timeline"
-    },
-    {
       title: "Guest List",
       description: "Manage invitations and track RSVPs",
       icon: <Users className="w-6 h-6 text-[#054697]" />,
@@ -61,10 +55,10 @@ function MemberDashboard() {
       href: "/checklist"
     },
     {
-      title: "AI Wedding Planner",
-      description: "Get personalized suggestions and assistance",
-      icon: <MessageSquare className="w-6 h-6 text-[#054697]" />,
-      href: "/ai-planner"
+      title: "Timeline",
+      description: "Plan and manage your wedding day schedule",
+      icon: <Calendar className="w-6 h-6 text-[#054697]" />,
+      href: "/timeline"
     },
     {
       title: "Vendor Directory",
@@ -86,6 +80,11 @@ function MemberDashboard() {
         <div className="flex flex-col gap-12">
           {/* Welcome Section with Photo Upload */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-gradient-to-r from-[#FFE8E4]/20 to-[#FFE8E4]/5 p-8 rounded-lg">
+            {/* AI Wedding Planner in the corner */}
+            <div className="absolute top-4 right-4 flex items-center gap-2 bg-[#FFE8E4]/30 p-2 rounded-lg cursor-pointer" onClick={() => window.location.href = '/ai-planner'}>
+              <MessageSquare className="w-6 h-6 text-[#054697]" />
+              <span className="text-sm font-medium text-[#054697]">AI Wedding Planner</span>
+            </div>
             <div className="flex flex-col gap-2">
               <h1 className="text-3xl md:text-4xl font-semibold text-[#054697]">Welcome, Lara</h1>
               <p className="text-[#054697]/80">Your wedding is in 187 days</p>

@@ -1661,6 +1661,9 @@ export default function SeatingChart() {
               backgroundRepeat: 'no-repeat',
               backgroundPosition: 'center',
               backgroundColor: '#f5f5f5', // Add a light background color
+              backgroundImage: selectedFloorPlan ? `url(${selectedFloorPlan.image_url})` : `linear-gradient(#054697 1px, transparent 1px), linear-gradient(90deg, #054697 1px, transparent 1px)`,
+              backgroundSize: selectedFloorPlan ? 'contain' : '20px 20px',
+              backgroundOpacity: 0.1,
               transition: 'all 0.3s ease',
               transform: selectedFloorPlan ? `scale(${zoomLevel})` : 'none',
               transformOrigin: 'center',
