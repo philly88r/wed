@@ -1,4 +1,4 @@
-import { Pricing } from "../components/ui/pricing-table-updated";
+import { Pricing } from "../components/ui/pricing-table-fixed";
 
 export default function Services() {
   return (
