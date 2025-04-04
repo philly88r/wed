@@ -58,6 +58,12 @@ const features: PricingFeature[] = [
     luxuryIncluded: true
   },
   {
+    title: "AI Wedding Planner",
+    essentialIncluded: false,
+    premiumIncluded: true,
+    luxuryIncluded: true
+  },
+  {
     title: "Floor Plan & Seating Chart Creator",
     essentialIncluded: false,
     premiumIncluded: true,
@@ -85,26 +91,7 @@ const features: PricingFeature[] = [
   }
 ];
 
-// Day-of coordinator features
-interface DayOfFeature {
-  title: string;
-  description: string;
-}
 
-const dayOfFeatures: DayOfFeature[] = [
-  {
-    title: "Professional Coordination",
-    description: "Experienced coordinator to manage your wedding day"
-  },
-  {
-    title: "Vendor Management",
-    description: "Coordination with all vendors before and during the event"
-  },
-  {
-    title: "Timeline Management",
-    description: "Detailed schedule creation and execution"
-  }
-];
 
 function Pricing() {
   return (
@@ -323,37 +310,7 @@ function Pricing() {
             ))}
           </div>
 
-          {/* Day-of Coordinator Card */}
-          <div className="w-full max-w-2xl mt-16 rounded-md bg-gradient-to-br from-[#FFE8E4]/5 to-[#FFE8E4]/10 hover:transform hover:-translate-y-1 transition-transform duration-200 p-8 border border-[#FFE8E4]">
-            <div className="flex flex-col gap-2">
-              <h3 className="text-2xl text-[#054697]">Day-of Wedding Coordination</h3>
-              <p className="text-[#054697]/80">
-                Let us handle the details on your big day while you focus on creating memories.
-              </p>
-            </div>
-            <div className="flex flex-col gap-8 justify-start mt-6">
-              <p className="flex flex-row items-center gap-2 text-xl">
-                <span className="text-4xl font-semibold text-[#054697]">Custom</span>
-                <span className="text-sm text-[#054697]/80">pricing based on your needs</span>
-              </p>
-              <div className="flex flex-col gap-4 justify-start">
-                {dayOfFeatures.map((feature, i) => (
-                  <div key={i} className="flex flex-row gap-4">
-                    <Check className="w-4 h-4 mt-1 text-[#FFE8E4]" />
-                    <div className="flex flex-col">
-                      <p className="text-[#054697]">{feature.title}</p>
-                      <p className="text-[#054697]/80 text-sm">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Button variant="outline" className="gap-4 mt-4 border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10 w-fit">
-                Book a consultation <PhoneCall className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+
         </div>
       </div>
     </div>
