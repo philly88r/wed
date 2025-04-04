@@ -1,125 +1,165 @@
 import {
   Building,
-  Shirt,
-  PartyPopper,
+  Utensils,
+  Wine,
+  Armchair,
+  Flower,
   Camera,
-  UtensilsCrossed,
-  Mail,
-  Car,
+  Video,
   Music,
-  Gift,
-  MoreHorizontal
+  Disc,
+  Cake,
+  Scissors,
+  Hotel,
+  Car,
+  Pizza,
+  BookOpen,
+  Shirt,
+  Users,
+  DollarSign,
+  Package
 } from 'lucide-react';
 
-export const budgetCategories = [
+// First 50% of budget
+export const essentialCategories = [
   {
     id: 'venue',
-    name: 'Venue and Location',
+    name: 'Venue site fee',
     icon: Building,
-    defaultPercentage: 25,
-    items: [
-      { id: 'ceremony', name: 'Ceremony Venue Rental', defaultPercentage: 30 },
-      { id: 'reception', name: 'Reception Venue Rental', defaultPercentage: 60 },
-      { id: 'rehearsal', name: 'Rehearsal Dinner Location', defaultPercentage: 10 }
-    ]
+    defaultPercentage: 20, // 20% of the first 50% (10% of total)
+    isEssential: true
   },
   {
-    id: 'attire',
-    name: 'Attire and Accessories',
-    icon: Shirt,
-    defaultPercentage: 10,
-    items: [
-      { id: 'dress', name: 'Wedding Dress', defaultPercentage: 50 },
-      { id: 'suit', name: 'Suit/Tuxedo', defaultPercentage: 25 },
-      { id: 'accessories', name: 'Shoes and Accessories', defaultPercentage: 15 },
-      { id: 'beauty', name: 'Hair and Makeup', defaultPercentage: 10 }
-    ]
+    id: 'catering',
+    name: 'Catering',
+    icon: Utensils,
+    defaultPercentage: 50, // 50% of the first 50% (25% of total)
+    isEssential: true
   },
   {
-    id: 'ceremony',
-    name: 'Ceremony and Reception',
-    icon: PartyPopper,
-    defaultPercentage: 15,
-    items: [
-      { id: 'decor', name: 'Decor (flowers, candles, etc.)', defaultPercentage: 40 },
-      { id: 'setup', name: 'Ceremony Setup Fees', defaultPercentage: 20 },
-      { id: 'rentals', name: 'Rentals (tables, chairs, linens)', defaultPercentage: 30 },
-      { id: 'lighting', name: 'Lighting', defaultPercentage: 10 }
-    ]
-  },
-  {
-    id: 'photo',
-    name: 'Photography and Videography',
-    icon: Camera,
-    defaultPercentage: 12,
-    items: [
-      { id: 'photographer', name: 'Photographer Fees', defaultPercentage: 50 },
-      { id: 'videographer', name: 'Videographer Fees', defaultPercentage: 40 },
-      { id: 'photobooth', name: 'Photo Booth', defaultPercentage: 10 }
-    ]
-  },
-  {
-    id: 'food',
-    name: 'Food and Beverage',
-    icon: UtensilsCrossed,
-    defaultPercentage: 20,
-    items: [
-      { id: 'catering', name: 'Catering per Head', defaultPercentage: 60 },
-      { id: 'bar', name: 'Beverages/Bar Service', defaultPercentage: 30 },
-      { id: 'cake', name: 'Cake or Dessert', defaultPercentage: 10 }
-    ]
-  },
-  {
-    id: 'stationery',
-    name: 'Invitations and Stationery',
-    icon: Mail,
-    defaultPercentage: 3,
-    items: [
-      { id: 'invitations', name: 'Save-the-dates and Invitations', defaultPercentage: 60 },
-      { id: 'thankyou', name: 'Thank You Cards', defaultPercentage: 20 },
-      { id: 'placecards', name: 'Place Cards and Menus', defaultPercentage: 20 }
-    ]
-  },
-  {
-    id: 'transport',
-    name: 'Transportation',
-    icon: Car,
-    defaultPercentage: 3,
-    items: [
-      { id: 'couple', name: 'Bride and Groom Transport', defaultPercentage: 60 },
-      { id: 'guests', name: 'Guest Shuttles', defaultPercentage: 40 }
-    ]
-  },
-  {
-    id: 'entertainment',
-    name: 'Entertainment',
-    icon: Music,
-    defaultPercentage: 5,
-    items: [
-      { id: 'band', name: 'Live Band/DJ', defaultPercentage: 80 },
-      { id: 'extra', name: 'Extra Entertainment', defaultPercentage: 20 }
-    ]
-  },
-  {
-    id: 'gifts',
-    name: 'Favors and Gifts',
-    icon: Gift,
-    defaultPercentage: 2,
-    items: [
-      { id: 'favors', name: 'Guest Favors', defaultPercentage: 40 },
-      { id: 'party', name: 'Wedding Party Gifts', defaultPercentage: 40 },
-      { id: 'parents', name: 'Parents\' Gifts', defaultPercentage: 20 }
-    ]
-  },
-  {
-    id: 'misc',
-    name: 'Other Miscellaneous',
-    icon: MoreHorizontal,
-    defaultPercentage: 5,
-    items: [
-      { id: 'planner', name: 'Wedding Planner/Coordinator', defaultPercentage: 70 },
-      { id: 'license', name: 'Marriage License', defaultPercentage: 10 },
-      { id: 'tips', name: 'Tips and Gratuities', defaultPercentage: 20 }
-    ]
+    id: 'alcohol',
+    name: 'Alcohol/Beverages',
+    icon: Wine,
+    defaultPercentage: 30, // 30% of the first 50% (15% of total)
+    isEssential: true
   }
 ];
+
+// Remaining 50% of budget
+export const budgetCategories = [
+  {
+    id: 'rentals',
+    name: 'Rentals',
+    icon: Armchair,
+    defaultPercentage: 0, // Client didn't specify percentage
+    isEssential: false
+  },
+  {
+    id: 'florist',
+    name: 'Florist',
+    icon: Flower,
+    defaultPercentage: 20, // 20% of the remaining 50% (10% of total)
+    isEssential: false
+  },
+  {
+    id: 'photographer',
+    name: 'Photographer',
+    icon: Camera,
+    defaultPercentage: 15, // 15% of the remaining 50% (7.5% of total)
+    isEssential: false
+  },
+  {
+    id: 'videographer',
+    name: 'Videographer',
+    icon: Video,
+    defaultPercentage: 8, // 8% of the remaining 50% (4% of total)
+    isEssential: false
+  },
+  {
+    id: 'band',
+    name: 'Band',
+    icon: Music,
+    defaultPercentage: 20, // 20% of the remaining 50% (10% of total)
+    isEssential: false
+  },
+  {
+    id: 'dj',
+    name: 'DJ',
+    icon: Disc,
+    defaultPercentage: 6, // 6% of the remaining 50% (3% of total)
+    isEssential: false
+  },
+  {
+    id: 'cake',
+    name: 'Cake',
+    icon: Cake,
+    defaultPercentage: 3, // 3% of the remaining 50% (1.5% of total)
+    isEssential: false
+  },
+  {
+    id: 'hairMakeup',
+    name: 'Hair and makeup',
+    icon: Scissors,
+    defaultPercentage: 6, // 6% of the remaining 50% (3% of total)
+    isEssential: false
+  },
+  {
+    id: 'hotelBlocks',
+    name: 'Hotel Blocks',
+    icon: Hotel,
+    defaultPercentage: 0, // 0% as per client requirements (courtesy block)
+    isEssential: false
+  },
+  {
+    id: 'transportation',
+    name: 'Transportation',
+    icon: Car,
+    defaultPercentage: 7, // 7% of the remaining 50% (3.5% of total)
+    isEssential: false
+  },
+  {
+    id: 'lateNightFood',
+    name: 'Late Night Food',
+    icon: Pizza,
+    defaultPercentage: 3, // 3% of the remaining 50% (1.5% of total)
+    isEssential: false
+  },
+  {
+    id: 'officiant',
+    name: 'Officiant',
+    icon: BookOpen,
+    defaultPercentage: 2, // 2% of the remaining 50% (1% of total)
+    isEssential: false
+  },
+  {
+    id: 'weddingAttire',
+    name: 'Wedding Attire',
+    icon: Shirt,
+    defaultPercentage: 15, // 15% of the remaining 50% (7.5% of total)
+    isEssential: false
+  },
+  {
+    id: 'weddingPartyAttire',
+    name: 'Wedding Party Attire',
+    icon: Users,
+    defaultPercentage: 6, // 6% of the remaining 50% (3% of total)
+    isEssential: false
+  },
+  {
+    id: 'vendorTips',
+    name: 'Tips (for vendors)',
+    icon: DollarSign,
+    defaultPercentage: 15, // 15% of the remaining 50% (7.5% of total)
+    isEssential: false
+  },
+  {
+    id: 'miscellaneous',
+    name: 'Miscellaneous',
+    icon: Package,
+    defaultPercentage: 5, // 5% of the remaining 50% (2.5% of total)
+    isEssential: false
+  }
+];
+
+// Combined categories for convenience
+export const allCategories = [...essentialCategories, ...budgetCategories];

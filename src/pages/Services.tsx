@@ -1,4 +1,4 @@
-import { Pricing } from "../components/ui/pricing-cards";
+import { Pricing } from "../components/ui/pricing-table";
 
 export default function Services() {
   return (
