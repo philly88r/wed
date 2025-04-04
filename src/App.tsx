@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParam
 import { ThemeProvider, CssBaseline, Box } from '@mui/material';
 import theme from './theme/theme';
 import ServiceMenu from './pages/ServiceMenu';
-import SeatingChart from './pages/SeatingChart';
+import Seating from './pages/Seating';
 import Header from './components/Header';
 import Budget from './pages/Budget';
 import Checklist from './pages/Checklist';
@@ -96,7 +96,7 @@ function AppContent() {
         
         {/* App routes - EXACT paths first */}
         <Route path="/" element={<ServiceMenu />} />
-        <Route path="/seating-chart" element={<SeatingChart />} />
+        <Route path="/seating-chart" element={<Seating />} />
         <Route path="/budget" element={<Budget />} />
         <Route path="/checklist" element={<Checklist />} />
         <Route path="/wedding-checklist" element={<WeddingChecklist />} />
