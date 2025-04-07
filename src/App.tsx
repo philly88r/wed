@@ -98,9 +98,9 @@ function AppContent() {
         <Route path="/" element={<Services />} />
         <Route path="/seating-chart" element={<SeatingChart />} />
         <Route path="/budget" element={<Budget />} />
-        <Route path="/checklist" element={<Checklist />} />
+        <Route path="/checklist" element={<ChecklistDemo />} />
+        <Route path="/checklist-old" element={<Checklist />} />
         <Route path="/wedding-checklist" element={<WeddingChecklist />} />
-        <Route path="/checklist-demo" element={<ChecklistDemo />} />
         <Route path="/vendors" element={<Vendors />} />
         <Route path="/vendors/:slug" element={<VendorProfile />} />
         <Route path="/timeline" element={<TimelineCreator />} />
