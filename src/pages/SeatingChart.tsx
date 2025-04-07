@@ -121,7 +121,13 @@ export default function SeatingChart() {
   const [editMode, setEditMode] = useState<'add' | 'edit'>('add');
   const [newTableName, setNewTableName] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState('');
-  const [customSeats, setCustomSeats] = useState(8);
+  const [customTableData, setCustomTableData] = useState({
+    shape: 'circle',
+    width: 60,
+    length: 60,
+    seats: 8
+  });
+  const [isCustomTable, setIsCustomTable] = useState(false);
   
   // Authentication state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -455,12 +461,8 @@ export default function SeatingChart() {
 
   const handleAddTable = async (data: TableFormData) => {
     try {
-      // Verify user is authenticated
       const userId = await getUserId();
-      
-      // If no userId, we can't add tables
       if (!userId) {
-        console.log('Cannot add table: No authenticated user');
         setSnackbar({
           open: true,
           message: 'Please log in to add tables',
@@ -468,72 +470,104 @@ export default function SeatingChart() {
         });
         return;
       }
-      
-      // Get the template data
-      const { data: templateData } = await supabase
-        .from('table_templates')
-        .select('*')
-        .eq('id', data.template_id)
-        .single();
-      
-      if (templateData) {
-        // Create a new table with larger default dimensions
-        const { data: newTable, error } = await supabase
-          .from('seating_tables')
-          .insert({
-            name: data.name,
-            shape: templateData.shape,
-            seats: data.seats,
-            template_id: templateData.id,
-            width: templateData.width * 2, // Make tables twice as large by default
-            length: templateData.length * 2, // Make tables twice as large by default
-            position_x: 300, // Position in the center of the view
-            position_y: 200, // Position in the center of the view
-            rotation: 0,
-            user_id: userId
-          })
-          .select()
+
+      let tableTemplate;
+      if (isCustomTable) {
+        tableTemplate = {
+          shape: customTableData.shape,
+          width: customTableData.width,
+          length: customTableData.length,
+          seats: customTableData.seats
+        };
+      } else {
+        const { data: templateData, error } = await supabase
+          .from('table_templates')
+          .select('*')
+          .eq('id', data.template_id)
           .single();
-        
-        if (error) throw error;
-        
-        // Add the new table to state
-        setTables([...tables, newTable]);
-        
-        // Create chairs for the new table
-        const chairPositions = Array.from({ length: data.seats }, (_, i) => {
-          // Calculate angle for evenly distributed chairs
-          const angle = (i * 360) / data.seats;
-          return {
-            table_id: newTable.id,
-            position: i + 1,
-            angle: angle,
-            user_id: userId
-          };
-        });
-        
-        // Insert chairs into the database
-        const { data: newChairs, error: chairsError } = await supabase
-          .from('table_chairs')
-          .insert(chairPositions)
-          .select();
-        
-        if (chairsError) throw chairsError;
-        
-        // Add the new chairs to state
-        setChairs([...chairs, ...newChairs]);
-        
-        // Show success message
-        setSnackbar({
-          open: true,
-          message: 'Table added successfully',
-          severity: 'success'
-        });
-        
-        // Close the dialog
-        setEditDialogOpen(false);
-        setEditMode('add' as const);
+
+        if (error || !templateData) {
+          throw new Error('Template not found');
+        }
+        tableTemplate = templateData;
       }
+
+      // Calculate grid-based dimensions
+      const gridSize = 20; // Base grid size in pixels
+      const width = Math.round(tableTemplate.width / gridSize) * gridSize;
+      const length = Math.round(tableTemplate.length / gridSize) * gridSize;
+
+      // Create the table
+      const { data: newTable, error } = await supabase
+        .from('seating_tables')
+        .insert([
+          {
+            name: data.name,
+            seats: tableTemplate.seats,
+            template_id: isCustomTable ? null : data.template_id,
+            shape: tableTemplate.shape,
+            width: width,
+            length: length,
+            position_x: 300, // Center of view
+            position_y: 200, // Center of view
+            rotation: 0,
+            created_by: userId
+          }
+        ])
+        .select()
+        .single();
+
+      if (error || !newTable) {
+        throw error || new Error('Failed to create table');
+      }
+
+      // Add the new table to state
+      setTables([...tables, newTable]);
+
+      // Create chairs for the new table
+      const chairPositions = Array.from({ length: tableTemplate.seats }, (_, i) => {
+        // Calculate angle for evenly distributed chairs
+        const angle = (i * 360) / tableTemplate.seats;
+        return {
+          table_id: newTable.id,
+          position: i + 1,
+          angle: angle,
+          created_by: userId
+        };
+      });
+
+      // Insert chairs into the database
+      const { data: newChairs, error: chairsError } = await supabase
+        .from('table_chairs')
+        .insert(chairPositions)
+        .select();
+
+      if (chairsError || !newChairs) {
+        throw chairsError || new Error('Failed to create chairs');
+      }
+
+      // Add the new chairs to state
+      setChairs([...chairs, ...newChairs]);
+
+      // Show success message
+      setSnackbar({
+        open: true,
+        message: 'Table added successfully',
+        severity: 'success'
+      });
+
+      // Reset form
+      setNewTableName('');
+      setSelectedTemplate('');
+      setIsCustomTable(false);
+      setCustomTableData({
+        shape: 'circle',
+        width: 60,
+        length: 60,
+        seats: 8
+      });
+      setEditDialogOpen(false);
+
     } catch (error) {
       console.error('Error adding table:', error);
       setSnackbar({
@@ -814,32 +848,81 @@ export default function SeatingChart() {
           {editMode === 'add' && (
             <>
               <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Table Template</InputLabel>
+                <InputLabel>Table Type</InputLabel>
                 <Select
-                  value={selectedTemplate}
-                  onChange={(e) => setSelectedTemplate(e.target.value)}
+                  value={isCustomTable ? 'custom' : selectedTemplate}
+                  label="Table Type"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === 'custom') {
+                      setIsCustomTable(true);
+                      setSelectedTemplate('');
+                    } else {
+                      setIsCustomTable(false);
+                      setSelectedTemplate(value);
+                    }
+                  }}
                 >
-                  <MenuItem value="">
-                    <em>Custom Table</em>
-                  </MenuItem>
-                  {tableTemplates.map((template: TableTemplate) => (
+                  <MenuItem value="custom">Custom Table</MenuItem>
+                  <Divider />
+                  {tableTemplates.map((template) => (
                     <MenuItem key={template.id} value={template.id}>
                       {template.name} ({template.seats} seats)
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
-              
-              {!selectedTemplate && (
-                <TextField
-                  margin="dense"
-                  label="Number of Seats"
-                  type="number"
-                  fullWidth
-                  value={customSeats}
-                  onChange={(e) => setCustomSeats(parseInt(e.target.value))}
-                  InputProps={{ inputProps: { min: 1, max: 20 } }}
-                />
+
+              {isCustomTable && (
+                <>
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <InputLabel>Shape</InputLabel>
+                    <Select
+                      value={customTableData.shape}
+                      label="Shape"
+                      onChange={(e) => setCustomTableData(prev => ({ ...prev, shape: e.target.value }))}
+                    >
+                      <MenuItem value="circle">Circle</MenuItem>
+                      <MenuItem value="square">Square</MenuItem>
+                      <MenuItem value="rectangle">Rectangle</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  {customTableData.shape !== 'circle' && (
+                    <TextField
+                      margin="dense"
+                      label="Length (inches)"
+                      type="number"
+                      fullWidth
+                      value={customTableData.length}
+                      onChange={(e) => setCustomTableData(prev => ({ ...prev, length: Number(e.target.value) }))}
+                      sx={{ mb: 2 }}
+                      InputProps={{ inputProps: { min: 24, max: 144 } }}
+                    />
+                  )}
+
+                  <TextField
+                    margin="dense"
+                    label={customTableData.shape === 'circle' ? 'Diameter (inches)' : 'Width (inches)'}
+                    type="number"
+                    fullWidth
+                    value={customTableData.width}
+                    onChange={(e) => setCustomTableData(prev => ({ ...prev, width: Number(e.target.value) }))}
+                    sx={{ mb: 2 }}
+                    InputProps={{ inputProps: { min: 24, max: 144 } }}
+                  />
+
+                  <TextField
+                    margin="dense"
+                    label="Number of Seats"
+                    type="number"
+                    fullWidth
+                    value={customTableData.seats}
+                    onChange={(e) => setCustomTableData(prev => ({ ...prev, seats: Number(e.target.value) }))}
+                    sx={{ mb: 2 }}
+                    InputProps={{ inputProps: { min: 1, max: 20 } }}
+                  />
+                </>
               )}
             </>
           )}
