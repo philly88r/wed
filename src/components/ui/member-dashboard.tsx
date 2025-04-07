@@ -37,10 +37,10 @@ function MemberDashboard() {
       href: "/directory"
     },
     {
-      title: "Guest List",
-      description: "Manage invitations and track RSVPs",
-      icon: <Users className="w-6 h-6 text-[#054697]" />,
-      href: "/guests"
+      title: "Video Tutorials",
+      description: "Learn how to use our wedding planning tools",
+      icon: <FileText className="w-6 h-6 text-[#054697]" />,
+      href: "/tutorials"
     },
     {
       title: "Seating Chart",
@@ -178,26 +178,18 @@ function MemberDashboard() {
                       </div>
                     )}
                     
-                    {/* Guest List Card */}
-                    {tool.title === "Guest List" && (
+                    {/* Video Tutorials Card */}
+                    {tool.title === "Video Tutorials" && (
                       <div className="mt-3 space-y-2">
-                        <div className="text-sm text-[#054697]/70">Track RSVPs and manage your guest list</div>
+                        <div className="text-sm text-[#054697]/70">Learn how to use our planning tools</div>
                         <div className="flex flex-wrap gap-2">
                           <Button 
                             variant="outline" 
                             size="sm"
                             className="text-xs border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
-                            onClick={() => window.location.href = "/guests"}
+                            onClick={() => window.location.href = "/tutorials"}
                           >
-                            View Guests
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="text-xs border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
-                            onClick={() => window.location.href = "/guests?action=add"}
-                          >
-                            Add Guest
+                            Watch Tutorials
                           </Button>
                         </div>
                       </div>
