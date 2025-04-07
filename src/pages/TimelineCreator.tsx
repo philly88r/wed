@@ -21,7 +21,15 @@ import {
   DialogActions,
   Snackbar,
   Alert,
+  useTheme,
 } from '@mui/material';
+import ThemeWrapper, {
+  BrandPaper,
+  BrandHeading,
+  BrandButton,
+  BrandTextField,
+  brandStyles
+} from '../components/ThemeWrapper';
 import { 
   Add as AddIcon,
   Download as DownloadIcon,
@@ -126,6 +134,9 @@ export default function TimelineCreator() {
   
   // State for view mode (timeline or table)
   const [viewMode, setViewMode] = useState<'timeline' | 'table'>('timeline');
+  
+  // Get theme for consistent styling
+  const theme = useTheme();
   
   // State for share dialog
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -519,13 +530,12 @@ export default function TimelineCreator() {
 
           {timelineData.venueSame ? (
             <Grid item xs={12}>
-              <TextField
-                fullWidth
+              <BrandTextField
                 label="Wedding Venue"
-                value={timelineData.ceremonyVenue}
+                value={timelineData.ceremonyVenue || ''}
                 onChange={(e) => handleInputChange('ceremonyVenue', e.target.value)}
                 error={!!formErrors.ceremonyVenue}
-                helperText={formErrors.ceremonyVenue}
+                helperText={formErrors.ceremonyVenue || ''}
               />
             </Grid>
           ) : (
@@ -1382,6 +1392,20 @@ export default function TimelineCreator() {
               value={viewMode}
               onChange={(_, newValue) => setViewMode(newValue)}
               aria-label="timeline view mode"
+              sx={{
+                '& .MuiTab-root': {
+                  '&:hover': {
+                    backgroundColor: theme.palette.accent.rose,
+                  },
+                  color: theme.palette.primary.main,
+                },
+                '& .Mui-selected': {
+                  color: `${theme.palette.primary.main} !important`,
+                },
+                '& .MuiTabs-indicator': {
+                  backgroundColor: theme.palette.primary.main,
+                }
+              }}
             >
               <Tab
                 icon={<TimelineIcon />}
@@ -1426,11 +1450,20 @@ export default function TimelineCreator() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h4" component="h1" align="center" gutterBottom>
+    <ThemeWrapper>
+    <Container maxWidth="lg" sx={brandStyles.container}>
+      <BrandHeading variant="h3" sx={{ textAlign: 'center' }}>
         Wedding Day Timeline Creator
-      </Typography>
-      <Typography variant="subtitle1" align="center" color="text.secondary" sx={{ mb: 4 }}>
+      </BrandHeading>
+      <Typography 
+        variant="subtitle1" 
+        align="center" 
+        sx={{ 
+          mb: 4, 
+          color: theme.palette.text.secondary,
+          fontFamily: "'Poppins', sans-serif",
+        }}
+      >
         Let's build your perfect wedding day timeline! Answer a few questions, and we'll handle the details.
       </Typography>
 
@@ -1441,34 +1474,47 @@ export default function TimelineCreator() {
         onClose={handleCloseShareDialog}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 0,
+            backgroundColor: theme.palette.background.paper,
+          }
+        }}
       >
-        <DialogTitle>Share Your Timeline</DialogTitle>
+        <DialogTitle sx={{ color: theme.palette.primary.main, fontFamily: "'Giaza', serif" }}>
+          Share Your Timeline
+        </DialogTitle>
         <DialogContent>
           <Grid container spacing={2}>
             <Grid item xs={12}>
-              <Button
-                variant="contained"
+              <BrandButton
+                variant="primary"
                 startIcon={<ContentCopyIcon />}
                 onClick={handleCopyLink}
-                fullWidth
+                sx={{ width: '100%' }}
               >
                 Copy Link
-              </Button>
+              </BrandButton>
             </Grid>
             <Grid item xs={12}>
-              <Button
-                variant="contained"
+              <BrandButton
+                variant="primary"
                 startIcon={<EmailIcon />}
                 onClick={handleEmailShare}
-                fullWidth
+                sx={{ width: '100%' }}
               >
                 Share via Email
-              </Button>
+              </BrandButton>
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseShareDialog}>Cancel</Button>
+          <BrandButton 
+            variant="secondary"
+            onClick={handleCloseShareDialog}
+          >
+            Cancel
+          </BrandButton>
         </DialogActions>
       </Dialog>
 
@@ -1485,5 +1531,6 @@ export default function TimelineCreator() {
         </Alert>
       </Snackbar>
     </Container>
+    </ThemeWrapper>
   );
 }
