@@ -31,22 +31,28 @@ function MemberDashboard() {
   
   const dashboardTools: DashboardTool[] = [
     {
+      title: "Guest Directory",
+      description: "Manage your guest contact information",
+      icon: <Users className="w-6 h-6 text-[#054697]" />,
+      href: "/directory"
+    },
+    {
       title: "Guest List",
       description: "Manage invitations and track RSVPs",
       icon: <Users className="w-6 h-6 text-[#054697]" />,
       href: "/guests"
     },
     {
-      title: "Budget Calculator",
-      description: "Track expenses and manage your wedding budget",
-      icon: <DollarSign className="w-6 h-6 text-[#054697]" />,
-      href: "/budget"
-    },
-    {
       title: "Seating Chart",
       description: "Design your reception seating arrangement with grid layout",
       icon: <Map className="w-6 h-6 text-[#054697]" />,
       href: "/seating-chart"
+    },
+    {
+      title: "Budget Calculator",
+      description: "Track expenses and manage your wedding budget",
+      icon: <DollarSign className="w-6 h-6 text-[#054697]" />,
+      href: "/budget"
     },
     {
       title: "Checklist",
@@ -146,6 +152,175 @@ function MemberDashboard() {
                     <CardDescription className="text-[#054697]/70">
                       {tool.description}
                     </CardDescription>
+                    
+                    {/* Guest Directory Card */}
+                    {tool.title === "Guest Directory" && (
+                      <div className="mt-3 space-y-2">
+                        <div className="text-sm text-[#054697]/70">Manage contact information for all your guests</div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-xs border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
+                            onClick={() => window.location.href = "/directory"}
+                          >
+                            View Contacts
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-xs border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
+                            onClick={() => window.location.href = "/directory?action=add"}
+                          >
+                            Add Contact
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Guest List Card */}
+                    {tool.title === "Guest List" && (
+                      <div className="mt-3 space-y-2">
+                        <div className="text-sm text-[#054697]/70">Track RSVPs and manage your guest list</div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-xs border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
+                            onClick={() => window.location.href = "/guests"}
+                          >
+                            View Guests
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-xs border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
+                            onClick={() => window.location.href = "/guests?action=add"}
+                          >
+                            Add Guest
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Seating Chart Card */}
+                    {tool.title === "Seating Chart" && (
+                      <div className="mt-3 space-y-2">
+                        <div className="text-sm text-[#054697]/70">Arrange tables and assign guests to seats</div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-xs border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
+                            onClick={() => window.location.href = "/seating-chart"}
+                          >
+                            Manage Seating
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Budget Calculator Card */}
+                    {tool.title === "Budget Calculator" && (
+                      <div className="mt-3 space-y-2">
+                        <div className="text-sm text-[#054697]/70">Track expenses and stay within budget</div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-xs border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
+                            onClick={() => window.location.href = "/budget"}
+                          >
+                            View Budget
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-xs border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
+                            onClick={() => window.location.href = "/budget?action=add"}
+                          >
+                            Add Expense
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Checklist Card */}
+                    {tool.title === "Checklist" && (
+                      <div className="mt-3 space-y-2">
+                        <div className="text-sm text-[#054697]/70">Keep track of planning tasks and deadlines</div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-xs border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
+                            onClick={() => window.location.href = "/checklist"}
+                          >
+                            View Tasks
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Timeline Card */}
+                    {tool.title === "Timeline" && (
+                      <div className="mt-3 space-y-2">
+                        <div className="text-sm text-[#054697]/70">Plan your wedding day schedule</div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-xs border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
+                            onClick={() => window.location.href = "/timeline"}
+                          >
+                            View Timeline
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-xs border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
+                            onClick={() => window.location.href = "/timeline-creator"}
+                          >
+                            Edit Timeline
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Vendor Directory Card */}
+                    {tool.title === "Vendor Directory" && (
+                      <div className="mt-3 space-y-2">
+                        <div className="text-sm text-[#054697]/70">Find and manage wedding vendors</div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-xs border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
+                            onClick={() => window.location.href = "/vendors"}
+                          >
+                            View Vendors
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Moodboard Creator Card */}
+                    {tool.title === "Moodboard Creator" && (
+                      <div className="mt-3 space-y-2">
+                        <div className="text-sm text-[#054697]/70">Design your wedding aesthetic</div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-xs border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
+                            onClick={() => window.location.href = "/moodboard"}
+                          >
+                            Create Moodboard
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
                     <Button 
                       variant="outline" 
                       className="w-full mt-4 border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
