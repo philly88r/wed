@@ -14,7 +14,6 @@ import VendorRegister from './pages/VendorRegister';
 import VendorForgotPassword from './pages/VendorForgotPassword';
 import VendorProfileEdit from './pages/VendorProfileEdit';
 import ProtectedVendorRoute from './components/ProtectedVendorRoute';
-import Timeline from './pages/Timeline';
 import TimelineCreator from './pages/TimelineCreator';
 import Guests from './pages/Guests';
 import GuestQuestionnaire from './pages/GuestQuestionnaire';
@@ -104,7 +103,7 @@ function AppContent() {
         <Route path="/checklist-demo" element={<ChecklistDemo />} />
         <Route path="/vendors" element={<Vendors />} />
         <Route path="/vendors/:slug" element={<VendorProfile />} />
-        <Route path="/timeline" element={<Timeline />} />
+        <Route path="/timeline" element={<TimelineCreator />} />
         <Route path="/timeline-creator" element={<TimelineCreator />} />
         <Route path="/timeline-share" element={<TimelineCreator />} />
         <Route path="/guests" element={<Guests />} />
