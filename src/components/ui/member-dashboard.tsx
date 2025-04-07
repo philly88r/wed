@@ -317,6 +317,14 @@ function MemberDashboard() {
                           >
                             Create Moodboard
                           </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-xs border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
+                            onClick={() => window.location.href = "/vision-board"}
+                          >
+                            Vision Board
+                          </Button>
                         </div>
                       </div>
                     )}
