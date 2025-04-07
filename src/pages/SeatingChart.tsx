@@ -36,8 +36,8 @@ import { Guest } from '../types/Guest';
 
 
 // Create a Supabase client with the correct credentials
-const supabaseUrl = 'https://yemkduykvfdjmldxfphq.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllbWtkdXlrdmZkam1sZHhmcGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1NDY4NzQsImV4cCI6MjA1NTEyMjg3NH0.JoIg1NFwFPE8ucc7D4Du2qe8SEX3OvSKqJf_ecf-euk';
+const supabaseUrl = 'https://kdhwrlhzevzekoanusbs.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaHdybGh6ZXZ6ZWtvYW51c2JzIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTg5MzY5NDcsImV4cCI6MjAxNDUxMjk0N30.LTG9sozXMFHQPYJ9o_V93YN4RZAYiJXqm_yGEUFF7Yk';
 const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
@@ -91,8 +91,12 @@ interface SnackbarState {
 
 interface TableFormData {
   name: string;
-  template_id: string;
+  template_id: string | null;
   seats: number;
+  shape?: string;
+  width?: number;
+  length?: number;
+  isCustom?: boolean;
 }
 
 export default function SeatingChart() {
@@ -338,7 +342,7 @@ export default function SeatingChart() {
       const { data, error } = await supabase
         .from('seating_tables')
         .select('*')
-        .eq('user_id', userId);
+        .eq('created_by', userId);
       
       if (error) {
         console.error('Database error fetching tables:', error);
@@ -386,7 +390,7 @@ export default function SeatingChart() {
       const { data: userTables, error: tablesError } = await supabase
         .from('seating_tables')
         .select('id')
-        .eq('user_id', userId);
+        .eq('created_by', userId);
       
       if (tablesError) {
         console.error('Error fetching tables for chairs:', tablesError);
@@ -458,6 +462,27 @@ export default function SeatingChart() {
   };
 
 
+
+  const handleCustomTableSubmit = () => {
+    if (!newTableName || !customTableData.shape || !customTableData.width || !customTableData.length || !customTableData.seats) {
+      setSnackbar({
+        open: true,
+        message: 'Please fill in all fields',
+        severity: 'error'
+      });
+      return;
+    }
+
+    handleAddTable({
+      name: newTableName,
+      template_id: null,
+      isCustom: true,
+      shape: customTableData.shape,
+      width: customTableData.width,
+      length: customTableData.length,
+      seats: customTableData.seats
+    });
+  };
 
   const handleAddTable = async (data: TableFormData) => {
     try {
@@ -872,6 +897,30 @@ export default function SeatingChart() {
                   ))}
                 </Select>
               </FormControl>
+
+              {isCustomTable ? (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleCustomTableSubmit}
+                  sx={{ mb: 2 }}
+                >
+                  Add Custom Table
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => handleAddTable({
+                    name: newTableName,
+                    template_id: selectedTemplate,
+                    seats: 0
+                  })}
+                  sx={{ mb: 2 }}
+                >
+                  Add Template Table
+                </Button>
+              )}
 
               {isCustomTable && (
                 <>
