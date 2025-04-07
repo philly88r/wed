@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
-import { Draggable, Droppable, DragDropContext } from 'react-beautiful-dnd';
+import { Draggable, Droppable } from 'react-beautiful-dnd';
 import { Guest } from '../../types/Guest';
 
 interface GuestListProps {
@@ -50,10 +50,7 @@ export default function GuestList({ guests, onAddGuest, filter, onFilterChange }
     `${guest.first_name} ${guest.last_name}`.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const onDragEnd = () => {
-    // This is a placeholder - we're not actually implementing drag and drop functionality
-    // but we need this to satisfy the DragDropContext requirement
-  };
+  // No need for onDragEnd here as it's handled in the parent component
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
@@ -114,8 +111,7 @@ export default function GuestList({ guests, onAddGuest, filter, onFilterChange }
       </Box>
 
       <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="guests-list">
+        <Droppable droppableId="guests-list">
             {(provided) => (
               <List 
                 ref={provided.innerRef}
@@ -184,7 +180,6 @@ export default function GuestList({ guests, onAddGuest, filter, onFilterChange }
               </List>
             )}
           </Droppable>
-        </DragDropContext>
       </Box>
 
       {/* Mobile floating action button for adding guests */}

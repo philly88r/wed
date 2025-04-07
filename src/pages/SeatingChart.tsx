@@ -21,21 +21,19 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction,
-  CircularProgress
+  ListItemSecondaryAction
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
-import ZoomInIcon from '@mui/icons-material/ZoomIn';
-import ZoomOutIcon from '@mui/icons-material/ZoomOut';
+
 import { DragDropContext } from 'react-beautiful-dnd';
+import type { DropResult } from 'react-beautiful-dnd';
 import { createClient } from '@supabase/supabase-js';
 import GuestList from '../components/SeatingChart/GuestList';
 import { useNavigate } from 'react-router-dom';
 import { Guest } from '../types/Guest';
+
 
 // Create a Supabase client with the correct credentials
 const supabaseUrl = 'https://yemkduykvfdjmldxfphq.supabase.co';
@@ -89,12 +87,7 @@ interface SnackbarState {
   severity: 'success' | 'error' | 'info' | 'warning';
 }
 
-interface FloorPlan {
-  id: string;
-  name: string;
-  image_url: string;
-  scale: number; // Scale in feet per pixel
-}
+
 
 interface TableFormData {
   name: string;
@@ -103,47 +96,45 @@ interface TableFormData {
 }
 
 export default function SeatingChart() {
+  const navigate = useNavigate();
+  const chartAreaRef = useRef<HTMLDivElement>(null);
+
+  // Table management state
   const [tables, setTables] = useState<Table[]>([]);
   const [tableTemplates, setTableTemplates] = useState<TableTemplate[]>([]);
   const [chairs, setChairs] = useState<Chair[]>([]);
-  const [guests, setGuests] = useState<Guest[]>([]);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+  
+  // Guest management state
+  const [guests, setGuests] = useState<Guest[]>([]);
+  const [selectedChair, setSelectedChair] = useState<Chair | null>(null);
+  const [guestSearchTerm, setGuestSearchTerm] = useState('');
+  const [filter, setFilter] = useState('all');
+  
+  // Dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [assignGuestDialogOpen, setAssignGuestDialogOpen] = useState(false);
+  const [guestDialogOpen, setGuestDialogOpen] = useState(false);
+  
+  // Form states
   const [editMode, setEditMode] = useState<'add' | 'edit'>('add');
   const [newTableName, setNewTableName] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [customSeats, setCustomSeats] = useState(8);
+  
+  // Authentication state
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  
+  // UI states
   const [snackbar, setSnackbar] = useState<SnackbarState>({
     open: false,
     message: '',
     severity: 'success',
   });
-  const [filter, setFilter] = useState('all');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [selectedChair, setSelectedChair] = useState<Chair | null>(null);
-  const [assignGuestDialogOpen, setAssignGuestDialogOpen] = useState(false);
-  const [guestSearchTerm, setGuestSearchTerm] = useState('');
-  const [guestDialogOpen, setGuestDialogOpen] = useState(false); // Add back the guestDialogOpen state
-  const chartAreaRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
-
-  // Floor plan state
-  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
-  const [selectedFloorPlan, setSelectedFloorPlan] = useState<FloorPlan | null>(null);
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [floorPlanName, setFloorPlanName] = useState('');
-  const [floorPlanScale, setFloorPlanScale] = useState('1');
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null); // Add support for image files
-  const [isUploading, setIsUploading] = useState(false);
-  const [floorPlanError, setFloorPlanError] = useState<string | null>(null); // Add error state
-
-  // Add state for zoom
-  const [zoomLevel, setZoomLevel] = useState(1);
   
   // Remove unused drag state variables
   // const [isDragging, setIsDragging] = useState(false);
@@ -163,48 +154,46 @@ export default function SeatingChart() {
   }, [navigate]);
 
   useEffect(() => {
-    checkUserAuth();
+    // Check authentication status when component mounts
+    const checkAuth = async () => {
+      try {
+        // First try to get session which is more reliable and doesn't throw errors if no session exists
+        const { data: sessionData } = await supabase.auth.getSession();
+        const isAuthenticated = !!sessionData?.session?.user;
+        
+        setIsLoggedIn(isAuthenticated);
+        
+        if (!isAuthenticated) {
+          // Only show login dialog if not authenticated
+          setLoginDialogOpen(true);
+          setSnackbar({
+            open: true,
+            message: 'Please log in to access the seating chart',
+            severity: 'info'
+          });
+        }
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+        setLoginDialogOpen(true);
+      }
+    };
+    
+    checkAuth();
   }, []);
-
-  const checkUserAuth = async () => {
-    try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
-        console.error('Error getting user:', userError);
-        setLoginDialogOpen(true);
-        return;
-      }
-      
-      const isAuthenticated = !!user;
-      setIsLoggedIn(isAuthenticated);
-      
-      if (isAuthenticated) {
-        console.log('User authenticated:', user.email);
-        // Only fetch data if user is authenticated
-        fetchTableTemplates();
-        fetchTables();
-        fetchChairs();
-        fetchGuests();
-        fetchFloorPlans();
-      } else {
-        // If user is not authenticated, show login dialog
-        setLoginDialogOpen(true);
-        setSnackbar({
-          open: true,
-          message: 'Please log in to access the seating chart',
-          severity: 'info'
-        });
-      }
-    } catch (error) {
-      console.error('Error checking authentication:', error);
-      setLoginDialogOpen(true);
+  
+  // Separate useEffect for data fetching that depends on authentication state
+  useEffect(() => {
+    if (isLoggedIn) {
+      // Only fetch data if user is authenticated
+      fetchTableTemplates();
+      fetchTables();
+      fetchChairs();
+      fetchGuests();
     }
-  };
+  }, [isLoggedIn]);
 
   const handleLogin = async () => {
     try {
-      console.log('Attempting login with:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -220,16 +209,9 @@ export default function SeatingChart() {
         return;
       }
 
-      console.log('Login successful:', data);
+      // Update login state - this will trigger the useEffect that fetches data
       setIsLoggedIn(true);
       setLoginDialogOpen(false);
-      
-      // Fetch data after successful login
-      fetchTableTemplates();
-      fetchTables();
-      fetchChairs();
-      fetchGuests();
-      fetchFloorPlans();
       
       setSnackbar({
         open: true,
@@ -246,30 +228,31 @@ export default function SeatingChart() {
     }
   };
 
-  // Get the current user ID or throw an error if not authenticated
+  // Get the current user ID or handle authentication gracefully
   const getUserId = async () => {
+    // If we already know the user is not logged in, don't make API calls
+    if (!isLoggedIn) {
+      return null;
+    }
+    
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      // Check if we already have a session
+      const { data: sessionData } = await supabase.auth.getSession();
       
-      if (error) {
-        console.error('Error getting user ID:', error);
-        throw new Error('Failed to get user: ' + error.message);
+      if (sessionData?.session) {
+        // We have a valid session
+        return sessionData.session.user.id;
       }
       
-      if (user) {
-        console.log('User ID retrieved:', user.id);
-        return user.id;
-      } else {
-        console.error('No user found in session');
-        setIsLoggedIn(false);
-        setLoginDialogOpen(true);
-        throw new Error('User not authenticated');
-      }
+      // If no session, update login state and return null
+      setIsLoggedIn(false);
+      setLoginDialogOpen(true);
+      return null;
     } catch (error) {
       console.error('Unexpected error in getUserId:', error);
       setIsLoggedIn(false);
       setLoginDialogOpen(true);
-      throw new Error('Authentication error');
+      return null;
     }
   };
 
@@ -339,6 +322,12 @@ export default function SeatingChart() {
       // Get the current user ID
       const userId = await getUserId();
       
+      // If no userId, we can't fetch tables
+      if (!userId) {
+        console.log('Cannot fetch tables: No authenticated user');
+        return;
+      }
+      
       // Query tables for the current user
       const { data, error } = await supabase
         .from('seating_tables')
@@ -380,6 +369,12 @@ export default function SeatingChart() {
     try {
       // Get the current user ID
       const userId = await getUserId();
+      
+      // If no userId, we can't fetch chairs
+      if (!userId) {
+        console.log('Cannot fetch chairs: No authenticated user');
+        return;
+      }
       
       // First get all tables for this user
       const { data: userTables, error: tablesError } = await supabase
@@ -428,6 +423,12 @@ export default function SeatingChart() {
       // Get the current user ID
       const userId = await getUserId();
       
+      // If no userId, we can't fetch guests
+      if (!userId) {
+        console.log('Cannot fetch guests: No authenticated user');
+        return;
+      }
+      
       // Query guests for the current user
       const { data, error } = await supabase
         .from('guests')
@@ -450,68 +451,23 @@ export default function SeatingChart() {
     }
   };
 
-  const fetchFloorPlans = async () => {
-    try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      
-      if (!currentUser) {
-        console.error('User not authenticated');
-        return;
-      }
 
-      const { data, error } = await supabase
-        .from('floor_plans')
-        .select('*')
-        .eq('created_by', currentUser.id)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        if (error.code === '42P01') {
-          // Table doesn't exist yet, this is expected on first run
-          console.log('Floor plans table does not exist yet. Will be created when needed.');
-          setFloorPlans([]);
-        } else {
-          console.error('Error fetching floor plans:', error);
-          setSnackbar({
-            open: true,
-            message: 'Failed to fetch floor plans',
-            severity: 'error'
-          });
-        }
-        return;
-      }
-
-      if (data && data.length > 0) {
-        // Process the data to handle different column names
-        const processedData = data.map(plan => {
-          // Create a normalized object with consistent properties
-          const normalizedPlan = { ...plan };
-          
-          // Handle different column names for image URL
-          if (plan.image_url) {
-            normalizedPlan.image_url = plan.image_url;
-          } else if (plan.imageUrl) {
-            // If the column is named imageUrl, copy it to image_url for consistency
-            normalizedPlan.image_url = plan.imageUrl;
-          }
-          
-          return normalizedPlan;
-        });
-        
-        console.log('Fetched floor plans:', processedData);
-        setFloorPlans(processedData);
-      } else {
-        setFloorPlans([]);
-      }
-    } catch (error) {
-      console.error('Error fetching floor plans:', error);
-    }
-  };
 
   const handleAddTable = async (data: TableFormData) => {
     try {
       // Verify user is authenticated
       const userId = await getUserId();
+      
+      // If no userId, we can't add tables
+      if (!userId) {
+        console.log('Cannot add table: No authenticated user');
+        setSnackbar({
+          open: true,
+          message: 'Please log in to add tables',
+          severity: 'error'
+        });
+        return;
+      }
       
       // Get the template data
       const { data: templateData } = await supabase
@@ -590,7 +546,18 @@ export default function SeatingChart() {
 
   const handleAddGuest = async (name: string) => {
     try {
-      await getUserId();
+      const userId = await getUserId();
+      
+      // If no userId, we can't add guests
+      if (!userId) {
+        console.log('Cannot add guest: No authenticated user');
+        setSnackbar({
+          open: true,
+          message: 'Please log in to add guests',
+          severity: 'error'
+        });
+        return;
+      }
       
       // Split the full name into first and last name
       const nameParts = name.trim().split(' ');
@@ -608,7 +575,7 @@ export default function SeatingChart() {
           state: 'Not provided',
           zip_code: 'Not provided',
           country: 'Not provided',
-          created_by: await getUserId()
+          created_by: userId
         }])
         .select();
 
@@ -641,10 +608,7 @@ export default function SeatingChart() {
       return;
     }
 
-    // Don't handle chair clicks in floor plan mode
-    if (selectedFloorPlan) {
-      return;
-    }
+
     
     setSelectedChair(chair);
     
@@ -660,8 +624,19 @@ export default function SeatingChart() {
 
   const handleRemoveGuestFromChair = async (chairId: string) => {
     try {
-      // Just verify user is authenticated
-      await getUserId();
+      // Verify user is authenticated
+      const userId = await getUserId();
+      
+      // If no userId, we can't modify chairs
+      if (!userId) {
+        console.log('Cannot remove guest from chair: No authenticated user');
+        setSnackbar({
+          open: true,
+          message: 'Please log in to modify seating assignments',
+          severity: 'error'
+        });
+        return;
+      }
       
       const { error } = await supabase
         .from('table_chairs')
@@ -763,7 +738,18 @@ export default function SeatingChart() {
     if (!selectedTable) return;
 
     try {
-      await getUserId();
+      const userId = await getUserId();
+      
+      // If no userId, we can't delete tables
+      if (!userId) {
+        console.log('Cannot delete table: No authenticated user');
+        setSnackbar({
+          open: true,
+          message: 'Please log in to delete tables',
+          severity: 'error'
+        });
+        return;
+      }
 
       // Delete the table
       const { error } = await supabase
@@ -942,7 +928,18 @@ export default function SeatingChart() {
       await handleAddTable({ name: newTableName, template_id: selectedTemplate, seats: customSeats });
     } else if (selectedTable) {
       try {
-        await getUserId();
+        const userId = await getUserId();
+        
+        // If no userId, we can't update tables
+        if (!userId) {
+          console.log('Cannot update table: No authenticated user');
+          setSnackbar({
+            open: true,
+            message: 'Please log in to update tables',
+            severity: 'error'
+          });
+          return;
+        }
 
         const { error } = await supabase
           .from('seating_tables')
@@ -974,39 +971,37 @@ export default function SeatingChart() {
     setEditDialogOpen(false);
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      await fetchTableTemplates();
-      await fetchTables(); // This will also create chairs if needed
-      await fetchGuests();
-      await fetchFloorPlans();
-    };
-    
-    fetchData();
-    
-    // Check if user is logged in
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsLoggedIn(!!user);
-    };
-    
-    checkAuth();
-  }, []);
+  // Data fetching is now handled by the useEffect that depends on isLoggedIn
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      fetchFloorPlans();
-      createFloorPlansBucket(); // Create the floor plans bucket if it doesn't exist
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const { source, destination, draggableId } = result;
+
+    // Handle guest assignment to chair
+    if ((source.droppableId === 'guests' || source.droppableId === 'guests-list') && destination.droppableId.startsWith('chair-')) {
+      const chairId = destination.droppableId.replace('chair-', '');
+      const guestId = draggableId;
+      handleAssignGuestToChair(chairId, guestId);
     }
-  }, [isLoggedIn]);
-
-  const onDragEnd = () => {
-    // This is a placeholder - we're not actually implementing drag and drop functionality
-    // but we need this to satisfy the DragDropContext requirement
   };
 
   const handleAssignGuestToChair = async (chairId: string, guestId: string) => {
     try {
+      // Verify user is authenticated
+      const userId = await getUserId();
+      
+      // If no userId, we can't assign guests
+      if (!userId) {
+        console.log('Cannot assign guest to chair: No authenticated user');
+        setSnackbar({
+          open: true,
+          message: 'Please log in to assign guests',
+          severity: 'error'
+        });
+        return;
+      }
+      
       // Assign guest to the chair
       const { error } = await supabase
         .from('table_chairs')
@@ -1043,214 +1038,14 @@ export default function SeatingChart() {
     }
   };
 
-  const handleAssignGuestToChairDialog = (chairId: string, guestId: string) => {
-    handleAssignGuestToChair(chairId, guestId);
+  const handleAssignGuestToChairDialog = async (chairId: string, guestId: string) => {
+    await handleAssignGuestToChair(chairId, guestId);
+    setAssignGuestDialogOpen(false);
   };
 
-  const createFloorPlansBucket = async () => {
-    try {
-      // Ensure user is authenticated before proceeding
-      await getUserId();
-      
-      // Check if the bucket exists
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
 
-      if (bucketsError) {
-        console.error('Error checking storage buckets:', bucketsError);
-        return false;
-      }
 
-      const bucketExists = buckets.some(bucket => bucket.name === 'floor_plans');
 
-      if (!bucketExists) {
-        // Instead of trying to create the bucket directly (which might fail due to RLS),
-        // we'll use a simpler approach - just check if it exists
-        console.log('Floor plans bucket does not exist in this session');
-        return true;
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Unexpected error checking floor plans bucket:', error);
-      return false;
-    }
-  };
-
-  const handleFloorPlanUpload = async () => {
-    if ((!pdfFile && !imageFile) || !floorPlanName || !floorPlanScale) {
-      setSnackbar({
-        open: true,
-        message: 'Please provide a name, scale, and file for the floor plan',
-        severity: 'error'
-      });
-      return;
-    }
-
-    setIsUploading(true);
-    setFloorPlanError(null);
-
-    try {
-      await getUserId();
-
-      // Create the bucket if it doesn't exist
-      await createFloorPlansBucket();
-      
-      // Use the image file if provided, otherwise use the PDF
-      const fileToUpload = imageFile || pdfFile;
-      if (!fileToUpload) {
-        throw new Error('No file selected');
-      }
-      
-      // Upload the file to storage
-      const fileName = `${await getUserId()}_${Date.now()}_${fileToUpload.name.replace(/\s+/g, '_')}`;
-      const { error: uploadError } = await supabase
-        .storage
-        .from('floor_plans')
-        .upload(fileName, fileToUpload);
-
-      if (uploadError) {
-        console.error('Error uploading floor plan:', uploadError);
-        setFloorPlanError('Failed to upload file. Please try again with a smaller file or a different format.');
-        setSnackbar({
-          open: true,
-          message: 'Failed to upload floor plan',
-          severity: 'error'
-        });
-        setIsUploading(false);
-        return;
-      }
-
-      // Get the public URL for the uploaded file
-      const { data: { publicUrl } } = supabase
-        .storage
-        .from('floor_plans')
-        .getPublicUrl(fileName);
-
-      console.log('Saving floor plan with URL:', publicUrl);
-      
-      // Try to save with image_url first
-      try {
-        const { data, error: insertError } = await supabase
-          .from('floor_plans')
-          .insert([
-            {
-              name: floorPlanName,
-              image_url: publicUrl,
-              scale: parseFloat(floorPlanScale),
-              created_by: await getUserId()
-            }
-          ])
-          .select()
-          .single();
-
-        if (insertError) {
-          throw insertError;
-        }
-
-        // Success with image_url
-        console.log('Successfully saved floor plan with image_url column');
-        
-        // Refresh the floor plans list
-        await fetchFloorPlans();
-
-        // Automatically select the newly uploaded floor plan
-        if (data) {
-          setSelectedFloorPlan(data);
-        }
-      } catch (error) {
-        console.log('Failed with image_url, trying imageUrl column instead:', error);
-        
-        // Try with imageUrl if image_url fails
-        const { data, error: insertError2 } = await supabase
-          .from('floor_plans')
-          .insert([
-            {
-              name: floorPlanName,
-              imageUrl: publicUrl,
-              scale: parseFloat(floorPlanScale),
-              created_by: await getUserId()
-            }
-          ])
-          .select()
-          .single();
-
-        if (insertError2) {
-          console.error('Error saving floor plan details with both column names:', insertError2);
-          setFloorPlanError('Failed to save floor plan details in the database.');
-          setSnackbar({
-            open: true,
-            message: 'Failed to save floor plan details',
-            severity: 'error'
-          });
-          setIsUploading(false);
-          return;
-        }
-
-        console.log('Successfully saved floor plan with imageUrl column');
-        
-        // Refresh the floor plans list
-        await fetchFloorPlans();
-
-        // Automatically select the newly uploaded floor plan
-        if (data) {
-          setSelectedFloorPlan(data);
-        }
-      }
-
-      // Reset the form
-      setFloorPlanName('');
-      setFloorPlanScale('1');
-      setPdfFile(null);
-      setImageFile(null);
-      setUploadDialogOpen(false);
-      setSnackbar({
-        open: true,
-        message: 'Floor plan uploaded successfully',
-        severity: 'success'
-      });
-    } catch (error) {
-      console.error('Error uploading floor plan:', error);
-      setFloorPlanError('An unexpected error occurred during upload.');
-      setSnackbar({
-        open: true,
-        message: 'Failed to upload floor plan',
-        severity: 'error'
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const toggleFloorPlanMode = () => {
-    if (selectedFloorPlan) {
-      // Switching back to regular mode
-      setSelectedFloorPlan(null);
-      setZoomLevel(1); // Reset zoom
-    } else {
-      // If there are floor plans, select the first one
-      if (floorPlans.length > 0) {
-        setSelectedFloorPlan(floorPlans[0]);
-        setZoomLevel(1); // Reset zoom
-      } else {
-        // No floor plans available, show upload dialog
-        setUploadDialogOpen(true);
-      }
-    }
-    // Clear selected table when switching modes
-    setSelectedTable(null);
-  };
-
-  const handleZoomIn = () => {
-    setZoomLevel(prev => Math.min(prev + 0.1, 2)); // Max zoom 2x
-  };
-
-  const handleZoomOut = () => {
-    setZoomLevel(prev => Math.max(prev - 0.1, 0.5)); // Min zoom 0.5x
-  };
-
-  const handleResetZoom = () => {
-    setZoomLevel(1);
-  };
 
   const handleTableDragStart = (e: React.MouseEvent, table: Table) => {
     e.preventDefault();
@@ -1433,7 +1228,7 @@ export default function SeatingChart() {
     const tableChairs = chairs.filter(chair => chair.table_id === table.id);
     const isSelected = selectedTable?.id === table.id;
     const chairsWithPositions = calculateChairPositions(tableChairs, table);
-    const showResizeHandles = isSelected && !selectedFloorPlan;
+    const showResizeHandles = isSelected;
     
     return (
       <Box
@@ -1456,11 +1251,9 @@ export default function SeatingChart() {
           touchAction: 'none', // Prevent touch actions during drag
         }}
         onClick={(e) => {
-          if (!selectedFloorPlan) {
-            e.stopPropagation();
-            setSelectedTable(table);
-            setEditMode('edit');
-          }
+          e.stopPropagation();
+          setSelectedTable(table);
+          setEditMode('edit');
         }}
         onMouseDown={(e) => handleTableDragStart(e, table)}
       >
@@ -1480,7 +1273,7 @@ export default function SeatingChart() {
               height: '20px',
               backgroundColor: chairWithPos.guest_id ? 'green' : 'gray',
               borderRadius: '50%',
-              cursor: selectedFloorPlan ? 'default' : 'pointer',
+              cursor: 'pointer',
               border: selectedChair?.id === chairWithPos.id ? '2px solid blue' : 'none',
               display: 'flex',
               justifyContent: 'center',
@@ -1490,10 +1283,8 @@ export default function SeatingChart() {
               userSelect: 'none',
             }}
             onClick={(e) => {
-              if (!selectedFloorPlan) {
-                e.stopPropagation();
-                handleChairClick(chairWithPos);
-              }
+              e.stopPropagation();
+              handleChairClick(chairWithPos);
             }}
           >
             {chairWithPos.position}
@@ -1571,77 +1362,16 @@ export default function SeatingChart() {
               variant="contained" 
               onClick={() => setEditMode('add')}
               startIcon={<AddIcon />}
-              disabled={!!selectedFloorPlan}
             >
               Add Table
             </Button>
             
-            <Button 
-              variant="outlined" 
-              onClick={() => toggleFloorPlanMode()}
-              startIcon={<PictureAsPdfIcon />}
-            >
-              {selectedFloorPlan ? 'Exit Floor Plan Mode' : 'Enter Floor Plan Mode'}
-            </Button>
-            
-            {selectedFloorPlan && (
-              <>
-                <Button 
-                  variant="outlined" 
-                  onClick={() => setUploadDialogOpen(true)}
-                  startIcon={<AddIcon />}
-                >
-                  Upload Floor Plan
-                </Button>
-                
-                <Button 
-                  variant="outlined" 
-                  onClick={handleZoomIn}
-                  startIcon={<ZoomInIcon />}
-                >
-                  Zoom In
-                </Button>
-                
-                <Button 
-                  variant="outlined" 
-                  onClick={handleZoomOut}
-                  startIcon={<ZoomOutIcon />}
-                >
-                  Zoom Out
-                </Button>
-                
-                <Button 
-                  variant="outlined" 
-                  onClick={handleResetZoom}
-                >
-                  Reset Zoom
-                </Button>
-                
-                <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
-                  <InputLabel>Floor Plan</InputLabel>
-                  <Select
-                    value={selectedFloorPlan?.id || ''}
-                    onChange={(e) => {
-                      const selected = floorPlans.find(fp => fp.id === e.target.value);
-                      setSelectedFloorPlan(selected || null);
-                    }}
-                    label="Floor Plan"
-                  >
-                    {floorPlans.map((floorPlan) => (
-                      <MenuItem key={floorPlan.id} value={floorPlan.id}>
-                        {floorPlan.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </>
-            )}
+
             
             <Button
               variant="outlined"
               onClick={() => setGuestDialogOpen(true)}
               startIcon={<PersonAddIcon />}
-              disabled={!!selectedFloorPlan}
             >
               Add Guest
             </Button>
@@ -1653,61 +1383,17 @@ export default function SeatingChart() {
             elevation={3} 
             sx={{ 
               height: '100%',
-              width: selectedFloorPlan ? '100%' : 'calc(100% - 320px)', 
+              width: 'calc(100% - 320px)', 
               position: 'relative', 
               overflow: 'hidden',
-              backgroundImage: selectedFloorPlan ? `url(${selectedFloorPlan.image_url})` : 'none',
-              backgroundSize: selectedFloorPlan ? 'contain' : 'cover',
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'center',
-              backgroundColor: '#f5f5f5', // Add a light background color
-              backgroundImage: selectedFloorPlan ? `url(${selectedFloorPlan.image_url})` : `linear-gradient(#054697 1px, transparent 1px), linear-gradient(90deg, #054697 1px, transparent 1px)`,
-              backgroundSize: selectedFloorPlan ? 'contain' : '20px 20px',
-              backgroundOpacity: 0.1,
+              backgroundColor: '#f5f5f5',
+              backgroundImage: `linear-gradient(rgba(5, 70, 151, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(5, 70, 151, 0.1) 1px, transparent 1px)`,
+              backgroundSize: '20px 20px',
               transition: 'all 0.3s ease',
-              transform: selectedFloorPlan ? `scale(${zoomLevel})` : 'none',
-              transformOrigin: 'center',
             }}
             ref={chartAreaRef}
           >
-            {/* Floor plan container */}
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                zIndex: 0,
-              }}
-            >
-              {selectedFloorPlan && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  {/* This is a transparent overlay to ensure the floor plan is clickable */}
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%',
-                      zIndex: 1,
-                    }}
-                  />
-                </Box>
-              )}
-            </Box>
+
             
             {/* Tables container with higher z-index */}
             <Box
@@ -1715,8 +1401,8 @@ export default function SeatingChart() {
                 position: 'relative',
                 width: '100%',
                 height: '100%',
-                zIndex: 2, // Ensure tables are above the floor plan
-                transform: 'none', // Remove zoom from tables
+                zIndex: 2,
+                transform: 'none',
                 transformOrigin: 'center',
                 transition: 'transform 0.3s ease',
               }}
@@ -1730,17 +1416,15 @@ export default function SeatingChart() {
             </Box>
           </Paper>
           
-          {/* Guest list sidebar - only show in seating chart mode */}
-          {!selectedFloorPlan && (
-            <Paper sx={{ width: 300, ml: 2, p: 2, height: '100%', overflow: 'auto' }}>
+          {/* Guest list sidebar */}
+          <Paper sx={{ width: 300, ml: 2, p: 2, height: '100%', overflow: 'auto' }}>
               <GuestList 
                 guests={guests} 
                 onAddGuest={handleAddGuest}
                 filter={filter}
                 onFilterChange={setFilter}
               />
-            </Paper>
-          )}
+          </Paper>
         </Box>
         
         {/* Add/Edit table dialog */}
@@ -1798,84 +1482,7 @@ export default function SeatingChart() {
           </DialogActions>
         </Dialog>
 
-        {/* Upload floor plan dialog */}
-        <Dialog open={uploadDialogOpen} onClose={() => setUploadDialogOpen(false)}>
-          <DialogTitle>Upload Floor Plan</DialogTitle>
-          <DialogContent sx={{ minWidth: 400 }}>
-            <Typography variant="body2" sx={{ mb: 2 }}>
-              Upload an image file (JPG, PNG) or PDF to use as a floor plan.
-            </Typography>
-            <TextField
-              fullWidth
-              label="Floor Plan Name"
-              type="text"
-              value={floorPlanName}
-              onChange={(e) => setFloorPlanName(e.target.value)}
-              margin="normal"
-              required
-            />
-            <Box sx={{ my: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                Floor Plan Image (Recommended)
-              </Typography>
-              <input
-                type="file"
-                accept=".jpg,.jpeg,.png"
-                onChange={(e) => {
-                  setImageFile(e.target.files?.[0] || null);
-                  // Clear PDF if image is selected
-                  if (e.target.files?.[0]) {
-                    setPdfFile(null);
-                  }
-                }}
-              />
-              <Typography variant="caption" display="block" sx={{ mt: 1, color: 'text.secondary' }}>
-                Recommended: Use JPG or PNG for better compatibility
-              </Typography>
-            </Box>
-            <Box sx={{ my: 2 }}>
-              <Typography variant="subtitle2" gutterBottom>
-                OR PDF File
-              </Typography>
-              <input
-                type="file"
-                accept=".pdf"
-                onChange={(e) => {
-                  setPdfFile(e.target.files?.[0] || null);
-                  // Clear image if PDF is selected
-                  if (e.target.files?.[0]) {
-                    setImageFile(null);
-                  }
-                }}
-              />
-            </Box>
-            <TextField
-              fullWidth
-              label="Scale (feet per pixel)"
-              type="text"
-              value={floorPlanScale}
-              onChange={(e) => setFloorPlanScale(e.target.value)}
-              margin="normal"
-              required
-            />
-            {floorPlanError && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                {floorPlanError}
-              </Alert>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setUploadDialogOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={handleFloorPlanUpload} 
-              variant="contained"
-              disabled={(!floorPlanName || (!pdfFile && !imageFile) || isUploading)}
-              startIcon={isUploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
-            >
-              {isUploading ? 'Uploading...' : 'Upload'}
-            </Button>
-          </DialogActions>
-        </Dialog>
+
 
         {/* Guest Dialog */}
         <Dialog open={guestDialogOpen} onClose={() => setGuestDialogOpen(false)} maxWidth="sm" fullWidth>
