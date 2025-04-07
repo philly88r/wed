@@ -36,8 +36,8 @@ import { Guest } from '../types/Guest';
 
 
 // Create a Supabase client with the correct credentials
-const supabaseUrl = 'https://kdhwrlhzevzekoanusbs.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkaHdybGh6ZXZ6ZWtvYW51c2JzIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTg5MzY5NDcsImV4cCI6MjAxNDUxMjk0N30.LTG9sozXMFHQPYJ9o_V93YN4RZAYiJXqm_yGEUFF7Yk';
+const supabaseUrl = 'https://yemkduykvfdjmldxfphq.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllbWtkdXlrdmZkam1sZHhmcGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1NDY4NzQsImV4cCI6MjA1NTEyMjg3NH0.JoIg1NFwFPE8ucc7D4Du2qe8SEX3OvSKqJf_ecf-euk';
 const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
