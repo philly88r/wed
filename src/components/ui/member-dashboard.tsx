@@ -15,6 +15,7 @@ import {
   Heart,
   ChevronRight
 } from "lucide-react";
+import { supabase } from "../../supabaseClient";
 
 // Define the dashboard tool interface
 interface DashboardTool {
@@ -39,6 +40,40 @@ export function MemberDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [notification, setNotification] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>("Wedding Planner");
+  
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          // Get user profile from the profiles table
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('id', user.id)
+            .single();
+            
+          if (error) {
+            console.error('Error fetching profile:', error);
+          } else if (data) {
+            // Set user name based on available data
+            if (data.first_name) {
+              setUserName(data.first_name as string);
+            } else if (data.last_name) {
+              setUserName(`${data.last_name as string} Family`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+    
+    fetchUserProfile();
+  }, []);
   
   // Check if a plan was selected from the pricing page
   useEffect(() => {
@@ -178,7 +213,7 @@ export function MemberDashboard() {
           </div>
 
           <div className="flex flex-col gap-3 w-full md:w-2/3">
-            <h1 className="text-4xl md:text-5xl font-semibold text-[#054697] font-['Giaza',serif] tracking-tight">Welcome, Lara</h1>
+            <h1 className="text-4xl md:text-5xl font-semibold text-[#054697] font-['Giaza',serif] tracking-tight">Welcome, {userName}</h1>
             <p className="text-[#054697]/80 font-light text-xl">Your wedding is in <span className="font-medium">{daysUntilWedding} days</span> ({formattedWeddingDate})</p>
             
             {/* Quick Stats */}
