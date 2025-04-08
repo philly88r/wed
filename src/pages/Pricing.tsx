@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Container,
   Typography,
@@ -99,6 +100,12 @@ const tiers: PricingTier[] = [
 
 export default function Pricing() {
   const [yearly, setYearly] = useState(false);
+  const navigate = useNavigate();
+  
+  const handleSelectPlan = (plan: string) => {
+    // In testing mode, redirect to profile page regardless of plan selected
+    navigate('/profile', { state: { selectedPlan: plan } });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-[#F9F9FF]">
@@ -309,6 +316,7 @@ export default function Pricing() {
                     fullWidth
                     variant={tier.buttonVariant}
                     size="large"
+                    onClick={() => handleSelectPlan(tier.title)}
                     sx={{
                       py: 2,
                       fontSize: '1rem',
