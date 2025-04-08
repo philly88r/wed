@@ -1,10 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, Box } from '@mui/material';
 import theme from './theme/theme';
-import ServiceMenu from './pages/ServiceMenu';
 import ServiceMenuWithTheme from './pages/ServiceMenuWithTheme';
 import SeatingChart from './pages/SeatingChart';
-import SeatingChartSimple from './pages/SeatingChartSimple';
 import Header from './components/Header';
 import Budget from './pages/Budget';
 import Checklist from './pages/Checklist';
@@ -28,6 +26,7 @@ import Services from './pages/Services';
 import Videos from './pages/Videos';
 import AddVendor from './pages/admin/add-vendor';
 import VisionBoard from './pages/VisionBoard';
+import Profile from './pages/Profile';
 
 // Define app routes to check against
 const APP_ROUTES = [
@@ -97,9 +96,8 @@ function AppContent() {
         />
         
         {/* App routes - EXACT paths first */}
-        <Route path="/" element={<Services />} />
+        <Route path="/" element={<Profile />} />
         <Route path="/seating-chart" element={<SeatingChart />} />
-        <Route path="/seating-chart-simple" element={<SeatingChartSimple />} />
         <Route path="/budget" element={<Budget />} />
         <Route path="/checklist" element={<ChecklistDemo />} />
         <Route path="/checklist-old" element={<Checklist />} />
