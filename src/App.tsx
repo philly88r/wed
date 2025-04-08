@@ -27,6 +27,7 @@ import Videos from './pages/Videos';
 import AddVendor from './pages/admin/add-vendor';
 import VisionBoard from './pages/VisionBoard';
 import Dashboard from './pages/Dashboard';
+import Pricing from './pages/Pricing';
 // import Profile from './pages/Profile';
 
 // Define app routes to check against
@@ -117,7 +118,7 @@ function AppContent() {
         <Route path="/services" element={<Services />} />
         <Route path="/vision-board" element={<VisionBoard />} />
         <Route path="/mood-board" element={<VisionBoard />} />
-        <Route path="/pricing" element={<ComingSoon />} />
+        <Route path="/pricing" element={<Pricing />} />
         
         {/* Wedding name route - use a separate component to handle the logic */}
         <Route path="/:weddingName" element={<WeddingNameHandler />} />
