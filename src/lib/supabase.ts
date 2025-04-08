@@ -16,10 +16,54 @@ export const mockVideos = [
     id: '1',
     title: 'Your Why?',
     description: 'Discover the deeper meaning behind your wedding planning journey and how to create a celebration that truly reflects your values.',
-    youtube_id: '-0gAzhbt2TM',
-    thumbnail_url: 'https://img.youtube.com/vi/-0gAzhbt2TM/maxresdefault.jpg',
+    youtube_id: 'WHm_U7uyhWg',
+    thumbnail_url: 'https://img.youtube.com/vi/WHm_U7uyhWg/maxresdefault.jpg',
     category: 'Getting Started',
     duration: '8:24',
+    has_journal_prompt: true,
+    related_feature: null
+  },
+  {
+    id: '2',
+    title: "Let's Get Started",
+    description: 'Begin your wedding planning journey by creating your ideal guest list and organizing your initial thoughts.',
+    youtube_id: 'Tcrxki6QgvI',
+    thumbnail_url: 'https://img.youtube.com/vi/Tcrxki6QgvI/maxresdefault.jpg',
+    category: 'Getting Started',
+    duration: '7:15',
+    has_journal_prompt: true,
+    related_feature: 'directory'
+  },
+  {
+    id: '3',
+    title: 'Securing Your Vendor Team',
+    description: 'Learn how to select and secure the perfect vendor team for your special day.',
+    youtube_id: 'ybWu6R-LWjU',
+    thumbnail_url: 'https://img.youtube.com/vi/ybWu6R-LWjU/maxresdefault.jpg',
+    category: 'Vendor Planning',
+    duration: '6:42',
+    has_journal_prompt: true,
+    related_feature: 'vendors'
+  },
+  {
+    id: '4',
+    title: 'Dividing Your Day',
+    description: 'Organize your wedding day timeline to ensure everything runs smoothly.',
+    youtube_id: 'DLSV-qkSu98',
+    thumbnail_url: 'https://img.youtube.com/vi/DLSV-qkSu98/maxresdefault.jpg',
+    category: 'Timeline Planning',
+    duration: '8:10',
+    has_journal_prompt: true,
+    related_feature: 'timeline'
+  },
+  {
+    id: '5',
+    title: 'Loose Ends',
+    description: 'Tie up any loose ends in your wedding planning process and address final concerns.',
+    youtube_id: 'esbxFsnOQT4',
+    thumbnail_url: 'https://img.youtube.com/vi/esbxFsnOQT4/maxresdefault.jpg',
+    category: 'Progress Check',
+    duration: '7:30',
     has_journal_prompt: true,
     related_feature: null
   }
