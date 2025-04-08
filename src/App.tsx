@@ -96,7 +96,7 @@ function AppContent() {
         />
         
         {/* App routes - EXACT paths first */}
-        <Route path="/" element={<Profile />} />
+        <Route path="/" element={<Services />} />
         <Route path="/seating-chart" element={<SeatingChart />} />
         <Route path="/budget" element={<Budget />} />
         <Route path="/checklist" element={<ChecklistDemo />} />
