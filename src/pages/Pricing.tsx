@@ -16,9 +16,11 @@ import {
   ListItemIcon,
   ListItemText,
   Chip,
+  CircularProgress,
 } from '@mui/material';
 import { Check as CheckIcon } from '@mui/icons-material';
 import { Heart } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface PricingTier {
   title: string;
@@ -100,11 +102,34 @@ const tiers: PricingTier[] = [
 
 export default function Pricing() {
   const [yearly, setYearly] = useState(false);
+  const [loading, setLoading] = useState<string | null>(null);
   const navigate = useNavigate();
   
-  const handleSelectPlan = (plan: string) => {
-    // In testing mode, redirect to dashboard page regardless of plan selected
-    navigate('/', { state: { selectedPlan: plan } });
+  const handleSelectPlan = async (plan: string) => {
+    setLoading(plan);
+    
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Update the user's profile with the selected plan
+        const { error } = await supabase
+          .from('profiles')
+          .update({ selected_plan: plan })
+          .eq('id', user.id);
+          
+        if (error) {
+          console.error('Error updating profile:', error);
+        }
+      }
+      
+      // Redirect to dashboard page with selected plan in state
+      navigate('/', { state: { selectedPlan: plan } });
+    } catch (error) {
+      console.error('Error selecting plan:', error);
+      setLoading(null);
+    }
   };
 
   return (
@@ -333,6 +358,8 @@ export default function Pricing() {
                         border: '1px solid #FFE8E4',
                       },
                     }}
+                    disabled={loading === tier.title}
+                    startIcon={loading === tier.title && <CircularProgress size={24} />}
                   >
                     {tier.buttonText}
                   </Button>

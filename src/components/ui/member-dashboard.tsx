@@ -198,9 +198,13 @@ export function MemberDashboard() {
   
   // Check if a plan was selected from the pricing page
   useEffect(() => {
-    if (location.state && location.state.selectedPlan) {
-      setSelectedPlan(location.state.selectedPlan);
-      setNotification(`Thank you for selecting the ${location.state.selectedPlan} plan!`);
+    if (location.state) {
+      if (location.state.selectedPlan) {
+        setSelectedPlan(location.state.selectedPlan);
+        setNotification(`Thank you for selecting the ${location.state.selectedPlan} plan!`);
+      } else if (location.state.message) {
+        setNotification(location.state.message);
+      }
       
       // Clear the location state after 5 seconds to prevent the notification from showing again on refresh
       const timer = setTimeout(() => {
