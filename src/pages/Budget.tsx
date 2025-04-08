@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Download, RefreshCw, X, Check, Info } from 'lucide-react';
-import { essentialCategories, budgetCategories, allCategories } from '../data/budgetCategories';
+import { Download, RefreshCw, X, Check } from 'lucide-react';
+import { essentialCategories, budgetCategories } from '../data/budgetCategories';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -34,7 +34,6 @@ export default function Budget() {
   
   // Track which vendors are enabled/disabled
   const [disabledVendors, setDisabledVendors] = useState<string[]>([]);
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
   useEffect(() => {
     const savedData = localStorage.getItem('wedding-budget-data-v2');
@@ -219,16 +218,6 @@ export default function Budget() {
     }
   };
 
-  const getTotalEssentialAllocated = () => {
-    return Object.values(budget.essentials).reduce((total, item) => 
-      total + item.allocated, 0);
-  };
-
-  const getTotalDiscretionaryAllocated = () => {
-    return Object.values(budget.discretionary).reduce((total, item) => 
-      item.enabled ? total + item.allocated : total, 0);
-  };
-
   const getTotalEssentialSpent = () => {
     return Object.values(budget.essentials).reduce((total, item) => 
       total + item.spent, 0);
@@ -245,36 +234,81 @@ export default function Budget() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-8">
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+      <div 
+        className="bg-white p-6 space-y-6"
+        style={{
+          border: '1px solid rgba(5, 70, 151, 0.1)',
+          boxShadow: '0 4px 20px rgba(5, 70, 151, 0.05)',
+          position: 'relative'
+        }}
+      >
+        <div 
+          style={{
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '4px',
+            height: '100%',
+            backgroundColor: '#054697'
+          }}
+        ></div>
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-gray-900">Wedding Budget Calculator</h2>
+          <h2 
+            className="text-2xl font-semibold"
+            style={{ 
+              fontFamily: "'Giaza', serif", 
+              color: '#054697',
+              letterSpacing: '-0.05em'
+            }}
+          >
+            Wedding Budget Calculator
+          </h2>
           <div className="flex space-x-3">
-            <button
-              onClick={resetBudget}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Reset
-            </button>
-            <button
+            <button 
               onClick={exportBudget}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-rose-600 border border-transparent rounded-md hover:bg-rose-700"
+              className="inline-flex items-center px-3 py-2 text-sm"
+              style={{
+                backgroundColor: 'transparent',
+                color: '#054697',
+                border: '1px solid #E8B4B4',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 400,
+                textTransform: 'uppercase'
+              }}
             >
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="w-4 h-4 mr-2" />
               Export
+            </button>
+            <button 
+              onClick={resetBudget}
+              className="inline-flex items-center px-3 py-2 text-sm"
+              style={{
+                backgroundColor: 'transparent',
+                color: '#054697',
+                border: '1px solid #E8B4B4',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 400,
+                textTransform: 'uppercase'
+              }}
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Reset
             </button>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Total Budget
-            </label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 sm:text-sm">$</span>
-              </div>
+        
+        {/* Budget Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div 
+            className="p-4"
+            style={{
+              border: '1px solid rgba(5, 70, 151, 0.1)',
+              backgroundColor: 'rgba(5, 70, 151, 0.05)'
+            }}
+          >
+            <div className="text-sm uppercase mb-1" style={{ fontFamily: 'Poppins, sans-serif', color: '#054697', opacity: 0.8 }}>Total Budget</div>
+            <div className="flex items-end">
               <input
                 type="number"
                 value={budget.totalBudget}
@@ -284,33 +318,89 @@ export default function Budget() {
                     initializeBudget(value, budget.guestCount);
                   }
                 }}
-                className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:ring-rose-500 focus:border-rose-500"
+                className="text-2xl font-bold bg-transparent border-b-2 w-full focus:outline-none"
+                style={{ 
+                  fontFamily: 'Poppins, sans-serif', 
+                  color: '#054697',
+                  borderBottomColor: '#E8B4B4'
+                }}
               />
             </div>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Number of Guests
-            </label>
-            <input
-              type="number"
-              value={budget.guestCount}
-              onChange={(e) => {
-                const value = parseInt(e.target.value);
-                if (!isNaN(value) && value > 0) {
-                  setBudget(prev => ({...prev, guestCount: value}));
-                }
+          <div 
+            className="p-4"
+            style={{
+              border: '1px solid rgba(5, 70, 151, 0.1)',
+              backgroundColor: 'rgba(5, 70, 151, 0.05)'
+            }}
+          >
+            <div className="text-sm uppercase mb-1" style={{ fontFamily: 'Poppins, sans-serif', color: '#054697', opacity: 0.8 }}>Guest Count</div>
+            <div className="flex items-end">
+              <input
+                type="number"
+                value={budget.guestCount}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  if (!isNaN(value) && value > 0) {
+                    setBudget(prev => ({...prev, guestCount: value}));
+                  }
+                }}
+                className="text-2xl font-bold bg-transparent border-b-2 w-full focus:outline-none"
+                style={{ 
+                  fontFamily: 'Poppins, sans-serif', 
+                  color: '#054697',
+                  borderBottomColor: '#E8B4B4'
+                }}
+              />
+            </div>
+            <div className="text-sm mt-1" style={{ fontFamily: 'Poppins, sans-serif', color: '#054697', opacity: 0.6 }}>
+              ${Math.round(budget.totalBudget / budget.guestCount)} per guest
+            </div>
+          </div>
+          
+          <div 
+            className="p-4"
+            style={{
+              border: '1px solid rgba(5, 70, 151, 0.1)',
+              backgroundColor: 'rgba(5, 70, 151, 0.05)'
+            }}
+          >
+            <div className="text-sm uppercase mb-1" style={{ fontFamily: 'Poppins, sans-serif', color: '#054697', opacity: 0.8 }}>Remaining</div>
+            <div 
+              className="text-2xl font-bold"
+              style={{ 
+                fontFamily: 'Poppins, sans-serif', 
+                color: '#054697'
               }}
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:ring-rose-500 focus:border-rose-500"
-            />
+            >
+              {formatCurrency(budget.totalBudget - getTotalSpent())}
+            </div>
+            <div className="w-full bg-gray-200 h-2 mt-2">
+              <div 
+                className="h-2" 
+                style={{
+                  width: `${(getTotalSpent() / budget.totalBudget) * 100}%`,
+                  backgroundColor: '#E8B4B4'
+                }}
+              ></div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Budget Summary */}
       <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Budget Summary</h2>
+        <h2 
+          className="text-xl font-semibold"
+          style={{ 
+            fontFamily: "'Giaza', serif", 
+            color: '#054697',
+            letterSpacing: '-0.05em'
+          }}
+        >
+          Budget Summary
+        </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-rose-50 rounded-lg p-4">
@@ -347,7 +437,14 @@ export default function Budget() {
 
       {/* Essential Budget (First 50%) */}
       <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 
+          className="text-xl font-semibold"
+          style={{ 
+            fontFamily: "'Giaza', serif", 
+            color: '#054697',
+            letterSpacing: '-0.05em'
+          }}
+        >
           Essential Budget (50% - {formatCurrency(budget.totalBudget * 0.5)})
         </h2>
         
@@ -357,16 +454,39 @@ export default function Budget() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <category.icon className="h-5 w-5 text-gray-400" />
-                  <h3 className="text-lg font-medium text-gray-900">{category.name}</h3>
+                  <h3 
+                    className="text-lg font-medium"
+                    style={{ 
+                      fontFamily: "'Giaza', serif", 
+                      color: '#054697',
+                      letterSpacing: '-0.05em'
+                    }}
+                  >
+                    {category.name}
+                  </h3>
                 </div>
-                <div className="text-lg font-semibold">
+                <div 
+                  className="text-lg font-semibold"
+                  style={{ 
+                    fontFamily: "'Giaza', serif", 
+                    color: '#054697',
+                    letterSpacing: '-0.05em'
+                  }}
+                >
                   {formatCurrency(budget.essentials[category.id]?.allocated || 0)}
                 </div>
               </div>
               
               <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label 
+                    className="block text-sm font-medium"
+                    style={{ 
+                      fontFamily: 'Poppins, sans-serif', 
+                      color: '#054697',
+                      opacity: 0.8
+                    }}
+                  >
                     Allocated
                   </label>
                   <input
@@ -379,10 +499,21 @@ export default function Budget() {
                       }
                     }}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-rose-500 focus:border-rose-500"
+                    style={{ 
+                      fontFamily: 'Poppins, sans-serif', 
+                      color: '#054697'
+                    }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label 
+                    className="block text-sm font-medium"
+                    style={{ 
+                      fontFamily: 'Poppins, sans-serif', 
+                      color: '#054697',
+                      opacity: 0.8
+                    }}
+                  >
                     Spent
                   </label>
                   <input
@@ -395,11 +526,22 @@ export default function Budget() {
                       }
                     }}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-rose-500 focus:border-rose-500"
+                    style={{ 
+                      fontFamily: 'Poppins, sans-serif', 
+                      color: '#054697'
+                    }}
                   />
                 </div>
               </div>
               
-              <div className="mt-2 text-sm text-gray-500">
+              <div 
+                className="text-sm"
+                style={{ 
+                  fontFamily: 'Poppins, sans-serif', 
+                  color: '#054697',
+                  opacity: 0.6
+                }}
+              >
                 {category.defaultPercentage}% of essential budget ({(category.defaultPercentage / 2).toFixed(1)}% of total)
               </div>
             </div>
@@ -409,7 +551,14 @@ export default function Budget() {
 
       {/* Discretionary Budget (Remaining 50%) */}
       <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 
+          className="text-xl font-semibold"
+          style={{ 
+            fontFamily: "'Giaza', serif", 
+            color: '#054697',
+            letterSpacing: '-0.05em'
+          }}
+        >
           Discretionary Budget (50% - {formatCurrency(budget.totalBudget * 0.5)})
         </h2>
         
@@ -427,6 +576,14 @@ export default function Budget() {
                       onClick={() => toggleVendor(category.id)}
                       className={`flex items-center justify-center w-6 h-6 rounded-full border ${isEnabled ? 'border-green-500' : 'border-red-500'}`}
                       title={isEnabled ? "Click to exclude this vendor" : "Click to include this vendor"}
+                      style={{ 
+                        backgroundColor: 'transparent',
+                        color: '#054697',
+                        border: '1px solid #E8B4B4',
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 400,
+                        textTransform: 'uppercase'
+                      }}
                     >
                       {isEnabled ? (
                         <Check className="h-4 w-4 text-green-500" />
@@ -435,10 +592,26 @@ export default function Budget() {
                       )}
                     </button>
                     <category.icon className="h-5 w-5 text-gray-400" />
-                    <h3 className="text-lg font-medium text-gray-900">{category.name}</h3>
+                    <h3 
+                      className="text-lg font-medium"
+                      style={{ 
+                        fontFamily: "'Giaza', serif", 
+                        color: '#054697',
+                        letterSpacing: '-0.05em'
+                      }}
+                    >
+                      {category.name}
+                    </h3>
                   </div>
                   {isEnabled && (
-                    <div className="text-lg font-semibold">
+                    <div 
+                      className="text-lg font-semibold"
+                      style={{ 
+                        fontFamily: "'Giaza', serif", 
+                        color: '#054697',
+                        letterSpacing: '-0.05em'
+                      }}
+                    >
                       {formatCurrency(budget.discretionary[category.id]?.allocated || 0)}
                     </div>
                   )}
@@ -448,7 +621,14 @@ export default function Budget() {
                   <>
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">
+                        <label 
+                          className="block text-sm font-medium"
+                          style={{ 
+                            fontFamily: 'Poppins, sans-serif', 
+                            color: '#054697',
+                            opacity: 0.8
+                          }}
+                        >
                           Allocated
                         </label>
                         <input
@@ -456,10 +636,21 @@ export default function Budget() {
                           value={budget.discretionary[category.id]?.allocated || 0}
                           disabled={true} // Automatically calculated based on percentages
                           className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm"
+                          style={{ 
+                            fontFamily: 'Poppins, sans-serif', 
+                            color: '#054697'
+                          }}
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">
+                        <label 
+                          className="block text-sm font-medium"
+                          style={{ 
+                            fontFamily: 'Poppins, sans-serif', 
+                            color: '#054697',
+                            opacity: 0.8
+                          }}
+                        >
                           Spent
                         </label>
                         <input
@@ -472,11 +663,22 @@ export default function Budget() {
                             }
                           }}
                           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-rose-500 focus:border-rose-500"
+                          style={{ 
+                            fontFamily: 'Poppins, sans-serif', 
+                            color: '#054697'
+                          }}
                         />
                       </div>
                     </div>
                     
-                    <div className="mt-2 text-sm text-gray-500">
+                    <div 
+                      className="text-sm"
+                      style={{ 
+                        fontFamily: 'Poppins, sans-serif', 
+                        color: '#054697',
+                        opacity: 0.6
+                      }}
+                    >
                       {category.defaultPercentage}% of discretionary budget ({(category.defaultPercentage / 2).toFixed(1)}% of total)
                     </div>
                   </>

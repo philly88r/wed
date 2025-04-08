@@ -110,8 +110,9 @@ export default function Login() {
               align="center" 
               gutterBottom
               sx={{ 
-                color: theme.palette.primary.main,
-                fontWeight: 600,
+                color: '#054697',
+                fontFamily: "'Giaza', serif",
+                letterSpacing: '-0.05em',
                 mb: 3
               }}
             >
@@ -121,7 +122,15 @@ export default function Login() {
             {message && (
               <Alert 
                 severity={message.type} 
-                sx={{ width: '100%', mb: 3 }}
+                sx={{ 
+                  width: '100%', 
+                  mb: 3,
+                  backgroundColor: message.type === 'error' ? 'rgba(211, 47, 47, 0.1)' : 'rgba(232, 180, 180, 0.2)',
+                  color: '#054697',
+                  '& .MuiAlert-icon': {
+                    color: message.type === 'error' ? '#d32f2f' : '#054697',
+                  }
+                }}
               >
                 {message.text}
               </Alert>
@@ -140,11 +149,11 @@ export default function Login() {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '&.Mui-focused fieldset': {
-                      borderColor: theme.palette.primary.main,
+                      borderColor: '#054697',
                     },
                   },
                   '& .MuiInputLabel-root.Mui-focused': {
-                    color: theme.palette.primary.main,
+                    color: '#054697',
                   }
                 }}
               />
@@ -160,11 +169,11 @@ export default function Login() {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '&.Mui-focused fieldset': {
-                      borderColor: theme.palette.primary.main,
+                      borderColor: '#054697',
                     },
                   },
                   '& .MuiInputLabel-root.Mui-focused': {
-                    color: theme.palette.primary.main,
+                    color: '#054697',
                   }
                 }}
               />
@@ -175,19 +184,31 @@ export default function Login() {
                 variant="contained"
                 disabled={loading}
                 sx={{
-                  bgcolor: theme.palette.accent.rose,
-                  color: theme.palette.primary.main,
-                  '&:hover': {
-                    bgcolor: theme.palette.accent.roseDark,
-                  },
                   mt: 3,
                   mb: 2,
                   py: 1.5,
-                  fontSize: '1rem'
+                  backgroundColor: '#E8B4B4',
+                  color: '#054697',
+                  fontFamily: 'Poppins, sans-serif',
+                  fontWeight: 400,
+                  textTransform: 'uppercase',
+                  '&:hover': {
+                    backgroundColor: '#FFD5CC',
+                  },
+                  '&.Mui-disabled': {
+                    backgroundColor: '#E8B4B4',
+                    opacity: 0.5,
+                    color: '#054697'
+                  }
                 }}
               >
                 {loading ? (
-                  <CircularProgress size={24} sx={{ color: theme.palette.primary.main }} />
+                  <CircularProgress 
+                    size={24} 
+                    sx={{ 
+                      color: '#054697'
+                    }}
+                  />
                 ) : isLogin ? (
                   'Sign In'
                 ) : (
@@ -199,7 +220,7 @@ export default function Login() {
                 variant="body2" 
                 align="center"
                 sx={{ 
-                  color: theme.palette.primary.main,
+                  color: '#054697',
                   opacity: 0.8,
                   cursor: 'pointer'
                 }}
