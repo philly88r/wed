@@ -1,9 +1,10 @@
-import { UploadCloud, Users, DollarSign, Map, FileText, MessageSquare, Settings, PenTool, Calendar, Heart, Clock, Bell, Camera, ArrowRight } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
-import { Button } from "./button";
+import { UploadCloud, Users, DollarSign, Map, FileText, Video, Calendar, Settings, PenTool, Heart, Clock, Bell, Camera, MessageSquare, ArrowRight } from "lucide-react";
+import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import * as React from 'react';
+import { useTheme } from "@mui/material/styles";
+import { Typography, Box, Container, Grid, Card, CardContent, Button, Avatar, Paper } from "@mui/material";
 
 interface DashboardTool {
   title: string;
@@ -15,8 +16,8 @@ interface DashboardTool {
 }
 
 function MemberDashboard() {
+  const theme = useTheme();
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Calculate wedding date (example: 187 days from now)
@@ -24,18 +25,6 @@ function MemberDashboard() {
   weddingDate.setDate(weddingDate.getDate() + 187);
   const daysUntilWedding = 187;
   const formattedWeddingDate = format(weddingDate, 'MMMM d, yyyy');
-  
-  // Track upcoming tasks
-  const upcomingTasks = [
-    { id: '1', title: 'Book photographer', dueDate: '2 days', priority: 'high' },
-    { id: '2', title: 'Finalize guest list', dueDate: '5 days', priority: 'medium' },
-    { id: '3', title: 'Order invitations', dueDate: '1 week', priority: 'medium' }
-  ];
-  
-  useEffect(() => {
-    // Initialize with all categories visible
-    setActiveCategory(null);
-  }, []);
   
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -50,22 +39,6 @@ function MemberDashboard() {
   
   const triggerFileInput = () => {
     fileInputRef.current?.click();
-  };
-  
-  const filterToolsByCategory = (category: string | null) => {
-    setActiveCategory(category);
-  };
-  
-  // Get tools filtered by active category
-  const getFilteredTools = () => {
-    return activeCategory 
-      ? dashboardTools.filter(tool => tool.category === activeCategory)
-      : dashboardTools;
-  };
-  
-  // Get featured tools
-  const getFeaturedTools = () => {
-    return dashboardTools.filter(tool => tool.featured);
   };
   
   // Define dashboard tools
