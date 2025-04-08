@@ -18,7 +18,6 @@ import {
 } from '@mui/material';
 import { MessageSquare, Upload, Download, Trash2, Edit2, X, Link, Copy, Send } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { useTheme } from '@mui/material/styles';
 
 interface GuestContact {
   id: string;
@@ -31,7 +30,6 @@ interface GuestContact {
 }
 
 export default function GuestDirectory() {
-  const theme = useTheme();
   const [contacts, setContacts] = useState<GuestContact[]>([]);
   const [bulkAddOpen, setBulkAddOpen] = useState(false);
   const [bulkInput, setBulkInput] = useState('');
@@ -302,14 +300,22 @@ export default function GuestDirectory() {
         <Typography
           variant="h3"
           sx={{
-            fontFamily: "'Playfair Display', serif",
-            color: theme.palette.text.primary,
+            fontFamily: "'Giaza', serif",
+            color: '#054697',
+            letterSpacing: '-0.05em',
             mb: 2
           }}
         >
           Guest Directory
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography 
+          variant="body1" 
+          sx={{ 
+            color: '#054697', 
+            opacity: 0.8,
+            fontFamily: 'Poppins, sans-serif',
+          }}
+        >
           Manage your guest contact information and send group messages.
         </Typography>
       </Box>
@@ -320,7 +326,7 @@ export default function GuestDirectory() {
         sx={{
           p: 4,
           mb: 4,
-          borderRadius: 4,
+          borderRadius: 0,
           background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
           position: 'relative',
           '&::before': {
@@ -330,15 +336,16 @@ export default function GuestDirectory() {
             left: 0,
             right: 0,
             height: '4px',
-            background: theme.palette.primary.main,
+            background: '#054697',
           }
         }}
       >
         <Typography
           variant="h5"
           sx={{
-            fontFamily: "'Playfair Display', serif",
-            color: theme.palette.text.primary,
+            fontFamily: "'Giaza', serif",
+            color: '#054697',
+            letterSpacing: '-0.05em',
             mb: 3
           }}
         >
@@ -372,7 +379,15 @@ export default function GuestDirectory() {
             sx={{
               height: 56,
               px: 4,
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              backgroundColor: '#E8B4B4',
+              color: '#054697',
+              borderRadius: 0,
+              '&:hover': {
+                backgroundColor: '#E8B4B4CC',
+              },
+              textTransform: 'uppercase',
+              fontFamily: 'Poppins, sans-serif',
             }}
           >
             Add Contact
@@ -384,6 +399,16 @@ export default function GuestDirectory() {
             startIcon={<Upload />}
             variant="outlined"
             onClick={() => setBulkAddOpen(true)}
+            sx={{
+              color: '#054697',
+              borderColor: '#054697',
+              borderRadius: 0,
+              textTransform: 'uppercase',
+              fontFamily: 'Poppins, sans-serif',
+              '&:hover': {
+                backgroundColor: 'rgba(5, 70, 151, 0.05)',
+              },
+            }}
           >
             Bulk Add Contacts
           </Button>
@@ -391,6 +416,16 @@ export default function GuestDirectory() {
             startIcon={<Download />}
             variant="outlined"
             onClick={downloadTemplate}
+            sx={{
+              color: '#054697',
+              borderColor: '#054697',
+              borderRadius: 0,
+              textTransform: 'uppercase',
+              fontFamily: 'Poppins, sans-serif',
+              '&:hover': {
+                backgroundColor: 'rgba(5, 70, 151, 0.05)',
+              },
+            }}
           >
             Download Template
           </Button>
@@ -403,7 +438,7 @@ export default function GuestDirectory() {
         sx={{
           p: 4,
           mb: 4,
-          borderRadius: 4,
+          borderRadius: 0,
           background: 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
           position: 'relative',
           '&::before': {
@@ -413,15 +448,16 @@ export default function GuestDirectory() {
             left: 0,
             right: 0,
             height: '4px',
-            background: theme.palette.primary.main,
+            background: '#054697',
           }
         }}
       >
         <Typography
           variant="h5"
           sx={{
-            fontFamily: "'Playfair Display', serif",
-            color: theme.palette.primary.main,
+            fontFamily: "'Giaza', serif",
+            color: '#054697',
+            letterSpacing: '-0.05em',
             mb: 3
           }}
         >
@@ -440,24 +476,24 @@ export default function GuestDirectory() {
           display: 'flex', 
           gap: 3,
           p: 3,
-          borderRadius: 2,
+          borderRadius: 0,
           bgcolor: 'background.paper',
           border: '1px solid',
           borderColor: 'divider'
         }}>
           <Box>
-            <Typography variant="h6">
+            <Typography variant="h6" sx={{ color: '#054697' }}>
               {contacts.filter(c => c.phone).length}
             </Typography>
-            <Typography variant="body2" sx={{ color: theme.palette.primary.main, opacity: 0.8 }}>
+            <Typography variant="body2" sx={{ color: '#054697', opacity: 0.8, fontFamily: 'Poppins, sans-serif' }}>
               Contacts with phone numbers
             </Typography>
           </Box>
           <Box>
-            <Typography variant="h6">
+            <Typography variant="h6" sx={{ color: '#054697' }}>
               {contacts.length - contacts.filter(c => c.phone).length}
             </Typography>
-            <Typography variant="body2" sx={{ color: theme.palette.primary.main, opacity: 0.8 }}>
+            <Typography variant="body2" sx={{ color: '#054697', opacity: 0.8, fontFamily: 'Poppins, sans-serif' }}>
               Contacts without phone numbers
             </Typography>
           </Box>
@@ -470,11 +506,14 @@ export default function GuestDirectory() {
           sx={{ 
             mt: 3,
             mr: 2,
-            bgcolor: theme.palette.accent?.rose || '#FFE8E4',
-            color: theme.palette.primary.main,
+            bgcolor: '#E8B4B4',
+            color: '#054697',
             '&:hover': {
-              bgcolor: '#FFD5CC',
-            }
+              bgcolor: '#E8B4B4CC',
+            },
+            borderRadius: 0,
+            textTransform: 'uppercase',
+            fontFamily: 'Poppins, sans-serif',
           }}
           size="large"
         >
@@ -487,8 +526,14 @@ export default function GuestDirectory() {
           onClick={() => setQuestionnaireLinkOpen(true)}
           sx={{ 
             mt: 3,
-            color: theme.palette.primary.main,
-            borderColor: theme.palette.primary.main,
+            color: '#054697',
+            borderColor: '#054697',
+            borderRadius: 0,
+            textTransform: 'uppercase',
+            fontFamily: 'Poppins, sans-serif',
+            '&:hover': {
+              backgroundColor: 'rgba(5, 70, 151, 0.05)',
+            },
           }}
           size="large"
         >
@@ -500,12 +545,19 @@ export default function GuestDirectory() {
       <Paper
         elevation={3}
         sx={{
-          borderRadius: 4,
+          borderRadius: 0,
           overflow: 'hidden'
         }}
       >
         <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="h6">
+          <Typography 
+            variant="h6"
+            sx={{
+              fontFamily: "'Giaza', serif",
+              color: '#054697',
+              letterSpacing: '-0.05em',
+            }}
+          >
             Your Contacts ({contacts.length})
           </Typography>
         </Box>
@@ -521,22 +573,42 @@ export default function GuestDirectory() {
                 borderBottom: '1px solid',
                 borderColor: 'divider',
                 '&:hover': {
-                  bgcolor: 'action.hover'
+                  bgcolor: 'rgba(5, 70, 151, 0.05)'
                 }
               }}
             >
               <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="subtitle1">
+                <Typography 
+                  variant="subtitle1"
+                  sx={{
+                    color: '#054697',
+                    fontFamily: 'Poppins, sans-serif',
+                  }}
+                >
                   {contact.full_name}
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 2, color: 'text.secondary' }}>
+                <Box sx={{ display: 'flex', gap: 2 }}>
                   {contact.phone && (
-                    <Typography variant="body2">
+                    <Typography 
+                      variant="body2"
+                      sx={{
+                        color: '#054697',
+                        opacity: 0.8,
+                        fontFamily: 'Poppins, sans-serif',
+                      }}
+                    >
                       📱 {contact.phone}
                     </Typography>
                   )}
                   {contact.email && (
-                    <Typography variant="body2">
+                    <Typography 
+                      variant="body2"
+                      sx={{
+                        color: '#054697',
+                        opacity: 0.8,
+                        fontFamily: 'Poppins, sans-serif',
+                      }}
+                    >
                       ✉️ {contact.email}
                     </Typography>
                   )}
@@ -580,10 +652,23 @@ export default function GuestDirectory() {
         onClose={() => setBulkAddOpen(false)}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 0
+          }
+        }}
       >
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            Bulk Add Contacts
+            <Typography 
+              sx={{
+                fontFamily: "'Giaza', serif",
+                color: '#054697',
+                letterSpacing: '-0.05em',
+              }}
+            >
+              Bulk Add Contacts
+            </Typography>
             <IconButton onClick={() => setBulkAddOpen(false)} size="small">
               <X size={18} />
             </IconButton>
@@ -604,13 +689,33 @@ export default function GuestDirectory() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setBulkAddOpen(false)}>
+          <Button 
+            onClick={() => setBulkAddOpen(false)}
+            sx={{
+              color: '#054697',
+              textTransform: 'uppercase',
+              fontFamily: 'Poppins, sans-serif',
+              '&:hover': {
+                backgroundColor: 'rgba(5, 70, 151, 0.05)',
+              },
+            }}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleBulkAdd}
             variant="contained"
             disabled={loading || !bulkInput.trim()}
+            sx={{
+              bgcolor: '#E8B4B4',
+              color: '#054697',
+              borderRadius: 0,
+              textTransform: 'uppercase',
+              fontFamily: 'Poppins, sans-serif',
+              '&:hover': {
+                backgroundColor: '#E8B4B4CC',
+              },
+            }}
           >
             {loading ? 'Adding...' : 'Add Contacts'}
           </Button>
@@ -623,10 +728,23 @@ export default function GuestDirectory() {
         onClose={() => setEditingContact(null)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 0
+          }
+        }}
       >
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            Edit Contact
+            <Typography 
+              sx={{
+                fontFamily: "'Giaza', serif",
+                color: '#054697',
+                letterSpacing: '-0.05em',
+              }}
+            >
+              Edit Contact
+            </Typography>
             <IconButton onClick={() => setEditingContact(null)} size="small">
               <X size={18} />
             </IconButton>
@@ -639,12 +757,50 @@ export default function GuestDirectory() {
               value={newContact.full_name}
               onChange={(e) => setNewContact({ ...newContact, full_name: e.target.value })}
               fullWidth
+              sx={{
+                '& .MuiInputLabel-root': {
+                  color: '#054697',
+                  opacity: 0.8,
+                },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: '#054697',
+                    opacity: 0.3,
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#054697',
+                    opacity: 0.5,
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#054697',
+                  },
+                },
+              }}
             />
             <TextField
               label="Phone"
               value={newContact.phone}
               onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
               fullWidth
+              sx={{
+                '& .MuiInputLabel-root': {
+                  color: '#054697',
+                  opacity: 0.8,
+                },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: '#054697',
+                    opacity: 0.3,
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#054697',
+                    opacity: 0.5,
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#054697',
+                  },
+                },
+              }}
             />
             <TextField
               label="Email"
@@ -652,11 +808,40 @@ export default function GuestDirectory() {
               value={newContact.email}
               onChange={(e) => setNewContact({ ...newContact, email: e.target.value })}
               fullWidth
+              sx={{
+                '& .MuiInputLabel-root': {
+                  color: '#054697',
+                  opacity: 0.8,
+                },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: '#054697',
+                    opacity: 0.3,
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#054697',
+                    opacity: 0.5,
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#054697',
+                  },
+                },
+              }}
             />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditingContact(null)}>
+          <Button 
+            onClick={() => setEditingContact(null)}
+            sx={{
+              color: '#054697',
+              textTransform: 'uppercase',
+              fontFamily: 'Poppins, sans-serif',
+              '&:hover': {
+                backgroundColor: 'rgba(5, 70, 151, 0.05)',
+              },
+            }}
+          >
             Cancel
           </Button>
           <Button
@@ -699,6 +884,16 @@ export default function GuestDirectory() {
             }}
             variant="contained"
             disabled={!newContact.full_name}
+            sx={{
+              bgcolor: '#E8B4B4',
+              color: '#054697',
+              borderRadius: 0,
+              textTransform: 'uppercase',
+              fontFamily: 'Poppins, sans-serif',
+              '&:hover': {
+                backgroundColor: '#E8B4B4CC',
+              },
+            }}
           >
             Save Changes
           </Button>
@@ -711,10 +906,23 @@ export default function GuestDirectory() {
         onClose={() => setQuestionnaireLinkOpen(false)}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 0
+          }
+        }}
       >
         <DialogTitle>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            Generate Guest Questionnaire Link
+            <Typography 
+              sx={{
+                fontFamily: "'Giaza', serif",
+                color: '#054697',
+                letterSpacing: '-0.05em',
+              }}
+            >
+              Generate Guest Questionnaire Link
+            </Typography>
             <IconButton onClick={() => setQuestionnaireLinkOpen(false)} size="small">
               <X size={18} />
             </IconButton>
@@ -726,7 +934,15 @@ export default function GuestDirectory() {
           </Alert>
           
           <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" sx={{ mb: 1, color: theme.palette.primary.main }}>
+            <Typography 
+              variant="subtitle1" 
+              sx={{ 
+                mb: 1, 
+                color: '#054697',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 500
+              }}
+            >
               1. Name your questionnaire
             </Typography>
             <TextField
@@ -736,23 +952,57 @@ export default function GuestDirectory() {
               onChange={(e) => setCustomLinkInput(e.target.value)}
               variant="outlined"
               helperText="This will be used to create your custom link"
+              sx={{
+                '& .MuiInputLabel-root': {
+                  color: '#054697',
+                  opacity: 0.8,
+                },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: '#054697',
+                    opacity: 0.3,
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#054697',
+                    opacity: 0.5,
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#054697',
+                  },
+                },
+                '& .MuiFormHelperText-root': {
+                  color: '#054697',
+                  opacity: 0.7,
+                }
+              }}
             />
           </Box>
           
           <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" sx={{ mb: 1, color: theme.palette.primary.main }}>
+            <Typography 
+              variant="subtitle1" 
+              sx={{ 
+                mb: 1, 
+                color: '#054697',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 500
+              }}
+            >
               2. Generate your link
             </Typography>
             <Button
               variant="contained"
               onClick={generateQuestionnaireLink}
               disabled={!customLinkInput.trim()}
-              sx={{ 
-                bgcolor: theme.palette.accent?.rose || '#FFE8E4',
-                color: theme.palette.primary.main,
+              sx={{
+                bgcolor: '#E8B4B4',
+                color: '#054697',
+                borderRadius: 0,
+                textTransform: 'uppercase',
+                fontFamily: 'Poppins, sans-serif',
                 '&:hover': {
-                  bgcolor: '#FFD5CC',
-                }
+                  backgroundColor: '#E8B4B4CC',
+                },
               }}
             >
               Generate Link
@@ -761,7 +1011,15 @@ export default function GuestDirectory() {
           
           {generatedLink && (
             <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle1" sx={{ mb: 1, color: theme.palette.primary.main }}>
+              <Typography 
+                variant="subtitle1" 
+                sx={{ 
+                  mb: 1, 
+                  color: '#054697',
+                  fontFamily: 'Poppins, sans-serif',
+                  fontWeight: 500
+                }}
+              >
                 3. Your questionnaire link
               </Typography>
               <TextField
@@ -775,11 +1033,30 @@ export default function GuestDirectory() {
                       <IconButton 
                         onClick={() => copyToClipboard(generatedLink)}
                         edge="end"
+                        sx={{
+                          color: '#054697',
+                        }}
                       >
                         <Copy size={18} />
                       </IconButton>
                     </InputAdornment>
                   ),
+                  sx: {
+                    color: '#054697',
+                    opacity: 0.9,
+                  }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: '#054697',
+                      opacity: 0.3,
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#054697',
+                      opacity: 0.5,
+                    },
+                  },
                 }}
               />
             </Box>
@@ -788,7 +1065,14 @@ export default function GuestDirectory() {
         <DialogActions>
           <Button 
             onClick={() => setQuestionnaireLinkOpen(false)}
-            sx={{ color: theme.palette.primary.main }}
+            sx={{
+              color: '#054697',
+              textTransform: 'uppercase',
+              fontFamily: 'Poppins, sans-serif',
+              '&:hover': {
+                backgroundColor: 'rgba(5, 70, 151, 0.05)',
+              },
+            }}
           >
             Close
           </Button>
@@ -798,11 +1082,14 @@ export default function GuestDirectory() {
               variant="contained"
               startIcon={<Send />}
               sx={{ 
-                bgcolor: theme.palette.accent?.rose || '#FFE8E4',
-                color: theme.palette.primary.main,
+                bgcolor: '#E8B4B4',
+                color: '#054697',
+                borderRadius: 0,
+                textTransform: 'uppercase',
+                fontFamily: 'Poppins, sans-serif',
                 '&:hover': {
-                  bgcolor: '#FFD5CC',
-                }
+                  backgroundColor: '#E8B4B4CC',
+                },
               }}
             >
               Send via SMS
@@ -817,6 +1104,13 @@ export default function GuestDirectory() {
         autoHideDuration={4000}
         onClose={() => setSnackbarOpen(false)}
         message={snackbarMessage}
+        sx={{
+          '& .MuiSnackbarContent-root': {
+            backgroundColor: '#054697',
+            color: 'white',
+            fontFamily: 'Poppins, sans-serif',
+          }
+        }}
       />
     </Container>
   );
