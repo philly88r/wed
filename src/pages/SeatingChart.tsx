@@ -25,16 +25,13 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 import { DragDropContext } from 'react-beautiful-dnd';
 import type { DropResult } from 'react-beautiful-dnd';
 import { createClient } from '@supabase/supabase-js';
 import GuestList from '../components/SeatingChart/GuestList';
-import AddTableButton from '../components/SeatingChart/AddTableButton';
 import { useNavigate } from 'react-router-dom';
 import { Guest } from '../types/Guest';
-
 
 // Create a Supabase client with the correct credentials
 const supabaseUrl = 'https://yemkduykvfdjmldxfphq.supabase.co';
@@ -87,8 +84,6 @@ interface SnackbarState {
   message: string;
   severity: 'success' | 'error' | 'info' | 'warning';
 }
-
-
 
 interface TableFormData {
   name: string;
@@ -194,7 +189,7 @@ export default function SeatingChart() {
 
   const handleLogin = async () => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data: userData, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
@@ -330,7 +325,7 @@ export default function SeatingChart() {
       }
       
       // Query tables for the current user
-      const { data, error } = await supabase
+      const { data: tableData, error } = await supabase
         .from('seating_tables')
         .select('*')
         .eq('created_by', userId);
@@ -340,9 +335,9 @@ export default function SeatingChart() {
         throw error;
       }
       
-      if (data) {
+      if (tableData) {
         // Ensure all tables have position_x and position_y properties
-        const formattedTables = data.map((table: any) => ({
+        const formattedTables = tableData.map((table: any) => ({
           ...table,
           // If the table has position.x and position.y, map them to position_x and position_y
           position_x: table.position_x || (table.position ? table.position.x : 300),
@@ -1400,79 +1395,131 @@ export default function SeatingChart() {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <Container maxWidth="xl" sx={{ py: 4, height: 'calc(100vh - 64px)' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-          <Typography 
-            variant="h4" 
-            sx={{ 
-              fontFamily: "'Giaza', serif", 
-              color: 'primary.main',
-              letterSpacing: '-0.05em',
-            }}
-          >
-            Seating Chart
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-            {/* Old button hidden since the new one works better */}
-            {false && (
-              <Button 
-                variant="contained" 
-                onClick={() => setEditMode('add')}
-                startIcon={<AddIcon />}
-              >
-                ADD TABLE
-              </Button>
-            )}
-            
-            <AddTableButton 
-              onTableAdded={(newTable) => {
-                console.log('New table added:', newTable);
-                // Add the new table to the state
-                setTables([...tables, newTable]);
-                // Refresh chairs
-                fetchChairs();
-              }} 
-            />
-            
+      <Container maxWidth={false} sx={{ py: 4, height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        {/* Header with improved styling */}
+        <Box 
+          sx={{ 
+            mb: 4, 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            position: 'relative',
+            pb: 2,
+            borderBottom: '1px solid rgba(5, 70, 151, 0.1)',
+          }}
+        >
+          <Box>
+            <Typography 
+              variant="h4" 
+              component="h1" 
+              sx={{ 
+                fontFamily: "'Giaza', serif", 
+                color: '#054697',
+                letterSpacing: '-0.05em',
+                mb: 1
+              }}
+            >
+              Seating Chart
+            </Typography>
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                color: '#054697', 
+                opacity: 0.8,
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 300
+              }}
+            >
+              Arrange tables and assign guests to create your perfect seating plan
+            </Typography>
+          </Box>
+          
+          <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
               variant="outlined"
+              onClick={() => navigate('/dashboard')}
               sx={{
-                borderColor: 'accent.rose',
-                color: 'primary.main',
-                '&:hover': {
-                  borderColor: '#FFD5CC',
-                  backgroundColor: 'rgba(255, 232, 228, 0.1)',
-                },
+                borderColor: '#E8B4B4',
+                color: '#054697',
                 textTransform: 'uppercase',
-                fontWeight: 'medium',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 400,
+                borderRadius: 0,
+                px: 3,
+                py: 1,
+                '&:hover': {
+                  borderColor: '#E8B4B4',
+                  backgroundColor: 'rgba(232, 180, 180, 0.1)',
+                },
               }}
-              onClick={() => setGuestDialogOpen(true)}
-              startIcon={<PersonAddIcon />}
             >
-              Add Guest
+              Back to Dashboard
+            </Button>
+            
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => {
+                setEditMode('add');
+                setNewTableName('');
+                setSelectedTemplate('');
+                setEditDialogOpen(true);
+              }}
+              sx={{
+                backgroundColor: '#E8B4B4',
+                color: '#054697',
+                textTransform: 'uppercase',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 400,
+                borderRadius: 0,
+                px: 3,
+                py: 1,
+                '&:hover': {
+                  backgroundColor: 'rgba(232, 180, 180, 0.8)',
+                },
+              }}
+            >
+              Add Table
             </Button>
           </Box>
+          
+          {/* Accent line at the top */}
+          <Box 
+            sx={{ 
+              position: 'absolute', 
+              top: -8, 
+              left: 0, 
+              width: '100%', 
+              height: '2px', 
+              background: 'linear-gradient(to right, #054697, #E8B4B4)' 
+            }} 
+          />
         </Box>
         
-        <Box sx={{ display: 'flex', height: 'calc(100% - 60px)' }}>
+        <Box sx={{ display: 'flex', height: 'calc(100% - 60px)', gap: 3 }}>
+          {/* Chart area with improved styling */}
           <Paper 
-            elevation={3} 
-            sx={{ 
-              height: '100%',
-              width: 'calc(100% - 320px)', 
-              position: 'relative', 
-              overflow: 'hidden',
-              backgroundColor: '#f9f9ff',
-              backgroundImage: `linear-gradient(rgba(5, 70, 151, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(5, 70, 151, 0.05) 1px, transparent 1px)`,
-              backgroundSize: '20px 20px',
-              transition: 'all 0.3s ease',
-              borderRadius: 0, // Square corners per brand guidelines
-              border: '1px solid rgba(184, 189, 215, 0.3)',
-            }}
             ref={chartAreaRef}
+            sx={{ 
+              flex: 3, 
+              p: 3, 
+              position: 'relative', 
+              overflow: 'auto',
+              borderRadius: 0,
+              border: '1px solid rgba(5, 70, 151, 0.1)',
+              boxShadow: '0 4px 20px rgba(5, 70, 151, 0.05)',
+              backgroundColor: '#FBFBF7',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '4px',
+                height: '100%',
+                backgroundColor: '#054697',
+              }
+            }}
           >
-
-            
             {/* Tables container with higher z-index */}
             <Box
               sx={{
@@ -1497,14 +1544,25 @@ export default function SeatingChart() {
           {/* Guest list sidebar */}
           <Paper 
             sx={{ 
-              width: 300, 
+              flex: 1, 
               ml: 2, 
               p: 2, 
               height: '100%', 
               overflow: 'auto',
-              borderRadius: 0, // Square corners per brand guidelines
-              border: '1px solid rgba(184, 189, 215, 0.3)',
-              backgroundColor: '#fff',
+              borderRadius: 0,
+              border: '1px solid rgba(5, 70, 151, 0.1)',
+              boxShadow: '0 4px 20px rgba(5, 70, 151, 0.05)',
+              backgroundColor: '#FBFBF7',
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '4px',
+                height: '100%',
+                backgroundColor: '#054697',
+              }
             }}
           >
               <Typography 
@@ -1512,7 +1570,7 @@ export default function SeatingChart() {
                 sx={{ 
                   mb: 2, 
                   fontFamily: "'Giaza', serif",
-                  color: 'primary.main',
+                  color: '#054697',
                   letterSpacing: '-0.05em',
                 }}
               >
@@ -1536,14 +1594,26 @@ export default function SeatingChart() {
           onClose={() => setDeleteDialogOpen(false)}
           PaperProps={{
             sx: {
-              borderRadius: 0, // Square corners per brand guidelines
+              borderRadius: 0,
               p: 1,
+              boxShadow: '0 4px 20px rgba(5, 70, 151, 0.1)',
+              border: '1px solid rgba(5, 70, 151, 0.1)',
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '4px',
+                height: '100%',
+                backgroundColor: '#054697',
+              }
             }
           }}
         >
-          <DialogTitle sx={{ color: 'primary.main', fontFamily: "'Giaza', serif" }}>Delete Table</DialogTitle>
+          <DialogTitle sx={{ color: '#054697', fontFamily: "'Giaza', serif", letterSpacing: '-0.05em' }}>Delete Table</DialogTitle>
           <DialogContent>
-            <Typography sx={{ color: 'primary.main', opacity: 0.8 }}>
+            <Typography sx={{ color: '#054697', opacity: 0.8, fontFamily: 'Poppins, sans-serif', fontWeight: 300 }}>
               Are you sure you want to delete this table? This action cannot be undone.
             </Typography>
           </DialogContent>
@@ -1551,9 +1621,12 @@ export default function SeatingChart() {
             <Button 
               onClick={() => setDeleteDialogOpen(false)}
               sx={{
-                color: 'primary.main',
+                color: '#054697',
+                textTransform: 'uppercase',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 400,
                 '&:hover': {
-                  backgroundColor: 'rgba(184, 189, 215, 0.1)',
+                  backgroundColor: 'rgba(5, 70, 151, 0.05)',
                 },
               }}
             >
@@ -1562,10 +1635,14 @@ export default function SeatingChart() {
             <Button 
               onClick={handleDeleteTable} 
               sx={{
-                backgroundColor: 'accent.rose',
-                color: 'primary.main',
+                backgroundColor: '#E8B4B4',
+                color: '#054697',
+                textTransform: 'uppercase',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 400,
+                borderRadius: 0,
                 '&:hover': {
-                  backgroundColor: '#FFD5CC',
+                  backgroundColor: 'rgba(232, 180, 180, 0.8)',
                 },
               }}
             >
@@ -1573,21 +1650,33 @@ export default function SeatingChart() {
             </Button>
           </DialogActions>
         </Dialog>
-
+        
         {/* Login dialog */}
         <Dialog 
           open={loginDialogOpen} 
           onClose={() => setLoginDialogOpen(false)}
           PaperProps={{
             sx: {
-              borderRadius: 0, // Square corners per brand guidelines
+              borderRadius: 0,
               p: 1,
+              boxShadow: '0 4px 20px rgba(5, 70, 151, 0.1)',
+              border: '1px solid rgba(5, 70, 151, 0.1)',
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '4px',
+                height: '100%',
+                backgroundColor: '#054697',
+              }
             }
           }}
         >
-          <DialogTitle sx={{ color: 'primary.main', fontFamily: "'Giaza', serif" }}>Login Required</DialogTitle>
+          <DialogTitle sx={{ color: '#054697', fontFamily: "'Giaza', serif", letterSpacing: '-0.05em' }}>Login Required</DialogTitle>
           <DialogContent sx={{ minWidth: 400 }}>
-            <Typography variant="body2" sx={{ mb: 2, color: 'primary.main', opacity: 0.8 }}>
+            <Typography variant="body2" sx={{ mb: 2, color: '#054697', opacity: 0.8, fontFamily: 'Poppins, sans-serif', fontWeight: 300 }}>
               You need to be logged in to manage seating charts.
             </Typography>
             <TextField
@@ -1599,20 +1688,20 @@ export default function SeatingChart() {
               margin="normal"
               sx={{
                 '& .MuiInputLabel-root': {
-                  color: 'primary.main',
+                  color: '#054697',
                   opacity: 0.8,
                 },
                 '& .MuiOutlinedInput-root': {
                   '& fieldset': {
-                    borderColor: 'primary.main',
+                    borderColor: '#054697',
                     opacity: 0.3,
                   },
                   '&:hover fieldset': {
-                    borderColor: 'primary.main',
+                    borderColor: '#054697',
                     opacity: 0.5,
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
+                    borderColor: '#054697',
                   },
                 },
               }}
@@ -1626,20 +1715,20 @@ export default function SeatingChart() {
               margin="normal"
               sx={{
                 '& .MuiInputLabel-root': {
-                  color: 'primary.main',
+                  color: '#054697',
                   opacity: 0.8,
                 },
                 '& .MuiOutlinedInput-root': {
                   '& fieldset': {
-                    borderColor: 'primary.main',
+                    borderColor: '#054697',
                     opacity: 0.3,
                   },
                   '&:hover fieldset': {
-                    borderColor: 'primary.main',
+                    borderColor: '#054697',
                     opacity: 0.5,
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
+                    borderColor: '#054697',
                   },
                 },
               }}
@@ -1649,9 +1738,9 @@ export default function SeatingChart() {
             <Button 
               onClick={() => setLoginDialogOpen(false)}
               sx={{
-                color: 'primary.main',
+                color: '#054697',
                 '&:hover': {
-                  backgroundColor: 'rgba(184, 189, 215, 0.1)',
+                  backgroundColor: 'rgba(5, 70, 151, 0.05)',
                 },
               }}
             >
@@ -1661,13 +1750,13 @@ export default function SeatingChart() {
               onClick={handleLogin} 
               disabled={!email || !password}
               sx={{
-                backgroundColor: 'accent.rose',
-                color: 'primary.main',
+                backgroundColor: '#E8B4B4',
+                color: '#054697',
                 '&:hover': {
-                  backgroundColor: '#FFD5CC',
+                  backgroundColor: 'rgba(232, 180, 180, 0.8)',
                 },
                 '&.Mui-disabled': {
-                  color: 'primary.main',
+                  color: '#054697',
                   opacity: 0.5,
                 },
               }}
@@ -1676,9 +1765,7 @@ export default function SeatingChart() {
             </Button>
           </DialogActions>
         </Dialog>
-
-
-
+        
         {/* Guest Dialog */}
         <Dialog 
           open={guestDialogOpen} 
@@ -1687,12 +1774,24 @@ export default function SeatingChart() {
           fullWidth
           PaperProps={{
             sx: {
-              borderRadius: 0, // Square corners per brand guidelines
+              borderRadius: 0,
               p: 1,
+              boxShadow: '0 4px 20px rgba(5, 70, 151, 0.1)',
+              border: '1px solid rgba(5, 70, 151, 0.1)',
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '4px',
+                height: '100%',
+                backgroundColor: '#054697',
+              }
             }
           }}
         >
-          <DialogTitle sx={{ color: 'primary.main', fontFamily: "'Giaza', serif" }}>Add Guest</DialogTitle>
+          <DialogTitle sx={{ color: '#054697', fontFamily: "'Giaza', serif", letterSpacing: '-0.05em' }}>Add Guest</DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
@@ -1704,20 +1803,20 @@ export default function SeatingChart() {
                 mb: 2, 
                 mt: 1,
                 '& .MuiInputLabel-root': {
-                  color: 'primary.main',
+                  color: '#054697',
                   opacity: 0.8,
                 },
                 '& .MuiOutlinedInput-root': {
                   '& fieldset': {
-                    borderColor: 'primary.main',
+                    borderColor: '#054697',
                     opacity: 0.3,
                   },
                   '&:hover fieldset': {
-                    borderColor: 'primary.main',
+                    borderColor: '#054697',
                     opacity: 0.5,
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
+                    borderColor: '#054697',
                   },
                 },
               }}
@@ -1730,20 +1829,20 @@ export default function SeatingChart() {
               sx={{ 
                 mb: 2,
                 '& .MuiInputLabel-root': {
-                  color: 'primary.main',
+                  color: '#054697',
                   opacity: 0.8,
                 },
                 '& .MuiOutlinedInput-root': {
                   '& fieldset': {
-                    borderColor: 'primary.main',
+                    borderColor: '#054697',
                     opacity: 0.3,
                   },
                   '&:hover fieldset': {
-                    borderColor: 'primary.main',
+                    borderColor: '#054697',
                     opacity: 0.5,
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
+                    borderColor: '#054697',
                   },
                 },
               }}
@@ -1753,20 +1852,20 @@ export default function SeatingChart() {
               sx={{ 
                 mb: 2,
                 '& .MuiInputLabel-root': {
-                  color: 'primary.main',
+                  color: '#054697',
                   opacity: 0.8,
                 },
                 '& .MuiOutlinedInput-root': {
                   '& fieldset': {
-                    borderColor: 'primary.main',
+                    borderColor: '#054697',
                     opacity: 0.3,
                   },
                   '&:hover fieldset': {
-                    borderColor: 'primary.main',
+                    borderColor: '#054697',
                     opacity: 0.5,
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
+                    borderColor: '#054697',
                   },
                 },
               }}
@@ -1786,9 +1885,9 @@ export default function SeatingChart() {
             <Button 
               onClick={() => setGuestDialogOpen(false)}
               sx={{
-                color: 'primary.main',
+                color: '#054697',
                 '&:hover': {
-                  backgroundColor: 'rgba(184, 189, 215, 0.1)',
+                  backgroundColor: 'rgba(5, 70, 151, 0.05)',
                 },
               }}
             >
@@ -1804,10 +1903,10 @@ export default function SeatingChart() {
                 });
               }}
               sx={{
-                backgroundColor: 'accent.rose',
-                color: 'primary.main',
+                backgroundColor: '#E8B4B4',
+                color: '#054697',
                 '&:hover': {
-                  backgroundColor: '#FFD5CC',
+                  backgroundColor: 'rgba(232, 180, 180, 0.8)',
                 },
               }}
             >
@@ -1824,12 +1923,24 @@ export default function SeatingChart() {
           fullWidth
           PaperProps={{
             sx: {
-              borderRadius: 0, // Square corners per brand guidelines
+              borderRadius: 0,
               p: 1,
+              boxShadow: '0 4px 20px rgba(5, 70, 151, 0.1)',
+              border: '1px solid rgba(5, 70, 151, 0.1)',
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '4px',
+                height: '100%',
+                backgroundColor: '#054697',
+              }
             }
           }}
         >
-          <DialogTitle sx={{ color: 'primary.main', fontFamily: "'Giaza', serif" }}>
+          <DialogTitle sx={{ color: '#054697', fontFamily: "'Giaza', serif", letterSpacing: '-0.05em' }}>
             Assign Guest to Seat {selectedChair?.position}
           </DialogTitle>
           <DialogContent>
@@ -1894,14 +2005,24 @@ export default function SeatingChart() {
         </Dialog>
 
         {/* Snackbar for notifications */}
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={6000}
+        <Snackbar 
+          open={snackbar.open} 
+          autoHideDuration={6000} 
           onClose={() => setSnackbar({ ...snackbar, open: false })}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
           <Alert 
             onClose={() => setSnackbar({ ...snackbar, open: false })} 
-            severity={snackbar.severity}
+            severity={snackbar.severity} 
+            sx={{ 
+              width: '100%', 
+              borderRadius: 0,
+              backgroundColor: snackbar.severity === 'success' ? 'rgba(232, 180, 180, 0.9)' : undefined,
+              color: snackbar.severity === 'success' ? '#054697' : undefined,
+              '& .MuiAlert-icon': {
+                color: snackbar.severity === 'success' ? '#054697' : undefined,
+              }
+            }}
           >
             {snackbar.message}
           </Alert>

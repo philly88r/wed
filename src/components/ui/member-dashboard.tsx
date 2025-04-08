@@ -406,7 +406,7 @@ export function MemberDashboard() {
                 boxShadow: '0 10px 30px rgba(5, 70, 151, 0.08)',
               }}
             >
-              <div className="absolute top-0 left-0 w-2 h-full bg-[#E8B4B4]"></div>
+              <div className="absolute top-0 left-0 w-2 h-full bg-[#054697]"></div>
               <div className="p-8 flex flex-col h-full">
                 <div className="flex items-center mb-6">
                   <div className="w-14 h-14 flex items-center justify-center bg-[#E8B4B4]/30 text-[#054697] group-hover:bg-[#E8B4B4]/60 transition-colors duration-300 rounded-none">
@@ -419,7 +419,7 @@ export function MemberDashboard() {
                 
                 <Link 
                   to={tool.href} 
-                  className="w-full border-2 border-[#E8B4B4] text-[#054697] py-3 text-sm font-medium hover:bg-[#E8B4B4] hover:text-[#054697] transition-all duration-300 uppercase flex items-center justify-center tracking-wider"
+                  className="w-full border-2 border-[#E8B4B4] bg-[#E8B4B4] text-[#054697] py-3 text-sm font-medium hover:bg-transparent hover:text-[#054697] transition-all duration-300 uppercase flex items-center justify-center tracking-wider"
                 >
                   <span>Open</span>
                   <ChevronRight className="w-4 h-4 ml-2 group-hover:ml-3 transition-all duration-300" />
@@ -431,7 +431,7 @@ export function MemberDashboard() {
 
         {/* Upcoming Tasks Section with improved styling */}
         <div className="mb-16 bg-white border-none rounded-none p-10 shadow-lg relative" style={{ boxShadow: '0 10px 30px rgba(5, 70, 151, 0.05)' }}>
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#E8B4B4] to-[#B8BDD7]"></div>
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#B8BDD7] to-[#E8B4B4]"></div>
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-['Giaza',serif] text-[#054697] tracking-[-0.05em]">Upcoming Tasks</h2>
             <Link to="/checklist" className="text-[#054697] hover:text-[#E8B4B4] text-sm uppercase font-medium flex items-center transition-colors duration-300">
@@ -450,7 +450,7 @@ export function MemberDashboard() {
                   className="bg-white border-none rounded-none p-6 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 relative"
                   style={{ boxShadow: '0 5px 20px rgba(5, 70, 151, 0.05)' }}
                 >
-                  <div className="absolute top-0 left-0 w-1 h-full bg-[#E8B4B4]"></div>
+                  <div className="absolute top-0 left-0 w-1 h-full bg-[#054697]"></div>
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="text-xl font-['Giaza',serif] font-medium text-[#054697] tracking-[-0.05em]">{task.title}</h3>
                     <span className="bg-[#E8B4B4]/50 text-[#054697] text-xs px-3 py-1">
