@@ -10,11 +10,12 @@ import {
   IconButton,
   useTheme,
   useMediaQuery,
+  Button,
+  Avatar,
 } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
+import { Close as CloseIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
 import { supabase, mockVideos } from '../lib/supabase';
 import { JournalPrompts } from '../components/ui/journal-prompts';
-import { Button } from '../components/ui/button';
 
 interface Video {
   id: string;
@@ -46,7 +47,8 @@ const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () 
           width: '100%',
           height: '100%',
           maxWidth: '90vw',
-          maxHeight: '90vh'
+          maxHeight: '90vh',
+          borderRadius: 0 // Square corners per brand guidelines
         }
       }}
     >
@@ -62,17 +64,18 @@ const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () 
           onClick={onClose}
           sx={{
             position: 'absolute',
-            right: 8,
-            top: 8,
+            right: 16,
+            top: 16,
             color: 'white',
-            bgcolor: 'rgba(0,0,0,0.5)',
+            bgcolor: theme.palette.accent?.rose || '#FFE8E4',
             '&:hover': {
-              bgcolor: 'rgba(0,0,0,0.7)'
+              bgcolor: theme.palette.accent?.roseDark || '#FFD5CC'
             },
-            zIndex: 2
+            zIndex: 2,
+            borderRadius: 0 // Square corners per brand guidelines
           }}
         >
-          <CloseIcon />
+          <CloseIcon sx={{ color: theme.palette.primary.main }} />
         </IconButton>
         <Box sx={{
           position: 'relative',
@@ -91,6 +94,7 @@ const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () 
             src={`https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&showinfo=0&color=white&controls=1&iv_load_policy=3&playsinline=1&enablejsapi=1&origin=${window.location.origin}&widget_referrer=${window.location.origin}&cc_load_policy=0&fs=0`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
+            title="Video Player"
           />
           {/* Top gradient overlay */}
           <Box
@@ -100,7 +104,7 @@ const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () 
               left: 0,
               right: 0,
               height: '120px',
-              background: 'linear-gradient(to bottom, rgba(5,70,151,0.95), rgba(255,232,228,0.6), transparent)',
+              background: `linear-gradient(to bottom, ${theme.palette.primary.main}CC, ${theme.palette.accent?.rose || '#FFE8E4'}99, transparent)`,
               pointerEvents: 'none',
               zIndex: 1
             }}
@@ -113,7 +117,7 @@ const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () 
               left: 0,
               right: 0,
               height: '120px',
-              background: 'linear-gradient(to top, rgba(5,70,151,0.95), rgba(255,232,228,0.6), transparent)',
+              background: `linear-gradient(to top, ${theme.palette.primary.main}CC, ${theme.palette.accent?.rose || '#FFE8E4'}99, transparent)`,
               pointerEvents: 'none',
               zIndex: 1
             }}
@@ -126,7 +130,7 @@ const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () 
               left: 0,
               bottom: 0,
               width: '100px',
-              background: 'linear-gradient(to right, rgba(5,70,151,0.95), rgba(255,232,228,0.6), transparent)',
+              background: `linear-gradient(to right, ${theme.palette.primary.main}CC, ${theme.palette.accent?.rose || '#FFE8E4'}99, transparent)`,
               pointerEvents: 'none',
               zIndex: 1
             }}
@@ -138,7 +142,7 @@ const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () 
               right: 0,
               bottom: 0,
               width: '100px',
-              background: 'linear-gradient(to left, rgba(5,70,151,0.95), rgba(255,232,228,0.6), transparent)',
+              background: `linear-gradient(to left, ${theme.palette.primary.main}CC, ${theme.palette.accent?.rose || '#FFE8E4'}99, transparent)`,
               pointerEvents: 'none',
               zIndex: 1
             }}
@@ -155,14 +159,18 @@ const VideoCard = ({ video, onPlay }: { video: Video; onPlay: (id: string) => vo
 
   return (
     <Card 
+      elevation={0}
       sx={{ 
         height: '100%', 
         display: 'flex', 
         flexDirection: 'column',
         transition: 'transform 0.2s',
         '&:hover': {
-          transform: 'translateY(-4px)'
-        }
+          transform: 'translateY(-4px)',
+          boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)'
+        },
+        borderRadius: 0, // Square corners per brand guidelines
+        border: `1px solid ${theme.palette.divider}`
       }}
     >
       <Box
@@ -199,7 +207,7 @@ const VideoCard = ({ video, onPlay }: { video: Video; onPlay: (id: string) => vo
             left: 0,
             width: '100%',
             height: '100%',
-            bgcolor: 'rgba(0,0,0,0.5)',
+            bgcolor: 'rgba(0,0,0,0.4)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -208,11 +216,18 @@ const VideoCard = ({ video, onPlay }: { video: Video; onPlay: (id: string) => vo
           }}
         >
           <Box
-            component="img"
-            src="/play-button.svg"
-            alt="Play"
-            sx={{ width: 64, height: 64 }}
-          />
+            sx={{
+              width: '60px',
+              height: '60px',
+              borderRadius: 0, // Square corners per brand guidelines
+              backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <PlayArrowIcon sx={{ color: theme.palette.primary.main, fontSize: 32 }} />
+          </Box>
         </Box>
       </Box>
       <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
@@ -256,9 +271,21 @@ const VideoCard = ({ video, onPlay }: { video: Video; onPlay: (id: string) => vo
               <JournalPrompts videoId={video.id} />
             ) : (
               <Button 
-                variant="outline"
-                className="w-full border-accent-rose text-primary hover:bg-accent-rose/10"
+                variant="outlined"
                 onClick={() => setShowJournal(true)}
+                sx={{
+                  width: '100%',
+                  color: theme.palette.primary.main,
+                  borderColor: theme.palette.accent?.rose || '#FFE8E4',
+                  backgroundColor: 'transparent',
+                  borderRadius: 0, // Square corners per brand guidelines
+                  '&:hover': {
+                    backgroundColor: `${theme.palette.accent?.rose || '#FFE8E4'}20`,
+                    borderColor: theme.palette.accent?.rose || '#FFE8E4'
+                  },
+                  textTransform: 'uppercase',
+                  fontWeight: 'regular'
+                }}
               >
                 Open Journal Prompts
               </Button>
@@ -322,49 +349,86 @@ export default function Videos() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography 
-        variant="h4" 
-        component="h1" 
-        gutterBottom 
-        sx={{ 
-          color: theme.palette.primary.main,
-          textAlign: 'center',
-          mb: 4
-        }}
-      >
-        Wedding Planning Video Tutorials
-      </Typography>
+    <Box sx={{ 
+      backgroundColor: '#FAFAFA', 
+      minHeight: '100vh',
+      pt: 4, 
+      pb: 8 
+    }}>
+      {/* Welcome Section */}
+      <Container maxWidth="lg">
+        <Box sx={{ 
+          mb: 6, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center' 
+        }}>
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            gutterBottom 
+            sx={{ 
+              color: theme.palette.primary.main,
+              textAlign: 'center',
+              fontFamily: 'Giaza, serif',
+              letterSpacing: '-0.05em',
+              fontSize: { xs: '2rem', md: '2.5rem' }
+            }}
+          >
+            Wedding Planning Videos
+          </Typography>
+          <Typography 
+            variant="body1" 
+            sx={{ 
+              color: theme.palette.primary.main, 
+              opacity: 0.8, 
+              textAlign: 'center',
+              maxWidth: '700px',
+              mb: 4
+            }}
+          >
+            Explore our collection of wedding planning tutorials to help you prepare for your special day. From venue selection to guest management, we've got you covered.
+          </Typography>
+        </Box>
 
-      {loading && (
-        <Typography sx={{ color: theme.palette.primary.main, opacity: 0.8, textAlign: 'center' }}>
-          Loading videos...
-        </Typography>
-      )}
+        {loading && (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <Typography sx={{ color: theme.palette.primary.main, opacity: 0.8 }}>
+              Loading videos...
+            </Typography>
+          </Box>
+        )}
 
-      {error && (
-        <Typography color="error" gutterBottom sx={{ textAlign: 'center' }}>
-          {error}
-        </Typography>
-      )}
+        {error && (
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <Typography color="error" gutterBottom>
+              {error}
+            </Typography>
+          </Box>
+        )}
 
-      {!loading && !error && videos.length === 0 && (
-        <Typography sx={{ color: theme.palette.primary.main, opacity: 0.8, textAlign: 'center' }}>
-          No videos available yet.
-        </Typography>
-      )}
+        {!loading && !error && videos.length === 0 && (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <Typography sx={{ color: theme.palette.primary.main, opacity: 0.8 }}>
+              No videos available yet.
+            </Typography>
+          </Box>
+        )}
 
-      <Grid container spacing={3}>
-        {videos && videos.map((video) => (
-          <Grid item xs={12} sm={6} md={4} key={video.id}>
-            <VideoCard video={video} onPlay={handlePlay} />
+        {!loading && !error && videos.length > 0 && (
+          <Grid container spacing={3}>
+            {videos.map((video) => (
+              <Grid item xs={12} sm={6} md={4} key={video.id}>
+                <VideoCard video={video} onPlay={handlePlay} />
+              </Grid>
+            ))}
           </Grid>
-        ))}
-      </Grid>
+        )}
 
       {selectedVideo && (
         <CustomVideoPlayer videoId={selectedVideo} onClose={handleClose} />
       )}
-    </Container>
+      </Container>
+    </Box>
   );
 }

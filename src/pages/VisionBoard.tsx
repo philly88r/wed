@@ -3,7 +3,31 @@ import { Plus, Image as ImageIcon, X, ExternalLink, Download } from 'lucide-reac
 import { supabase } from '../supabaseClient';
 import { createCustomLink } from '../utils/customLinksHelper';
 import MoodboardGenerator from '../components/MoodboardGenerator';
-import { Tabs, Tab, Box } from '@mui/material';
+import { 
+  Tabs, 
+  Tab, 
+  Box, 
+  Container, 
+  Typography, 
+  Button, 
+  Grid, 
+  Card, 
+  CardContent, 
+  CardMedia,
+  Chip,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  useTheme,
+  Paper
+} from '@mui/material';
 
 interface InspirationImage {
   id: string;
@@ -22,7 +46,6 @@ interface TabPanelProps {
 
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
-
   return (
     <div
       role="tabpanel"
@@ -48,6 +71,7 @@ const categories = [
 ];
 
 export default function VisionBoard() {
+  const theme = useTheme();
   const [images, setImages] = useState<InspirationImage[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -192,237 +216,628 @@ export default function VisionBoard() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Mood Board</h1>
-        <div className="flex space-x-3">
-          <button
+    <Box sx={{ 
+      backgroundColor: '#FAFAFA', 
+      minHeight: '100vh',
+      pt: 4, 
+      pb: 8 
+    }}>
+      <Container maxWidth="lg">
+        <Box sx={{ 
+          mb: 6, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center' 
+        }}>
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            gutterBottom 
+            sx={{ 
+              color: theme.palette.primary.main,
+              textAlign: 'center',
+              fontFamily: 'Giaza, serif',
+              letterSpacing: '-0.05em',
+              fontSize: { xs: '2rem', md: '2.5rem' }
+            }}
+          >
+            Wedding Vision Board
+          </Typography>
+          <Typography 
+            variant="body1" 
+            sx={{ 
+              color: theme.palette.primary.main, 
+              opacity: 0.8, 
+              textAlign: 'center',
+              maxWidth: '700px',
+              mb: 4
+            }}
+          >
+            Create a visual collection of your wedding inspiration. Add images that inspire your wedding style, colors, and overall aesthetic.
+          </Typography>
+        </Box>
+
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 4, gap: 2 }}>
+          <Button
+            variant="outlined"
             onClick={downloadBoard}
-            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+            startIcon={<Download />}
+            sx={{ 
+              color: theme.palette.primary.main,
+              borderColor: theme.palette.accent?.rose || '#FFE8E4',
+              borderRadius: 0, // Square corners per brand guidelines
+              '&:hover': {
+                backgroundColor: `${theme.palette.accent?.rose || '#FFE8E4'}20`,
+                borderColor: theme.palette.accent?.rose || '#FFE8E4'
+              },
+              textTransform: 'uppercase'
+            }}
           >
-            <Download className="w-5 h-5 mr-2" />
-            Export Mood Board
-          </button>
-          <button
+            Export Board
+          </Button>
+          <Button
+            variant="outlined"
             onClick={() => document.getElementById('import-board')?.click()}
-            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            startIcon={<ExternalLink />}
+            sx={{ 
+              color: theme.palette.primary.main,
+              borderColor: theme.palette.accent?.rose || '#FFE8E4',
+              borderRadius: 0, // Square corners per brand guidelines
+              '&:hover': {
+                backgroundColor: `${theme.palette.accent?.rose || '#FFE8E4'}20`,
+                borderColor: theme.palette.accent?.rose || '#FFE8E4'
+              },
+              textTransform: 'uppercase'
+            }}
           >
-            <ExternalLink className="w-5 h-5 mr-2" />
-            Import Mood Board
-          </button>
+            Import Board
+          </Button>
           <input
             type="file"
             id="import-board"
             accept=".json"
-            className="hidden"
+            style={{ display: 'none' }}
             onChange={handleImport}
           />
-          <button
+          <Button
+            variant="contained"
             onClick={() => {
               setNewImage({ category: categories[0] });
               setShowForm(true);
             }}
-            className="flex items-center px-4 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700"
+            startIcon={<Plus />}
+            sx={{ 
+              backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
+              color: theme.palette.primary.main,
+              borderRadius: 0, // Square corners per brand guidelines
+              '&:hover': {
+                backgroundColor: theme.palette.accent?.roseDark || '#FFD5CC'
+              },
+              textTransform: 'uppercase'
+            }}
           >
-            <Plus className="w-5 h-5 mr-2" />
             Add Image
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Box>
 
-      <div className="mb-6">
-        <div className="flex flex-wrap gap-4 mb-8">
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 4 }}>
+          <Chip 
+            label="All"
+            onClick={() => setSelectedCategory('all')}
+            sx={{
+              borderRadius: 0, // Square corners per brand guidelines
+              backgroundColor: selectedCategory === 'all' ? (theme.palette.accent?.rose || '#FFE8E4') : 'transparent',
+              color: theme.palette.primary.main,
+              border: `1px solid ${theme.palette.accent?.rose || '#FFE8E4'}`,
+              '&:hover': {
+                backgroundColor: selectedCategory === 'all' ? (theme.palette.accent?.roseDark || '#FFD5CC') : `${theme.palette.accent?.rose || '#FFE8E4'}20`
+              },
+              textTransform: 'uppercase',
+              fontWeight: 'regular',
+              px: 2
+            }}
+          />
           {categories.map((category, index) => (
-            <button
+            <Chip
               key={index}
-              onClick={() => setSelectedCategory(category === selectedCategory ? '' : category)}
-              className={`px-4 py-2 rounded-full text-sm font-medium ${
-                category === selectedCategory
-                  ? 'bg-rose-100 text-rose-800'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {category}
-            </button>
+              label={category}
+              onClick={() => setSelectedCategory(category === selectedCategory ? 'all' : category)}
+              sx={{
+                borderRadius: 0, // Square corners per brand guidelines
+                backgroundColor: category === selectedCategory ? (theme.palette.accent?.rose || '#FFE8E4') : 'transparent',
+                color: theme.palette.primary.main,
+                border: `1px solid ${theme.palette.accent?.rose || '#FFE8E4'}`,
+                '&:hover': {
+                  backgroundColor: category === selectedCategory ? (theme.palette.accent?.roseDark || '#FFD5CC') : `${theme.palette.accent?.rose || '#FFE8E4'}20`
+                },
+                textTransform: 'uppercase',
+                fontWeight: 'regular',
+                px: 2
+              }}
+            />
           ))}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Mood Board Generator</h1>
-        <div className="flex space-x-3">
-          <Tabs value={tabValue} onChange={handleTabChange} centered>
-            <Tab label="Classic Mood Board" />
-            <Tab label="AI Mood Board Generator" />
-          </Tabs>
-        </div>
-      </div>
+      <Box sx={{ mb: 4 }}>
+        <Typography 
+          variant="h5" 
+          component="h2" 
+          sx={{ 
+            color: theme.palette.primary.main,
+            mb: 2,
+            fontFamily: 'Poppins, sans-serif',
+            fontWeight: 'medium',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+          }}
+        >
+          Vision Board Options
+        </Typography>
+        <Tabs 
+          value={tabValue} 
+          onChange={handleTabChange} 
+          sx={{ 
+            '& .MuiTabs-indicator': {
+              backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
+              height: 3
+            },
+            '& .MuiTab-root': {
+              color: `${theme.palette.primary.main}80`,
+              textTransform: 'uppercase',
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 'regular',
+              '&.Mui-selected': {
+                color: theme.palette.primary.main
+              }
+            }
+          }}
+        >
+          <Tab label="Classic Mood Board" />
+          <Tab label="AI Mood Board Generator" />
+        </Tabs>
+      </Box>
 
       <TabPanel value={tabValue} index={0}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Grid container spacing={3}>
           {filteredImages.map(image => (
-            <div
-              key={image.id}
-              className="bg-white rounded-xl shadow-sm overflow-hidden group"
-            >
-              <div className="relative aspect-w-16 aspect-h-9">
-                <img
-                  src={image.url}
-                  alt={image.title}
-                  className="object-cover w-full h-full"
-                />
-                <button
-                  onClick={() => deleteImage(image.id)}
-                  className="absolute top-2 right-2 p-1 bg-white rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X className="w-4 h-4 text-gray-500" />
-                </button>
-              </div>
-              <div className="p-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900">
-                    {image.title}
-                  </h3>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    {image.category}
-                  </span>
-                </div>
-                {image.description && (
-                  <p className="mt-2 text-sm text-gray-500">{image.description}</p>
-                )}
-                {image.source && (
-                  <a
-                    href={image.source}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-flex items-center text-sm text-rose-600 hover:text-rose-700"
+            <Grid item xs={12} sm={6} md={4} key={image.id}>
+              <Card 
+                elevation={0}
+                sx={{ 
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  transition: 'transform 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)'
+                  },
+                  borderRadius: 0, // Square corners per brand guidelines
+                  border: `1px solid ${theme.palette.divider}`
+                }}
+              >
+                <Box sx={{ position: 'relative' }}>
+                  <CardMedia
+                    component="img"
+                    image={image.url}
+                    alt={image.title}
+                    sx={{ 
+                      height: 0,
+                      paddingTop: '56.25%', // 16:9 aspect ratio
+                      position: 'relative'
+                    }}
+                  />
+                  <IconButton
+                    onClick={() => deleteImage(image.id)}
+                    size="small"
+                    sx={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
+                      color: theme.palette.primary.main,
+                      opacity: 0,
+                      transition: 'opacity 0.2s',
+                      borderRadius: 0, // Square corners per brand guidelines
+                      '&:hover': {
+                        backgroundColor: theme.palette.accent?.roseDark || '#FFD5CC',
+                        opacity: 1
+                      },
+                      '.MuiCard-root:hover &': {
+                        opacity: 1
+                      }
+                    }}
                   >
-                    <ExternalLink className="w-4 h-4 mr-1" />
-                    Source
-                  </a>
-                )}
-              </div>
-            </div>
+                    <X size={16} />
+                  </IconButton>
+                </Box>
+                <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                    <Typography 
+                      variant="h6" 
+                      gutterBottom 
+                      sx={{ 
+                        color: theme.palette.primary.main,
+                        fontWeight: 'medium',
+                        mb: 0
+                      }}
+                    >
+                      {image.title}
+                    </Typography>
+                    <Chip 
+                      label={image.category} 
+                      size="small"
+                      sx={{ 
+                        borderRadius: 0, // Square corners per brand guidelines
+                        backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
+                        color: theme.palette.primary.main,
+                        textTransform: 'uppercase',
+                        fontSize: '0.7rem',
+                        fontWeight: 'medium',
+                        ml: 1
+                      }}
+                    />
+                  </Box>
+                  {image.description && (
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        color: theme.palette.primary.main,
+                        opacity: 0.8,
+                        mb: 2 
+                      }}
+                    >
+                      {image.description}
+                    </Typography>
+                  )}
+                  {image.source && (
+                    <Button
+                      href={image.source}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      startIcon={<ExternalLink size={16} />}
+                      size="small"
+                      sx={{ 
+                        mt: 'auto',
+                        color: theme.palette.primary.main,
+                        textTransform: 'none',
+                        padding: 0,
+                        '&:hover': {
+                          backgroundColor: 'transparent',
+                          textDecoration: 'underline'
+                        },
+                        justifyContent: 'flex-start',
+                        minWidth: 'auto'
+                      }}
+                    >
+                      Source
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
           ))}
-        </div>
+        </Grid>
       </TabPanel>
 
       <TabPanel value={tabValue} index={1}>
-        <MoodboardGenerator falApiKey={falApiKey} />
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            p: 4, 
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 0, // Square corners per brand guidelines
+            mb: 4
+          }}
+        >
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              mb: 2, 
+              color: theme.palette.primary.main,
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 'medium',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}
+          >
+            AI Vision Board Generator
+          </Typography>
+          <Typography 
+            variant="body1" 
+            sx={{ 
+              mb: 3, 
+              color: theme.palette.primary.main,
+              opacity: 0.8
+            }}
+          >
+            Describe your dream wedding and our AI will generate a vision board for you.
+          </Typography>
+          <MoodboardGenerator falApiKey={falApiKey} />
+        </Paper>
       </TabPanel>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Add to Mood Board</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-500 hover:text-gray-700">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+        <Dialog 
+          open={showForm} 
+          onClose={() => setShowForm(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 0, // Square corners per brand guidelines
+              p: 3
+            }
+          }}
+        >
+          <DialogTitle sx={{ 
+            p: 0, 
+            mb: 2,
+            color: theme.palette.primary.main,
+            fontFamily: 'Poppins, sans-serif',
+            fontWeight: 'medium',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <Typography variant="h5" component="h2">
+              Add to Vision Board
+            </Typography>
+            <IconButton 
+              onClick={() => setShowForm(false)}
+              sx={{ 
+                color: theme.palette.primary.main,
+                p: 1
+              }}
+            >
+              <X size={20} />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent sx={{ p: 0 }}>
+            <form onSubmit={handleSubmit}>
+              <Box sx={{ mb: 3 }}>
+                <Typography 
+                  variant="subtitle2" 
+                  component="label"
+                  htmlFor="image-upload"
+                  sx={{ 
+                    display: 'block', 
+                    mb: 1,
+                    color: theme.palette.primary.main
+                  }}
+                >
                   Image
-                </label>
+                </Typography>
                 <input
+                  id="image-upload"
                   type="file"
                   accept="image/*"
                   onChange={handleImageUpload}
                   ref={fileInputRef}
-                  className="w-full"
+                  style={{ width: '100%' }}
                   required
                 />
-              </div>
+              </Box>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Title
-                </label>
-                <input
-                  type="text"
+              <Box sx={{ mb: 3 }}>
+                <TextField
+                  fullWidth
+                  label="Title"
                   value={newImage.title || ''}
                   onChange={e => setNewImage(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-rose-500 focus:border-rose-500"
                   required
+                  variant="outlined"
+                  InputLabelProps={{
+                    sx: { color: theme.palette.primary.main }
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: theme.palette.divider,
+                        borderRadius: 0 // Square corners per brand guidelines
+                      },
+                      '&:hover fieldset': {
+                        borderColor: theme.palette.accent?.rose || '#FFE8E4'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: theme.palette.accent?.rose || '#FFE8E4'
+                      }
+                    },
+                    '& .MuiInputBase-input': {
+                      color: theme.palette.primary.main
+                    }
+                  }}
                 />
-              </div>
+              </Box>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
+              <Box sx={{ mb: 3 }}>
+                <TextField
+                  fullWidth
+                  label="Description"
                   value={newImage.description || ''}
                   onChange={e => setNewImage(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-rose-500 focus:border-rose-500"
+                  multiline
                   rows={3}
+                  variant="outlined"
+                  InputLabelProps={{
+                    sx: { color: theme.palette.primary.main }
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: theme.palette.divider,
+                        borderRadius: 0 // Square corners per brand guidelines
+                      },
+                      '&:hover fieldset': {
+                        borderColor: theme.palette.accent?.rose || '#FFE8E4'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: theme.palette.accent?.rose || '#FFE8E4'
+                      }
+                    },
+                    '& .MuiInputBase-input': {
+                      color: theme.palette.primary.main
+                    }
+                  }}
                 />
-              </div>
+              </Box>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
-                <select
-                  value={newImage.category}
-                  onChange={e => setNewImage(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-rose-500 focus:border-rose-500"
-                >
-                  {categories.map(category => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Box sx={{ mb: 3 }}>
+                <FormControl fullWidth variant="outlined">
+                  <InputLabel 
+                    id="category-label"
+                    sx={{ color: theme.palette.primary.main }}
+                  >
+                    Category
+                  </InputLabel>
+                  <Select
+                    labelId="category-label"
+                    value={newImage.category}
+                    onChange={e => setNewImage(prev => ({ ...prev, category: e.target.value }))}
+                    label="Category"
+                    sx={{
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: theme.palette.divider,
+                        borderRadius: 0 // Square corners per brand guidelines
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: theme.palette.accent?.rose || '#FFE8E4'
+                      },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: theme.palette.accent?.rose || '#FFE8E4'
+                      },
+                      color: theme.palette.primary.main
+                    }}
+                  >
+                    {categories.map(category => (
+                      <MenuItem key={category} value={category}>
+                        {category}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Source URL
-                </label>
-                <input
-                  type="url"
+              <Box sx={{ mb: 3 }}>
+                <TextField
+                  fullWidth
+                  label="Source URL (Optional)"
                   value={newImage.source || ''}
                   onChange={e => setNewImage(prev => ({ ...prev, source: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-rose-500 focus:border-rose-500"
-                  placeholder="Optional"
+                  type="url"
+                  variant="outlined"
+                  InputLabelProps={{
+                    sx: { color: theme.palette.primary.main }
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: theme.palette.divider,
+                        borderRadius: 0 // Square corners per brand guidelines
+                      },
+                      '&:hover fieldset': {
+                        borderColor: theme.palette.accent?.rose || '#FFE8E4'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: theme.palette.accent?.rose || '#FFE8E4'
+                      }
+                    },
+                    '& .MuiInputBase-input': {
+                      color: theme.palette.primary.main
+                    }
+                  }}
                 />
-              </div>
-
-              <div className="flex justify-end space-x-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-rose-600 rounded-md hover:bg-rose-700"
-                >
-                  Add Image
-                </button>
-              </div>
+              </Box>
             </form>
-          </div>
-        </div>
+          </DialogContent>
+          <DialogActions sx={{ p: 0, mt: 2 }}>
+            <Button
+              onClick={() => setShowForm(false)}
+              variant="outlined"
+              sx={{ 
+                color: theme.palette.primary.main,
+                borderColor: theme.palette.divider,
+                borderRadius: 0, // Square corners per brand guidelines
+                '&:hover': {
+                  borderColor: theme.palette.divider,
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                },
+                textTransform: 'uppercase'
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              variant="contained"
+              sx={{ 
+                backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
+                color: theme.palette.primary.main,
+                borderRadius: 0, // Square corners per brand guidelines
+                '&:hover': {
+                  backgroundColor: theme.palette.accent?.roseDark || '#FFD5CC'
+                },
+                ml: 2,
+                textTransform: 'uppercase'
+              }}
+            >
+              Add Image
+            </Button>
+          </DialogActions>
+        </Dialog>
       )}
 
       {filteredImages.length === 0 && (
-        <div className="text-center py-12">
-          <ImageIcon className="w-16 h-16 mx-auto text-gray-400" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">No images yet</h3>
-          <p className="mt-1 text-gray-500">Get started by adding images to your mood board.</p>
-          <button
+        <Box sx={{ textAlign: 'center', py: 6 }}>
+          <ImageIcon size={64} style={{ margin: '0 auto', color: theme.palette.primary.main, opacity: 0.6 }} />
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              mt: 3, 
+              color: theme.palette.primary.main,
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 'medium'
+            }}
+          >
+            Your Vision Board is Empty
+          </Typography>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              mt: 1, 
+              color: theme.palette.primary.main,
+              opacity: 0.8,
+              maxWidth: '400px',
+              mx: 'auto'
+            }}
+          >
+            Start adding images to create your perfect wedding vision board.
+          </Typography>
+          <Button
             onClick={() => setShowForm(true)}
-            className="mt-6 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+            variant="contained"
+            sx={{ 
+              mt: 4,
+              backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
+              color: theme.palette.primary.main,
+              borderRadius: 0, // Square corners per brand guidelines
+              '&:hover': {
+                backgroundColor: theme.palette.accent?.roseDark || '#FFD5CC'
+              },
+              textTransform: 'uppercase',
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 'medium',
+              px: 3,
+              py: 1
+            }}
           >
             Add Your First Image
-          </button>
-        </div>
+          </Button>
+        </Box>
       )}
-    </div>
+      </Container>
+    </Box>
   );
 }
