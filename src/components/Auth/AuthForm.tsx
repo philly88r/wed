@@ -10,7 +10,9 @@ import {
   IconButton,
   InputAdornment,
   Fade,
-  CircularProgress
+  CircularProgress,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { 
   Heart, 
@@ -23,6 +25,7 @@ import {
   EyeOff,
   Check
 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 // Define the types of users
 type UserType = 'couple' | 'planner' | 'vendor';
@@ -35,76 +38,188 @@ type RegistrationStep =
   | 'accountInfo'
   | 'confirmation';
 
-// Define the question sets for each user type
-interface QuestionSet {
-  basicInfo: Question[];
-  weddingInfo: Question[];
-  accountInfo: Question[];
+// Define the form data interface
+interface FormData {
+  [key: string]: string;
 }
 
 // Define the question interface
 interface Question {
   id: string;
   label: string;
-  type: 'text' | 'email' | 'password' | 'date' | 'select';
-  options?: string[];
-  required: boolean;
+  type: string;
   placeholder?: string;
+  required: boolean;
 }
 
-// Define the form data interface
-interface FormData {
-  [key: string]: string;
-}
-
-// Question sets for each user type
-const questionSets: Record<UserType, QuestionSet> = {
-  'couple': {
+// Define the question sets for each user type
+const questionSets: Record<UserType, Record<string, Question[]>> = {
+  couple: {
     basicInfo: [
-      { id: 'firstName', label: 'What\'s your first name?', type: 'text', required: true, placeholder: 'Enter your first name' },
-      { id: 'partnerName', label: 'What\'s your partner\'s name?', type: 'text', required: true, placeholder: 'Enter your partner\'s name' },
+      {
+        id: 'firstName',
+        label: "What's your name?",
+        type: 'text',
+        placeholder: 'Your name',
+        required: true,
+      },
+      {
+        id: 'partnerName',
+        label: "What's your partner's name?",
+        type: 'text',
+        placeholder: "Your partner's name",
+        required: true,
+      },
     ],
     weddingInfo: [
-      { id: 'weddingDate', label: 'When is your wedding date?', type: 'date', required: true },
-      { id: 'location', label: 'Where will your wedding take place?', type: 'text', required: false, placeholder: 'City, State or Country' },
+      {
+        id: 'weddingDate',
+        label: 'When is your wedding date?',
+        type: 'date',
+        required: false,
+      },
+      {
+        id: 'location',
+        label: 'Where are you getting married?',
+        type: 'text',
+        placeholder: 'City, State',
+        required: false,
+      },
+      {
+        id: 'guestCount',
+        label: 'How many guests are you expecting?',
+        type: 'number',
+        placeholder: 'Approximate number',
+        required: false,
+      },
     ],
     accountInfo: [
-      { id: 'email', label: 'What\'s your email address?', type: 'email', required: true, placeholder: 'Enter your email' },
-      { id: 'password', label: 'Create a password', type: 'password', required: true, placeholder: 'Choose a secure password' },
+      {
+        id: 'email',
+        label: 'What email would you like to use?',
+        type: 'email',
+        placeholder: 'your.email@example.com',
+        required: true,
+      },
+      {
+        id: 'password',
+        label: 'Create a password',
+        type: 'password',
+        placeholder: 'At least 8 characters',
+        required: true,
+      },
     ],
   },
-  'planner': {
+  planner: {
     basicInfo: [
-      { id: 'firstName', label: 'What\'s your first name?', type: 'text', required: true, placeholder: 'Enter your first name' },
-      { id: 'lastName', label: 'What\'s your last name?', type: 'text', required: true, placeholder: 'Enter your last name' },
-      { id: 'companyName', label: 'What\'s your company name?', type: 'text', required: false, placeholder: 'Enter your company name' },
+      {
+        id: 'firstName',
+        label: "What's your first name?",
+        type: 'text',
+        placeholder: 'First name',
+        required: true,
+      },
+      {
+        id: 'lastName',
+        label: "What's your last name?",
+        type: 'text',
+        placeholder: 'Last name',
+        required: true,
+      },
+      {
+        id: 'companyName',
+        label: "What's your company name?",
+        type: 'text',
+        placeholder: 'Company name',
+        required: true,
+      },
     ],
     weddingInfo: [
-      { id: 'experience', label: 'How many years of experience do you have?', type: 'text', required: false, placeholder: 'Enter number of years' },
-      { id: 'specialization', label: 'What\'s your specialization?', type: 'text', required: false, placeholder: 'E.g., Destination weddings, Luxury weddings' },
+      {
+        id: 'experience',
+        label: 'How many years of experience do you have?',
+        type: 'number',
+        placeholder: 'Years',
+        required: false,
+      },
+      {
+        id: 'specialization',
+        label: 'What is your specialization?',
+        type: 'text',
+        placeholder: 'E.g., Destination weddings, Luxury events',
+        required: false,
+      },
     ],
     accountInfo: [
-      { id: 'email', label: 'What\'s your email address?', type: 'email', required: true, placeholder: 'Enter your email' },
-      { id: 'password', label: 'Create a password', type: 'password', required: true, placeholder: 'Choose a secure password' },
+      {
+        id: 'email',
+        label: 'What email would you like to use?',
+        type: 'email',
+        placeholder: 'your.email@example.com',
+        required: true,
+      },
+      {
+        id: 'password',
+        label: 'Create a password',
+        type: 'password',
+        placeholder: 'At least 8 characters',
+        required: true,
+      },
     ],
   },
-  'vendor': {
+  vendor: {
     basicInfo: [
-      { id: 'companyName', label: 'What\'s your business name?', type: 'text', required: true, placeholder: 'Enter your business name' },
-      { id: 'contactName', label: 'What\'s your name?', type: 'text', required: true, placeholder: 'Enter your full name' },
+      {
+        id: 'companyName',
+        label: "What's your business name?",
+        type: 'text',
+        placeholder: 'Business name',
+        required: true,
+      },
+      {
+        id: 'contactName',
+        label: "What's your name?",
+        type: 'text',
+        placeholder: 'Your name',
+        required: true,
+      },
     ],
     weddingInfo: [
-      { id: 'vendorType', label: 'What type of vendor are you?', type: 'text', required: true, placeholder: 'E.g., Photographer, Caterer, Venue' },
-      { id: 'location', label: 'Where are you located?', type: 'text', required: true, placeholder: 'City, State or Country' },
+      {
+        id: 'vendorType',
+        label: 'What type of vendor are you?',
+        type: 'text',
+        placeholder: 'E.g., Photographer, Caterer',
+        required: true,
+      },
+      {
+        id: 'location',
+        label: 'Where are you based?',
+        type: 'text',
+        placeholder: 'City, State',
+        required: false,
+      },
     ],
     accountInfo: [
-      { id: 'email', label: 'What\'s your business email?', type: 'email', required: true, placeholder: 'Enter your business email' },
-      { id: 'password', label: 'Create a password', type: 'password', required: true, placeholder: 'Choose a secure password' },
+      {
+        id: 'email',
+        label: 'What email would you like to use?',
+        type: 'email',
+        placeholder: 'your.email@example.com',
+        required: true,
+      },
+      {
+        id: 'password',
+        label: 'Create a password',
+        type: 'password',
+        placeholder: 'At least 8 characters',
+        required: true,
+      },
     ],
-  }
+  },
 };
 
-export const AuthForm: React.FC<{ redirectPath?: string }> = ({ redirectPath = '/' }) => {
+export const AuthForm: React.FC = () => {
   const navigate = useNavigate();
   
   // State for login/register toggle
@@ -127,6 +242,12 @@ export const AuthForm: React.FC<{ redirectPath?: string }> = ({ redirectPath = '
   
   // State for loading
   const [isLoading, setIsLoading] = useState(false);
+  
+  // State for error message
+  const [error, setError] = useState<string | null>(null);
+  
+  // State for success message
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Get current question set based on registration step and user type
   const getCurrentQuestions = () => {
@@ -229,177 +350,381 @@ export const AuthForm: React.FC<{ redirectPath?: string }> = ({ redirectPath = '
     setRegistrationStep('userType');
     setCurrentQuestionIndex(0);
     setFormData({});
+    setError(null);
   };
   
-  // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  // Check if user has a subscription
+  const checkSubscription = async (userId: string) => {
+    try {
+      // First, check if the user profile exists and has completed onboarding
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (profileError) throw profileError;
+      
+      // If profile doesn't exist or onboarding not completed, redirect to pricing
+      if (!profileData || !profileData.onboarding_completed) {
+        return false;
+      }
+      
+      // Check if user has an active subscription
+      const { data: subscriptionData, error: subscriptionError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+      
+      if (subscriptionError && subscriptionError.code !== 'PGRST116') {
+        // PGRST116 is "no rows returned" error, which is expected if no subscription
+        throw subscriptionError;
+      }
+      
+      return !!subscriptionData;
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+      return false;
+    }
+  };
+  
+  // Create user profile in Supabase
+  const createUserProfile = async (userId: string) => {
+    try {
+      // Extract relevant data from form
+      const profileData: any = {
+        id: userId,
+        email: formData.email,
+        role: 'user',
+        onboarding_completed: false,
+      };
+      
+      // Add user type specific data
+      if (userType === 'couple') {
+        profileData.full_name = formData.firstName;
+        profileData.partner_name = formData.partnerName;
+        profileData.wedding_date = formData.weddingDate || null;
+        profileData.wedding_location = formData.location || null;
+      } else if (userType === 'planner') {
+        profileData.full_name = `${formData.firstName} ${formData.lastName}`;
+        profileData.company_name = formData.companyName || null;
+        profileData.experience_years = formData.experience || null;
+        profileData.specialization = formData.specialization || null;
+      } else if (userType === 'vendor') {
+        profileData.company_name = formData.companyName;
+        profileData.contact_name = formData.contactName;
+        profileData.vendor_type = formData.vendorType || null;
+        profileData.location = formData.location || null;
+      }
+      
+      // Insert profile data
+      const { error } = await supabase
+        .from('profiles')
+        .upsert(profileData);
+      
+      if (error) throw error;
+      
+      return true;
+    } catch (error) {
+      console.error('Error creating user profile:', error);
+      return false;
+    }
+  };
+  
+  // Handle form submission for registration
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     setIsLoading(true);
+    setError(null);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // Register user with Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            user_type: userType,
+          },
+        },
+      });
       
-      // For demo purposes, just navigate to dashboard
-      navigate(redirectPath);
-    }, 1500);
+      if (error) throw error;
+      
+      if (data.user) {
+        // Create user profile
+        await createUserProfile(data.user.id);
+        
+        setSuccessMessage('Account created successfully! Redirecting to pricing page...');
+        
+        // Redirect to pricing page for new users
+        setTimeout(() => {
+          navigate('/pricing');
+        }, 1500);
+      }
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      setError(error.message || 'An error occurred during registration');
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   // Handle login
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     setIsLoading(true);
+    setError(null);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // Sign in with Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
       
-      // For demo purposes, just navigate to dashboard
-      navigate(redirectPath);
-    }, 1500);
+      if (error) throw error;
+      
+      if (data.user) {
+        // Check if user has a subscription
+        const hasSubscription = await checkSubscription(data.user.id);
+        
+        if (hasSubscription) {
+          // If user has a subscription, redirect to dashboard
+          navigate('/');
+        } else {
+          // If user doesn't have a subscription, redirect to pricing page
+          navigate('/pricing');
+        }
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setError(error.message || 'Invalid email or password');
+      setIsLoading(false);
+    }
   };
-
+  
   // Render login form
   const renderLoginForm = () => {
     return (
-      <Fade in={isLogin} timeout={500}>
-        <form onSubmit={handleLogin} className="w-full">
-          <Box sx={{ mb: 4 }}>
-            <TextField
-              fullWidth
-              label="Email"
-              name="email"
-              type="email"
-              required
-              variant="outlined"
-              sx={{
-                mb: 3,
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 0,
-                  '& fieldset': {
-                    borderColor: '#B8BDD7',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: '#B8BDD7',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#FFE8E4',
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#054697',
-                  opacity: 0.8,
-                },
-                '& .MuiOutlinedInput-input': {
-                  color: '#054697',
-                },
-              }}
-            />
-            
-            <TextField
-              fullWidth
-              label="Password"
-              name="password"
-              type={showPassword ? 'text' : 'password'}
-              required
-              variant="outlined"
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                      sx={{ color: '#054697' }}
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 0,
-                  '& fieldset': {
-                    borderColor: '#B8BDD7',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: '#B8BDD7',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#FFE8E4',
-                  },
-                },
-                '& .MuiInputLabel-root': {
-                  color: '#054697',
-                  opacity: 0.8,
-                },
-                '& .MuiOutlinedInput-input': {
-                  color: '#054697',
-                },
-              }}
-            />
-          </Box>
-          
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            disabled={isLoading}
-            sx={{
-              py: 1.5,
-              backgroundColor: '#FFE8E4',
-              color: '#054697',
-              fontFamily: "'Poppins', sans-serif",
-              fontWeight: 500,
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              borderRadius: 0,
-              border: '1px solid #FFE8E4',
-              boxShadow: 'none',
-              '&:hover': {
-                backgroundColor: '#FFD5CC',
-                boxShadow: 'none',
+      <Box component="form" onSubmit={handleLogin} sx={{ width: '100%', mt: 2 }}>
+        <TextField
+          margin="normal"
+          required
+          fullWidth
+          id="email"
+          label="Email Address"
+          name="email"
+          autoComplete="email"
+          autoFocus
+          value={formData.email || ''}
+          onChange={handleChange}
+          sx={{
+            '& .MuiInputLabel-root': {
+              color: 'primary.main',
+              opacity: 0.8,
+            },
+            '& .MuiOutlinedInput-root': {
+              '& fieldset': {
+                borderColor: 'primary.main',
+                opacity: 0.3,
               },
-            }}
-          >
-            {isLoading ? <CircularProgress size={24} sx={{ color: '#054697' }} /> : 'Log In'}
-          </Button>
+              '&:hover fieldset': {
+                borderColor: 'primary.main',
+                opacity: 0.5,
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: 'primary.main',
+              },
+            },
+          }}
+        />
+        <TextField
+          margin="normal"
+          required
+          fullWidth
+          name="password"
+          label="Password"
+          type={showPassword ? 'text' : 'password'}
+          id="password"
+          autoComplete="current-password"
+          value={formData.password || ''}
+          onChange={handleChange}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="toggle password visibility"
+                  onClick={() => setShowPassword(!showPassword)}
+                  edge="end"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            '& .MuiInputLabel-root': {
+              color: 'primary.main',
+              opacity: 0.8,
+            },
+            '& .MuiOutlinedInput-root': {
+              '& fieldset': {
+                borderColor: 'primary.main',
+                opacity: 0.3,
+              },
+              '&:hover fieldset': {
+                borderColor: 'primary.main',
+                opacity: 0.5,
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: 'primary.main',
+              },
+            },
+          }}
+        />
+        
+        {error && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {error}
+          </Alert>
+        )}
+        
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          disabled={isLoading}
+          sx={{
+            mt: 3,
+            mb: 2,
+            py: 1.5,
+            bgcolor: 'accent.rose',
+            color: 'primary.main',
+            fontWeight: 500,
+            textTransform: 'uppercase',
+            '&:hover': {
+              bgcolor: '#FFD5CC',
+            },
+          }}
+        >
+          {isLoading ? <CircularProgress size={24} color="primary" /> : 'Sign In'}
+        </Button>
+        
+        <Typography 
+          variant="body2" 
+          align="center" 
+          sx={{ 
+            mt: 2, 
+            cursor: 'pointer',
+            color: 'primary.main',
+            opacity: 0.8,
+            '&:hover': {
+              textDecoration: 'underline',
+            }
+          }}
+          onClick={handleAuthModeToggle}
+        >
+          Don't have an account? Sign Up
+        </Typography>
+      </Box>
+    );
+  };
+
+  // Render the confirmation step
+  const renderConfirmation = () => {
+    return (
+      <Fade in={registrationStep === 'confirmation'}>
+        <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Typography variant="h5" component="h2" gutterBottom sx={{ color: 'primary.main' }}>
+            Confirm Your Information
+          </Typography>
           
-          <Box sx={{ mt: 3, textAlign: 'center' }}>
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                color: '#054697', 
-                opacity: 0.8,
-                fontFamily: "'Poppins', sans-serif",
-                cursor: 'pointer',
+          <Paper elevation={0} sx={{ p: 3, mt: 3, bgcolor: 'rgba(184, 189, 215, 0.1)' }}>
+            <Typography variant="body1" sx={{ mb: 2, color: 'primary.main', opacity: 0.8 }}>
+              <strong>User Type:</strong> {userType === 'couple' ? 'Engaged Couple' : userType === 'planner' ? 'Wedding Planner' : 'Vendor'}
+            </Typography>
+            
+            {Object.entries(formData).map(([key, value]) => {
+              // Skip password display
+              if (key === 'password') return null;
+              
+              // Format key for display
+              const formattedKey = key.replace(/([A-Z])/g, ' $1')
+                .replace(/^./, str => str.toUpperCase());
+              
+              return (
+                <Typography key={key} variant="body1" sx={{ mb: 1, color: 'primary.main', opacity: 0.8 }}>
+                  <strong>{formattedKey}:</strong> {value}
+                </Typography>
+              );
+            })}
+          </Paper>
+          
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
+          
+          {successMessage && (
+            <Alert severity="success" sx={{ mt: 2 }}>
+              {successMessage}
+            </Alert>
+          )}
+          
+          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between' }}>
+            <Button
+              onClick={handlePrevious}
+              startIcon={<ArrowLeft size={20} />}
+              sx={{
+                color: 'primary.main',
                 '&:hover': {
-                  textDecoration: 'underline',
+                  bgcolor: 'rgba(184, 189, 215, 0.1)',
                 },
               }}
-              onClick={handleAuthModeToggle}
             >
-              Don't have an account? Register
-            </Typography>
+              Back
+            </Button>
+            
+            <Button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              endIcon={isLoading ? <CircularProgress size={20} color="primary" /> : <Check size={20} />}
+              sx={{
+                bgcolor: 'accent.rose',
+                color: 'primary.main',
+                px: 3,
+                py: 1,
+                '&:hover': {
+                  bgcolor: '#FFD5CC',
+                },
+              }}
+            >
+              {isLoading ? 'Creating Account...' : 'Create Account'}
+            </Button>
           </Box>
-        </form>
+        </Box>
       </Fade>
     );
   };
-  
+
   // Render user type selection
   const renderUserTypeSelection = () => {
     return (
-      <Fade in={registrationStep === 'userType'} timeout={500}>
+      <Fade in={registrationStep === 'userType'}>
         <Box sx={{ width: '100%' }}>
           <Typography 
             variant="h5" 
+            component="h2"
             sx={{ 
               mb: 4, 
-              color: '#054697', 
-              fontFamily: "'Giaza', serif",
+              color: 'primary.main',
+              fontFamily: 'Giaza, serif',
               textAlign: 'center',
             }}
           >
@@ -415,27 +740,23 @@ export const AuthForm: React.FC<{ redirectPath?: string }> = ({ redirectPath = '
                 justifyContent: 'flex-start',
                 p: 3,
                 backgroundColor: 'white',
-                border: '1px solid #B8BDD7',
-                borderRadius: 0,
-                color: '#054697',
+                border: '1px solid',
+                borderColor: 'primary.main',
+                borderOpacity: 0.3,
+                color: 'primary.main',
                 textTransform: 'none',
-                fontFamily: "'Poppins', sans-serif",
-                fontWeight: 400,
-                fontSize: '1rem',
-                transition: 'all 0.3s',
                 '&:hover': {
-                  backgroundColor: '#FFE8E4',
-                  borderColor: '#FFE8E4',
-                  transform: 'translateY(-2px)',
+                  backgroundColor: 'accent.rose',
+                  borderColor: 'accent.rose',
                 },
               }}
             >
-              <Users className="w-6 h-6 mr-3" />
+              <Users size={24} style={{ marginRight: '12px' }} />
               <Box sx={{ textAlign: 'left' }}>
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>
                   Engaged Couple
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#054697', opacity: 0.8 }}>
+                <Typography variant="body2" sx={{ color: 'primary.main', opacity: 0.8 }}>
                   Planning our wedding
                 </Typography>
               </Box>
@@ -449,27 +770,23 @@ export const AuthForm: React.FC<{ redirectPath?: string }> = ({ redirectPath = '
                 justifyContent: 'flex-start',
                 p: 3,
                 backgroundColor: 'white',
-                border: '1px solid #B8BDD7',
-                borderRadius: 0,
-                color: '#054697',
+                border: '1px solid',
+                borderColor: 'primary.main',
+                borderOpacity: 0.3,
+                color: 'primary.main',
                 textTransform: 'none',
-                fontFamily: "'Poppins', sans-serif",
-                fontWeight: 400,
-                fontSize: '1rem',
-                transition: 'all 0.3s',
                 '&:hover': {
-                  backgroundColor: '#FFE8E4',
-                  borderColor: '#FFE8E4',
-                  transform: 'translateY(-2px)',
+                  backgroundColor: 'accent.rose',
+                  borderColor: 'accent.rose',
                 },
               }}
             >
-              <Calendar className="w-6 h-6 mr-3" />
+              <Calendar size={24} style={{ marginRight: '12px' }} />
               <Box sx={{ textAlign: 'left' }}>
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>
                   Wedding Planner
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#054697', opacity: 0.8 }}>
+                <Typography variant="body2" sx={{ color: 'primary.main', opacity: 0.8 }}>
                   Professional event coordinator
                 </Typography>
               </Box>
@@ -483,27 +800,23 @@ export const AuthForm: React.FC<{ redirectPath?: string }> = ({ redirectPath = '
                 justifyContent: 'flex-start',
                 p: 3,
                 backgroundColor: 'white',
-                border: '1px solid #B8BDD7',
-                borderRadius: 0,
-                color: '#054697',
+                border: '1px solid',
+                borderColor: 'primary.main',
+                borderOpacity: 0.3,
+                color: 'primary.main',
                 textTransform: 'none',
-                fontFamily: "'Poppins', sans-serif",
-                fontWeight: 400,
-                fontSize: '1rem',
-                transition: 'all 0.3s',
                 '&:hover': {
-                  backgroundColor: '#FFE8E4',
-                  borderColor: '#FFE8E4',
-                  transform: 'translateY(-2px)',
+                  backgroundColor: 'accent.rose',
+                  borderColor: 'accent.rose',
                 },
               }}
             >
-              <Store className="w-6 h-6 mr-3" />
+              <Store size={24} style={{ marginRight: '12px' }} />
               <Box sx={{ textAlign: 'left' }}>
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>
                   Wedding Vendor
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#054697', opacity: 0.8 }}>
+                <Typography variant="body2" sx={{ color: 'primary.main', opacity: 0.8 }}>
                   Provide services for weddings
                 </Typography>
               </Box>
@@ -514,9 +827,8 @@ export const AuthForm: React.FC<{ redirectPath?: string }> = ({ redirectPath = '
             <Typography 
               variant="body2" 
               sx={{ 
-                color: '#054697', 
+                color: 'primary.main', 
                 opacity: 0.8,
-                fontFamily: "'Poppins', sans-serif",
                 cursor: 'pointer',
                 '&:hover': {
                   textDecoration: 'underline',
@@ -531,7 +843,7 @@ export const AuthForm: React.FC<{ redirectPath?: string }> = ({ redirectPath = '
       </Fade>
     );
   };
-  
+
   // Render question form
   const renderQuestionForm = () => {
     const question = getCurrentQuestion();
@@ -539,14 +851,15 @@ export const AuthForm: React.FC<{ redirectPath?: string }> = ({ redirectPath = '
     if (!question) return null;
     
     return (
-      <Fade in={true} timeout={500}>
+      <Fade in={true}>
         <Box sx={{ width: '100%' }}>
           <Typography 
             variant="h5" 
+            component="h2"
             sx={{ 
               mb: 1, 
-              color: '#054697', 
-              fontFamily: "'Giaza', serif",
+              color: 'primary.main',
+              fontFamily: 'Giaza, serif',
             }}
           >
             {question.label}
@@ -564,26 +877,22 @@ export const AuthForm: React.FC<{ redirectPath?: string }> = ({ redirectPath = '
               variant="outlined"
               autoFocus
               sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 0,
-                  '& fieldset': {
-                    borderColor: '#B8BDD7',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: '#B8BDD7',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#FFE8E4',
-                  },
-                },
                 '& .MuiInputLabel-root': {
-                  color: '#054697',
+                  color: 'primary.main',
                   opacity: 0.8,
                 },
-                '& .MuiOutlinedInput-input': {
-                  color: '#054697',
-                  fontSize: '1.1rem',
-                  padding: '16px',
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: 'primary.main',
+                    opacity: 0.3,
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'primary.main',
+                    opacity: 0.5,
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'primary.main',
+                  },
                 },
               }}
               InputProps={{
@@ -592,9 +901,8 @@ export const AuthForm: React.FC<{ redirectPath?: string }> = ({ redirectPath = '
                     <IconButton
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
-                      sx={{ color: '#054697' }}
                     >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </IconButton>
                   </InputAdornment>
                 ) : null,
@@ -606,18 +914,12 @@ export const AuthForm: React.FC<{ redirectPath?: string }> = ({ redirectPath = '
             <Button
               onClick={handlePrevious}
               sx={{
-                color: '#054697',
-                borderRadius: 0,
-                border: '1px solid #FFE8E4',
-                textTransform: 'uppercase',
-                fontFamily: "'Poppins', sans-serif",
-                fontWeight: 500,
-                px: 3,
+                color: 'primary.main',
                 '&:hover': {
-                  backgroundColor: '#FFE8E4',
+                  backgroundColor: 'rgba(184, 189, 215, 0.1)',
                 },
               }}
-              startIcon={<ArrowLeft className="w-4 h-4" />}
+              startIcon={<ArrowLeft size={20} />}
             >
               Back
             </Button>
@@ -625,18 +927,13 @@ export const AuthForm: React.FC<{ redirectPath?: string }> = ({ redirectPath = '
             <Button
               onClick={handleNext}
               sx={{
-                backgroundColor: '#FFE8E4',
-                color: '#054697',
-                borderRadius: 0,
-                textTransform: 'uppercase',
-                fontFamily: "'Poppins', sans-serif",
-                fontWeight: 500,
-                px: 3,
+                backgroundColor: 'accent.rose',
+                color: 'primary.main',
                 '&:hover': {
                   backgroundColor: '#FFD5CC',
                 },
               }}
-              endIcon={<ArrowRight className="w-4 h-4" />}
+              endIcon={<ArrowRight size={20} />}
             >
               Next
             </Button>
@@ -652,15 +949,15 @@ export const AuthForm: React.FC<{ redirectPath?: string }> = ({ redirectPath = '
                   borderRadius: '50%',
                   backgroundColor: 
                     registrationStep === step 
-                      ? '#FFE8E4' 
+                      ? 'accent.rose' 
                       : registrationStep === 'confirmation' || 
                         (registrationStep === 'accountInfo' && step === 'weddingInfo') ||
                         (registrationStep === 'weddingInfo' && step === 'basicInfo') ||
                         (registrationStep === 'weddingInfo' && step === 'userType') ||
                         (registrationStep === 'accountInfo' && step === 'basicInfo') ||
                         (registrationStep === 'accountInfo' && step === 'userType')
-                        ? '#FFE8E4' 
-                        : '#B8BDD7',
+                        ? 'accent.rose' 
+                        : 'rgba(184, 189, 215, 0.5)',
                   mx: 0.5,
                   transition: 'all 0.3s',
                 }}
@@ -671,183 +968,68 @@ export const AuthForm: React.FC<{ redirectPath?: string }> = ({ redirectPath = '
       </Fade>
     );
   };
-  
-  // Render confirmation step
-  const renderConfirmation = () => {
-    return (
-      <Fade in={registrationStep === 'confirmation'} timeout={500}>
-        <Box sx={{ width: '100%', textAlign: 'center' }}>
-          <Box 
-            sx={{ 
-              width: 80, 
-              height: 80, 
-              borderRadius: '50%', 
-              backgroundColor: '#FFE8E4',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 24px auto',
-            }}
-          >
-            <Check className="w-10 h-10 text-[#054697]" />
-          </Box>
-          
-          <Typography 
-            variant="h4" 
-            sx={{ 
-              mb: 2, 
-              color: '#054697', 
-              fontFamily: "'Giaza', serif",
-            }}
-          >
-            Almost there!
-          </Typography>
-          
-          <Typography 
-            variant="body1" 
-            sx={{ 
-              mb: 4, 
-              color: '#054697', 
-              opacity: 0.8,
-              fontFamily: "'Poppins', sans-serif",
-            }}
-          >
-            Please review your information and create your account.
-          </Typography>
-          
-          <Box sx={{ mb: 4, textAlign: 'left' }}>
-            {Object.entries(formData).map(([key, value]) => (
-              <Box key={key} sx={{ mb: 2, display: 'flex', justifyContent: 'space-between' }}>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    color: '#054697', 
-                    opacity: 0.7,
-                    fontFamily: "'Poppins', sans-serif",
-                    textTransform: 'capitalize',
-                  }}
-                >
-                  {key.replace(/([A-Z])/g, ' $1').trim()}:
-                </Typography>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    color: '#054697',
-                    fontFamily: "'Poppins', sans-serif",
-                    fontWeight: 500,
-                  }}
-                >
-                  {key === 'password' ? '••••••••' : value}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
-          
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-            <Button
-              onClick={handlePrevious}
-              sx={{
-                color: '#054697',
-                borderRadius: 0,
-                border: '1px solid #FFE8E4',
-                textTransform: 'uppercase',
-                fontFamily: "'Poppins', sans-serif",
-                fontWeight: 500,
-                px: 3,
-                '&:hover': {
-                  backgroundColor: '#FFE8E4',
-                },
-              }}
-              startIcon={<ArrowLeft className="w-4 h-4" />}
-            >
-              Back
-            </Button>
-            
-            <Button
-              onClick={handleSubmit}
-              disabled={isLoading}
-              sx={{
-                backgroundColor: '#FFE8E4',
-                color: '#054697',
-                borderRadius: 0,
-                textTransform: 'uppercase',
-                fontFamily: "'Poppins', sans-serif",
-                fontWeight: 500,
-                px: 3,
-                '&:hover': {
-                  backgroundColor: '#FFD5CC',
-                },
-              }}
-            >
-              {isLoading ? <CircularProgress size={24} sx={{ color: '#054697' }} /> : 'Create Account'}
-            </Button>
-          </Box>
-        </Box>
-      </Fade>
-    );
-  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-[#F9F9FF] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
-      {/* Decorative elements */}
-      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-[#FFE8E4]/20 blur-3xl"></div>
-      <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-[#B8BDD7]/10 blur-3xl"></div>
-      
-      <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 1 }}>
-        <Paper 
-          elevation={0} 
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Paper 
+        elevation={0} 
+        sx={{ 
+          p: 4, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center',
+          border: '1px solid',
+          borderColor: 'primary.main',
+          borderOpacity: 0.1,
+        }}
+      >
+        <Typography 
+          component="h1" 
+          variant="h4" 
+          gutterBottom
           sx={{ 
-            p: 6, 
-            borderRadius: 0,
-            border: '1px solid #B8BDD7',
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            backdropFilter: 'blur(10px)',
+            fontFamily: 'Giaza, serif',
+            color: 'primary.main',
+            letterSpacing: '-0.05em',
           }}
         >
-          <Box sx={{ mb: 6, textAlign: 'center' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-              <Heart className="w-10 h-10 text-[#FFE8E4]" />
-            </Box>
-            
-            <Typography 
-              component="h1" 
-              variant="h4" 
-              sx={{ 
-                fontFamily: "'Giaza', serif",
-                color: '#054697',
-                mb: 1,
-              }}
-            >
-              {isLogin ? 'Welcome Back' : 'Join Altare'}
-            </Typography>
-            
-            <Typography 
-              variant="body1" 
-              sx={{ 
-                color: '#054697', 
-                opacity: 0.8,
-                fontFamily: "'Poppins', sans-serif",
-              }}
-            >
-              {isLogin 
-                ? 'Log in to access your wedding planning tools' 
-                : 'Create an account to start planning your perfect day'}
-            </Typography>
-          </Box>
-          
-          {isLogin ? (
-            renderLoginForm()
-          ) : (
-            <>
-              {registrationStep === 'userType' && renderUserTypeSelection()}
-              {(registrationStep === 'basicInfo' || registrationStep === 'weddingInfo' || registrationStep === 'accountInfo') && renderQuestionForm()}
-              {registrationStep === 'confirmation' && renderConfirmation()}
-            </>
-          )}
-        </Paper>
-      </Container>
-    </div>
+          {isLogin ? 'Welcome Back' : 'Create Your Account'}
+        </Typography>
+        
+        {isLogin ? (
+          renderLoginForm()
+        ) : (
+          <>
+            {registrationStep === 'userType' && renderUserTypeSelection()}
+            {registrationStep === 'basicInfo' && renderQuestionForm()}
+            {registrationStep === 'weddingInfo' && renderQuestionForm()}
+            {registrationStep === 'accountInfo' && renderQuestionForm()}
+            {registrationStep === 'confirmation' && renderConfirmation()}
+          </>
+        )}
+        
+        <Snackbar 
+          open={!!error} 
+          autoHideDuration={6000} 
+          onClose={() => setError(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+            {error}
+          </Alert>
+        </Snackbar>
+        
+        <Snackbar 
+          open={!!successMessage} 
+          autoHideDuration={6000} 
+          onClose={() => setSuccessMessage(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={() => setSuccessMessage(null)} severity="success" sx={{ width: '100%' }}>
+            {successMessage}
+          </Alert>
+        </Snackbar>
+      </Paper>
+    </Container>
   );
 };
-
-export default AuthForm;
