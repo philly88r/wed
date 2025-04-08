@@ -15,7 +15,6 @@ import {
   Alert
 } from '@mui/material';
 import { 
-  Heart, 
   Calendar, 
   ArrowRight, 
   ArrowLeft,
@@ -556,6 +555,47 @@ export const AuthForm: React.FC = () => {
   const renderLoginForm = () => {
     return (
       <Box component="form" onSubmit={handleLogin} sx={{ width: '100%', mt: 2 }}>
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center',
+            mb: 4
+          }}
+        >
+          <Box 
+            component="img"
+            src="/Altare Primary-Blanc.svg"
+            alt="Altare Logo"
+            sx={{ 
+              width: 180, 
+              mb: 3,
+              filter: 'invert(13%) sepia(83%) saturate(2471%) hue-rotate(201deg) brightness(97%) contrast(101%)' // Makes the white logo blue
+            }}
+          />
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontFamily: "'Giaza', serif", 
+              color: 'primary.main',
+              letterSpacing: '-0.05em',
+              mb: 1
+            }}
+          >
+            Welcome Back
+          </Typography>
+          <Typography 
+            variant="body1" 
+            sx={{ 
+              color: 'primary.main', 
+              opacity: 0.8,
+              textAlign: 'center'
+            }}
+          >
+            Sign in to continue planning your perfect wedding
+          </Typography>
+        </Box>
+
         <TextField
           margin="normal"
           required
@@ -728,7 +768,7 @@ export const AuthForm: React.FC = () => {
               sx={{
                 color: 'primary.main',
                 '&:hover': {
-                  bgcolor: 'rgba(184, 189, 215, 0.1)',
+                  backgroundColor: 'rgba(184, 189, 215, 0.1)',
                 },
               }}
             >
@@ -762,6 +802,47 @@ export const AuthForm: React.FC = () => {
     return (
       <Fade in={registrationStep === 'userType'}>
         <Box sx={{ width: '100%' }}>
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              mb: 4,
+              width: '100%'
+            }}
+          >
+            <Box 
+              component="img"
+              src="/Altare Primary-Blanc.svg"
+              alt="Altare Logo"
+              sx={{ 
+                width: 180, 
+                mb: 3,
+                filter: 'invert(13%) sepia(83%) saturate(2471%) hue-rotate(201deg) brightness(97%) contrast(101%)' // Makes the white logo blue
+              }}
+            />
+            <Typography 
+              variant="h4" 
+              sx={{ 
+                fontFamily: "'Giaza', serif", 
+                color: 'primary.main',
+                letterSpacing: '-0.05em',
+                mb: 1
+              }}
+            >
+              Create Your Account
+            </Typography>
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                color: 'primary.main', 
+                opacity: 0.8,
+                textAlign: 'center'
+              }}
+            >
+              Begin your wedding planning journey with Altare
+            </Typography>
+          </Box>
           <Typography 
             variant="h5" 
             component="h2"
@@ -897,6 +978,46 @@ export const AuthForm: React.FC = () => {
     return (
       <Fade in={true}>
         <Box sx={{ width: '100%' }}>
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              mb: 4
+            }}
+          >
+            <Box 
+              component="img"
+              src="/Altare Primary-Blanc.svg"
+              alt="Altare Logo"
+              sx={{ 
+                width: 180, 
+                mb: 3,
+                filter: 'invert(13%) sepia(83%) saturate(2471%) hue-rotate(201deg) brightness(97%) contrast(101%)' // Makes the white logo blue
+              }}
+            />
+            <Typography 
+              variant="h4" 
+              sx={{ 
+                fontFamily: "'Giaza', serif", 
+                color: 'primary.main',
+                letterSpacing: '-0.05em',
+                mb: 1
+              }}
+            >
+              Create Your Account
+            </Typography>
+            <Typography 
+              variant="body1" 
+              sx={{ 
+                color: 'primary.main', 
+                opacity: 0.8,
+                textAlign: 'center'
+              }}
+            >
+              Begin your wedding planning journey with Altare
+            </Typography>
+          </Box>
           <Typography 
             variant="h5" 
             component="h2"
@@ -1014,66 +1135,87 @@ export const AuthForm: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
-      <Paper 
-        elevation={0} 
-        sx={{ 
-          p: 4, 
-          display: 'flex', 
-          flexDirection: 'column', 
+    <Container component="main" maxWidth="sm">
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
-          border: '1px solid',
-          borderColor: 'primary.main',
-          borderOpacity: 0.1,
+          justifyContent: 'center',
+          minHeight: '100vh',
+          py: 8,
         }}
       >
-        <Typography 
-          component="h1" 
-          variant="h4" 
-          gutterBottom
-          sx={{ 
-            fontFamily: 'Giaza, serif',
-            color: 'primary.main',
-            letterSpacing: '-0.05em',
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: 0, // Square corners per brand guidelines
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'primary.main',
+            },
           }}
         >
-          {isLogin ? 'Welcome Back' : 'Create Your Account'}
-        </Typography>
-        
-        {isLogin ? (
-          renderLoginForm()
-        ) : (
-          <>
-            {registrationStep === 'userType' && renderUserTypeSelection()}
-            {registrationStep === 'basicInfo' && renderQuestionForm()}
-            {registrationStep === 'weddingInfo' && renderQuestionForm()}
-            {registrationStep === 'accountInfo' && renderQuestionForm()}
-            {registrationStep === 'confirmation' && renderConfirmation()}
-          </>
-        )}
-        
-        <Snackbar 
-          open={!!error} 
-          autoHideDuration={6000} 
-          onClose={() => setError(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
-            {error}
-          </Alert>
-        </Snackbar>
-        
-        <Snackbar 
-          open={!!successMessage} 
-          autoHideDuration={6000} 
-          onClose={() => setSuccessMessage(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert onClose={() => setSuccessMessage(null)} severity="success" sx={{ width: '100%' }}>
-            {successMessage}
-          </Alert>
-        </Snackbar>
-      </Paper>
+          <Typography 
+            component="h1" 
+            variant="h4" 
+            gutterBottom
+            sx={{ 
+              fontFamily: 'Giaza, serif',
+              color: 'primary.main',
+              letterSpacing: '-0.05em',
+            }}
+          >
+            {isLogin ? 'Welcome Back' : 'Create Your Account'}
+          </Typography>
+          
+          {isLogin ? (
+            renderLoginForm()
+          ) : (
+            <>
+              {registrationStep === 'userType' && renderUserTypeSelection()}
+              {registrationStep === 'basicInfo' && renderQuestionForm()}
+              {registrationStep === 'weddingInfo' && renderQuestionForm()}
+              {registrationStep === 'accountInfo' && renderQuestionForm()}
+              {registrationStep === 'confirmation' && renderConfirmation()}
+            </>
+          )}
+          
+          <Snackbar 
+            open={!!error} 
+            autoHideDuration={6000} 
+            onClose={() => setError(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+              {error}
+            </Alert>
+          </Snackbar>
+          
+          <Snackbar 
+            open={!!successMessage} 
+            autoHideDuration={6000} 
+            onClose={() => setSuccessMessage(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <Alert onClose={() => setSuccessMessage(null)} severity="success" sx={{ width: '100%' }}>
+              {successMessage}
+            </Alert>
+          </Snackbar>
+        </Paper>
+      </Box>
     </Container>
   );
 };
