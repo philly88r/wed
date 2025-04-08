@@ -37,65 +37,61 @@ interface PricingTier {
 
 const tiers: PricingTier[] = [
   {
-    title: 'Basic',
+    title: 'Essential Planning',
     price: {
-      monthly: 9.99,
-      yearly: 99,
+      monthly: 19,
+      yearly: 190,
     },
     description: 'Essential tools for planning your special day',
     features: [
-      'Guest List Management',
-      'Basic Timeline',
-      'Budget Tracking',
-      'Checklist Templates',
-      'Basic Vendor Directory',
-      'Email Support',
+      'Wedding Planning Video Tutorials (with journal prompts)',
+      'Address Book',
+      'Budget Calculator',
+      'Vendor Directory',
+      'Planning Timeline Calculator',
     ],
     buttonText: 'Start Planning',
     buttonVariant: 'outlined',
   },
   {
-    title: 'Premium',
+    title: 'Premium Planning',
     price: {
-      monthly: 19.99,
-      yearly: 199,
+      monthly: 89,
+      yearly: 890,
     },
-    description: 'Everything you need for a perfect wedding',
+    description: 'Minimum 4 months commitment',
     features: [
-      'All Basic Features',
-      'Advanced Timeline',
-      'Seating Arrangements',
-      'Custom Checklist Templates',
-      'Vendor Collaboration Tools',
-      'Priority Email Support',
-      'Wedding Website',
-      'Digital Invitations',
-      'Mobile App Access',
+      'Wedding Planning Video Tutorials (with journal prompts)',
+      'Address Book',
+      'Budget Calculator',
+      'Vendor Directory',
+      'Planning Timeline Calculator',
+      'Floor Plan + Seating Chart Creator',
+      'Quarterly Video Calls (60 mins) with an assigned Altare Planner',
     ],
     buttonText: 'Get Premium',
     buttonVariant: 'contained',
     highlighted: true,
   },
   {
-    title: 'Ultimate',
+    title: 'Luxury Planning',
     price: {
-      monthly: 29.99,
-      yearly: 299,
+      monthly: 199,
+      yearly: 1990,
     },
-    description: 'The complete luxury wedding planning suite',
+    description: 'Minimum 4 months commitment',
     features: [
-      'All Premium Features',
-      'Dedicated Wedding Planner',
-      'Virtual Planning Sessions',
-      'Premium Design Templates',
-      'Unlimited Storage',
-      'Priority 24/7 Support',
-      'Custom Domain',
-      'Social Media Integration',
-      'Analytics Dashboard',
-      'Vendor Negotiation Support',
+      'Wedding Planning Video Tutorials (with journal prompts)',
+      'Address Book',
+      'Budget Calculator',
+      'Vendor Directory',
+      'Planning Timeline Calculator',
+      'Floor Plan + Seating Chart Creator',
+      'Quarterly Video Calls (60 mins) with an assigned Altare Planner',
+      'Moodboard Inspo creation',
+      'Assigned Month Of Coordinator- 8 weeks before your wedding',
     ],
-    buttonText: 'Go Ultimate',
+    buttonText: 'Go Luxury',
     buttonVariant: 'outlined',
   },
 ];
@@ -132,6 +128,11 @@ export default function Pricing() {
     }
   };
 
+  const handleContactUs = () => {
+    // Navigate to contact page or open modal
+    navigate('/contact', { state: { inquiry: 'Day-of Coordinator' } });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-[#F9F9FF]">
       {/* Decorative elements */}
@@ -153,6 +154,7 @@ export default function Pricing() {
               fontWeight: 600,
               fontFamily: "'Giaza', serif",
               mb: 2,
+              letterSpacing: '-0.05em',
             }}
           >
             Choose Your Perfect Plan
@@ -265,6 +267,7 @@ export default function Pricing() {
                         color: '#054697',
                         fontFamily: "'Giaza', serif",
                         mb: 3,
+                        letterSpacing: '-0.05em',
                       }}
                     >
                       {tier.title}
@@ -368,6 +371,135 @@ export default function Pricing() {
             </Grid>
           ))}
         </Grid>
+
+        {/* Day-of Coordinator Card */}
+        <Box mt={8}>
+          <Card
+            sx={{
+              position: 'relative',
+              transition: 'all 0.3s ease-in-out',
+              borderRadius: 0,
+              boxShadow: 'none',
+              border: '1px solid #B8BDD7',
+              background: 'linear-gradient(135deg, rgba(255, 232, 228, 0.3) 0%, rgba(184, 189, 215, 0.2) 100%)',
+              overflow: 'hidden',
+              '&:hover': {
+                transform: 'translateY(-8px)',
+                boxShadow: '0 10px 30px rgba(5, 70, 151, 0.1)',
+              },
+            }}
+          >
+            <CardContent sx={{ p: 4 }}>
+              <Grid container spacing={4} alignItems="center">
+                <Grid item xs={12} md={7}>
+                  <Typography
+                    component="h2"
+                    variant="h3"
+                    sx={{
+                      color: '#054697',
+                      fontFamily: "'Giaza', serif",
+                      mb: 2,
+                      letterSpacing: '-0.05em',
+                    }}
+                  >
+                    Day-of Coordinator
+                  </Typography>
+                  
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: '#054697',
+                      opacity: 0.8,
+                      fontFamily: "'Poppins', sans-serif",
+                      fontWeight: 300,
+                      mb: 3,
+                    }}
+                  >
+                    Custom pricing based on your specific wedding needs
+                  </Typography>
+                  
+                  <List>
+                    <ListItem sx={{ py: 1, px: 0 }}>
+                      <ListItemIcon sx={{ minWidth: 36 }}>
+                        <CheckIcon sx={{ color: '#054697' }} />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Professional day-of coordination services"
+                        sx={{
+                          '& .MuiListItemText-primary': {
+                            color: '#054697',
+                            opacity: 0.8,
+                            fontFamily: "'Poppins', sans-serif",
+                            fontWeight: 300,
+                          }
+                        }}
+                      />
+                    </ListItem>
+                    <ListItem sx={{ py: 1, px: 0 }}>
+                      <ListItemIcon sx={{ minWidth: 36 }}>
+                        <CheckIcon sx={{ color: '#054697' }} />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Personalized timeline and vendor management"
+                        sx={{
+                          '& .MuiListItemText-primary': {
+                            color: '#054697',
+                            opacity: 0.8,
+                            fontFamily: "'Poppins', sans-serif",
+                            fontWeight: 300,
+                          }
+                        }}
+                      />
+                    </ListItem>
+                    <ListItem sx={{ py: 1, px: 0 }}>
+                      <ListItemIcon sx={{ minWidth: 36 }}>
+                        <CheckIcon sx={{ color: '#054697' }} />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="On-site management of all wedding day details"
+                        sx={{
+                          '& .MuiListItemText-primary': {
+                            color: '#054697',
+                            opacity: 0.8,
+                            fontFamily: "'Poppins', sans-serif",
+                            fontWeight: 300,
+                          }
+                        }}
+                      />
+                    </ListItem>
+                  </List>
+                </Grid>
+                
+                <Grid item xs={12} md={5} sx={{ textAlign: { xs: 'center', md: 'right' } }}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    onClick={handleContactUs}
+                    sx={{
+                      py: 2,
+                      px: 4,
+                      fontSize: '1rem',
+                      fontFamily: "'Poppins', sans-serif",
+                      fontWeight: 500,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      borderRadius: 0,
+                      backgroundColor: '#FFE8E4',
+                      color: '#054697',
+                      border: '1px solid #FFE8E4',
+                      '&:hover': {
+                        backgroundColor: '#FFD5CC',
+                        border: '1px solid #FFE8E4',
+                      },
+                    }}
+                  >
+                    Contact For Details
+                  </Button>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Box>
 
         {/* Contact Section */}
         <Box mt={12} textAlign="center" className="relative">
