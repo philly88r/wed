@@ -26,6 +26,7 @@ import Services from './pages/Services';
 import Videos from './pages/Videos';
 import AddVendor from './pages/admin/add-vendor';
 import VisionBoard from './pages/VisionBoard';
+import Dashboard from './pages/Dashboard';
 // import Profile from './pages/Profile';
 
 // Define app routes to check against
@@ -97,7 +98,7 @@ function AppContent() {
         />
         
         {/* App routes - EXACT paths first */}
-        <Route path="/" element={<Services />} />
+        <Route path="/" element={<Dashboard />} />
         <Route path="/service-menu" element={<ServiceMenuWithTheme />} />
         <Route path="/seating-chart" element={<SeatingChart />} />
         <Route path="/budget" element={<Budget />} />
