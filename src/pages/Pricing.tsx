@@ -103,8 +103,8 @@ export default function Pricing() {
   const navigate = useNavigate();
   
   const handleSelectPlan = (plan: string) => {
-    // In testing mode, redirect to profile page regardless of plan selected
-    navigate('/profile', { state: { selectedPlan: plan } });
+    // In testing mode, redirect to dashboard page regardless of plan selected
+    navigate('/', { state: { selectedPlan: plan } });
   };
 
   return (

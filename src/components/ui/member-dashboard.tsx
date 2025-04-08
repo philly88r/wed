@@ -1,6 +1,6 @@
-import { useState, useRef } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@mui/material";
+import { useState, useRef, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Button, Snackbar, Alert } from "@mui/material";
 import { 
   Video, 
   Users, 
@@ -34,8 +34,26 @@ interface Task {
 }
 
 export function MemberDashboard() {
+  const location = useLocation();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [notification, setNotification] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  
+  // Check if a plan was selected from the pricing page
+  useEffect(() => {
+    if (location.state && location.state.selectedPlan) {
+      setSelectedPlan(location.state.selectedPlan);
+      setNotification(`Thank you for selecting the ${location.state.selectedPlan} plan!`);
+      
+      // Clear the location state after 5 seconds to prevent the notification from showing again on refresh
+      const timer = setTimeout(() => {
+        window.history.replaceState({}, document.title);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location]);
   
   // Wedding date calculation
   const weddingDate = new Date("2025-10-15");
@@ -140,6 +158,14 @@ export function MemberDashboard() {
         {/* Decorative elements */}
         <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-[#FFE8E4]/20 blur-3xl"></div>
         <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-[#B8BDD7]/10 blur-3xl"></div>
+        
+        {selectedPlan && (
+          <div className="bg-[#FFE8E4] p-4 text-[#054697] text-center">
+            <p className="font-medium">
+              Thank you for choosing our {selectedPlan} plan! Your subscription has been activated.
+            </p>
+          </div>
+        )}
         
         <div className="relative flex flex-col md:flex-row items-center justify-between gap-8 bg-gradient-to-r from-[#FFE8E4]/30 to-[#FFE8E4]/10 p-8 md:p-10 rounded-none shadow-sm">
           {/* AI Wedding Planner in the corner */}
@@ -299,6 +325,29 @@ export function MemberDashboard() {
           <p className="mt-6 text-[#054697]/80">Your special day is approaching! Make sure to check your tasks regularly.</p>
         </div>
       </div>
+      
+      {/* Snackbar notification for plan selection */}
+      <Snackbar
+        open={!!notification}
+        autoHideDuration={5000}
+        onClose={() => setNotification(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setNotification(null)} 
+          severity="success" 
+          sx={{ 
+            width: '100%',
+            backgroundColor: '#FFE8E4',
+            color: '#054697',
+            '& .MuiAlert-icon': {
+              color: '#054697',
+            },
+          }}
+        >
+          {notification}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }
