@@ -92,14 +92,6 @@ function MemberDashboard() {
       featured: true
     },
     {
-      title: "Wedding Planning Checklist Calculator",
-      description: "Never miss a planning milestone",
-      icon: <FileText className="w-6 h-6" />,
-      href: "/checklist-demo",
-      category: "planning",
-      featured: true
-    },
-    {
       title: "Wedding Checklist",
       description: "Comprehensive quarter-by-quarter planning guide",
       icon: <FileText className="w-6 h-6" />,
