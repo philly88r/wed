@@ -1402,7 +1402,16 @@ export default function SeatingChart() {
     <DragDropContext onDragEnd={onDragEnd}>
       <Container maxWidth="xl" sx={{ py: 4, height: 'calc(100vh - 64px)' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-          <Typography variant="h4">$ Seating Chart $</Typography>
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontFamily: "'Giaza', serif", 
+              color: 'primary.main',
+              letterSpacing: '-0.05em',
+            }}
+          >
+            Seating Chart
+          </Typography>
           <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
             {/* Old button hidden since the new one works better */}
             {false && (
@@ -1427,6 +1436,16 @@ export default function SeatingChart() {
             
             <Button
               variant="outlined"
+              sx={{
+                borderColor: 'accent.rose',
+                color: 'primary.main',
+                '&:hover': {
+                  borderColor: '#FFD5CC',
+                  backgroundColor: 'rgba(255, 232, 228, 0.1)',
+                },
+                textTransform: 'uppercase',
+                fontWeight: 'medium',
+              }}
               onClick={() => setGuestDialogOpen(true)}
               startIcon={<PersonAddIcon />}
             >
@@ -1443,10 +1462,12 @@ export default function SeatingChart() {
               width: 'calc(100% - 320px)', 
               position: 'relative', 
               overflow: 'hidden',
-              backgroundColor: '#f5f5f5',
-              backgroundImage: `linear-gradient(rgba(5, 70, 151, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(5, 70, 151, 0.1) 1px, transparent 1px)`,
+              backgroundColor: '#f9f9ff',
+              backgroundImage: `linear-gradient(rgba(5, 70, 151, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(5, 70, 151, 0.05) 1px, transparent 1px)`,
               backgroundSize: '20px 20px',
               transition: 'all 0.3s ease',
+              borderRadius: 0, // Square corners per brand guidelines
+              border: '1px solid rgba(184, 189, 215, 0.3)',
             }}
             ref={chartAreaRef}
           >
@@ -1474,7 +1495,29 @@ export default function SeatingChart() {
           </Paper>
           
           {/* Guest list sidebar */}
-          <Paper sx={{ width: 300, ml: 2, p: 2, height: '100%', overflow: 'auto' }}>
+          <Paper 
+            sx={{ 
+              width: 300, 
+              ml: 2, 
+              p: 2, 
+              height: '100%', 
+              overflow: 'auto',
+              borderRadius: 0, // Square corners per brand guidelines
+              border: '1px solid rgba(184, 189, 215, 0.3)',
+              backgroundColor: '#fff',
+            }}
+          >
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  mb: 2, 
+                  fontFamily: "'Giaza', serif",
+                  color: 'primary.main',
+                  letterSpacing: '-0.05em',
+                }}
+              >
+                Guest List
+              </Typography>
               <GuestList 
                 guests={guests} 
                 onAddGuest={handleAddGuest}
@@ -1488,26 +1531,63 @@ export default function SeatingChart() {
         <EditTableDialog />
 
         {/* Delete confirmation dialog */}
-        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-          <DialogTitle>Delete Table</DialogTitle>
+        <Dialog 
+          open={deleteDialogOpen} 
+          onClose={() => setDeleteDialogOpen(false)}
+          PaperProps={{
+            sx: {
+              borderRadius: 0, // Square corners per brand guidelines
+              p: 1,
+            }
+          }}
+        >
+          <DialogTitle sx={{ color: 'primary.main', fontFamily: "'Giaza', serif" }}>Delete Table</DialogTitle>
           <DialogContent>
-            <Typography>
+            <Typography sx={{ color: 'primary.main', opacity: 0.8 }}>
               Are you sure you want to delete this table? This action cannot be undone.
             </Typography>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleDeleteTable} color="error">
+            <Button 
+              onClick={() => setDeleteDialogOpen(false)}
+              sx={{
+                color: 'primary.main',
+                '&:hover': {
+                  backgroundColor: 'rgba(184, 189, 215, 0.1)',
+                },
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleDeleteTable} 
+              sx={{
+                backgroundColor: 'accent.rose',
+                color: 'primary.main',
+                '&:hover': {
+                  backgroundColor: '#FFD5CC',
+                },
+              }}
+            >
               Delete
             </Button>
           </DialogActions>
         </Dialog>
 
         {/* Login dialog */}
-        <Dialog open={loginDialogOpen} onClose={() => setLoginDialogOpen(false)}>
-          <DialogTitle>Login Required</DialogTitle>
+        <Dialog 
+          open={loginDialogOpen} 
+          onClose={() => setLoginDialogOpen(false)}
+          PaperProps={{
+            sx: {
+              borderRadius: 0, // Square corners per brand guidelines
+              p: 1,
+            }
+          }}
+        >
+          <DialogTitle sx={{ color: 'primary.main', fontFamily: "'Giaza', serif" }}>Login Required</DialogTitle>
           <DialogContent sx={{ minWidth: 400 }}>
-            <Typography variant="body2" sx={{ mb: 2 }}>
+            <Typography variant="body2" sx={{ mb: 2, color: 'primary.main', opacity: 0.8 }}>
               You need to be logged in to manage seating charts.
             </Typography>
             <TextField
@@ -1517,6 +1597,25 @@ export default function SeatingChart() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               margin="normal"
+              sx={{
+                '& .MuiInputLabel-root': {
+                  color: 'primary.main',
+                  opacity: 0.8,
+                },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: 'primary.main',
+                    opacity: 0.3,
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'primary.main',
+                    opacity: 0.5,
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'primary.main',
+                  },
+                },
+              }}
             />
             <TextField
               fullWidth
@@ -1525,14 +1624,53 @@ export default function SeatingChart() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               margin="normal"
+              sx={{
+                '& .MuiInputLabel-root': {
+                  color: 'primary.main',
+                  opacity: 0.8,
+                },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: 'primary.main',
+                    opacity: 0.3,
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'primary.main',
+                    opacity: 0.5,
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'primary.main',
+                  },
+                },
+              }}
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setLoginDialogOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={() => setLoginDialogOpen(false)}
+              sx={{
+                color: 'primary.main',
+                '&:hover': {
+                  backgroundColor: 'rgba(184, 189, 215, 0.1)',
+                },
+              }}
+            >
+              Cancel
+            </Button>
             <Button 
               onClick={handleLogin} 
-              variant="contained"
               disabled={!email || !password}
+              sx={{
+                backgroundColor: 'accent.rose',
+                color: 'primary.main',
+                '&:hover': {
+                  backgroundColor: '#FFD5CC',
+                },
+                '&.Mui-disabled': {
+                  color: 'primary.main',
+                  opacity: 0.5,
+                },
+              }}
             >
               Login
             </Button>
@@ -1542,8 +1680,19 @@ export default function SeatingChart() {
 
 
         {/* Guest Dialog */}
-        <Dialog open={guestDialogOpen} onClose={() => setGuestDialogOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Add Guest</DialogTitle>
+        <Dialog 
+          open={guestDialogOpen} 
+          onClose={() => setGuestDialogOpen(false)} 
+          maxWidth="sm" 
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 0, // Square corners per brand guidelines
+              p: 1,
+            }
+          }}
+        >
+          <DialogTitle sx={{ color: 'primary.main', fontFamily: "'Giaza', serif" }}>Add Guest</DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
@@ -1551,16 +1700,77 @@ export default function SeatingChart() {
               label="Guest Name"
               fullWidth
               variant="outlined"
-              sx={{ mb: 2, mt: 1 }}
+              sx={{ 
+                mb: 2, 
+                mt: 1,
+                '& .MuiInputLabel-root': {
+                  color: 'primary.main',
+                  opacity: 0.8,
+                },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: 'primary.main',
+                    opacity: 0.3,
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'primary.main',
+                    opacity: 0.5,
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'primary.main',
+                  },
+                },
+              }}
             />
             <TextField
               margin="dense"
               label="Email (Optional)"
               fullWidth
               variant="outlined"
-              sx={{ mb: 2 }}
+              sx={{ 
+                mb: 2,
+                '& .MuiInputLabel-root': {
+                  color: 'primary.main',
+                  opacity: 0.8,
+                },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: 'primary.main',
+                    opacity: 0.3,
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'primary.main',
+                    opacity: 0.5,
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'primary.main',
+                  },
+                },
+              }}
             />
-            <FormControl fullWidth sx={{ mb: 2 }}>
+            <FormControl 
+              fullWidth 
+              sx={{ 
+                mb: 2,
+                '& .MuiInputLabel-root': {
+                  color: 'primary.main',
+                  opacity: 0.8,
+                },
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: 'primary.main',
+                    opacity: 0.3,
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'primary.main',
+                    opacity: 0.5,
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'primary.main',
+                  },
+                },
+              }}
+            >
               <InputLabel>RSVP Status</InputLabel>
               <Select
                 label="RSVP Status"
@@ -1573,15 +1783,34 @@ export default function SeatingChart() {
             </FormControl>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setGuestDialogOpen(false)}>Cancel</Button>
-            <Button variant="contained" onClick={() => {
-              // Add guest logic would go here
-              setSnackbar({
-                open: true,
-                message: 'Guest added successfully',
-                severity: 'success'
-              });
-            }}>
+            <Button 
+              onClick={() => setGuestDialogOpen(false)}
+              sx={{
+                color: 'primary.main',
+                '&:hover': {
+                  backgroundColor: 'rgba(184, 189, 215, 0.1)',
+                },
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                // Add guest logic would go here
+                setSnackbar({
+                  open: true,
+                  message: 'Guest added successfully',
+                  severity: 'success'
+                });
+              }}
+              sx={{
+                backgroundColor: 'accent.rose',
+                color: 'primary.main',
+                '&:hover': {
+                  backgroundColor: '#FFD5CC',
+                },
+              }}
+            >
               Add Guest
             </Button>
           </DialogActions>
@@ -1593,8 +1822,14 @@ export default function SeatingChart() {
           onClose={() => setAssignGuestDialogOpen(false)}
           maxWidth="sm"
           fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 0, // Square corners per brand guidelines
+              p: 1,
+            }
+          }}
         >
-          <DialogTitle>
+          <DialogTitle sx={{ color: 'primary.main', fontFamily: "'Giaza', serif" }}>
             Assign Guest to Seat {selectedChair?.position}
           </DialogTitle>
           <DialogContent>

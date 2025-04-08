@@ -326,7 +326,7 @@ export function MemberDashboard() {
           </div>
 
           <div className="flex flex-col gap-3 w-full md:w-2/3">
-            <h1 className="text-4xl md:text-5xl font-semibold text-[#054697] font-['Giaza',serif] tracking-tight">Welcome, {userName}</h1>
+            <h1 className="text-4xl md:text-5xl font-['Giaza',serif] text-[#054697] mb-3">Welcome, {userName}</h1>
             <p className="text-[#054697]/80 font-light text-xl">Your wedding is in <span className="font-medium">{daysUntilWedding} days</span> ({formattedWeddingDate})</p>
             
             {/* Quick Stats */}
@@ -408,7 +408,7 @@ export function MemberDashboard() {
                   <div className="w-12 h-12 flex items-center justify-center bg-[#FFE8E4]/30 text-[#054697] group-hover:bg-[#FFE8E4]/60 transition-colors duration-300">
                     {tool.icon}
                   </div>
-                  <h3 className="ml-4 text-xl font-medium text-[#054697]">{tool.title}</h3>
+                  <h3 className="ml-4 text-xl font-['Giaza',serif] font-medium text-[#054697]">{tool.title}</h3>
                 </div>
                 
                 <p className="text-[#054697]/80 mb-6 flex-grow">{tool.description}</p>
@@ -445,7 +445,7 @@ export function MemberDashboard() {
                   className="bg-white border border-[#B8BDD7]/20 p-5 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 hover:border-[#B8BDD7]/40"
                 >
                   <div className="flex justify-between items-start mb-3">
-                    <h3 className="text-lg font-medium text-[#054697]">{task.title}</h3>
+                    <h3 className="text-lg font-['Giaza',serif] font-medium text-[#054697]">{task.title}</h3>
                     <span className="bg-[#FFE8E4]/50 text-[#054697] text-xs px-2 py-1">
                       {task.category}
                     </span>
