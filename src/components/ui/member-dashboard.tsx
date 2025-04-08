@@ -26,6 +26,13 @@ function MemberDashboard() {
   const daysUntilWedding = 187;
   const formattedWeddingDate = format(weddingDate, 'MMMM d, yyyy');
   
+  // Define upcoming tasks
+  const upcomingTasks = [
+    { id: 1, title: "Book venue tour", dueDate: "Next week" },
+    { id: 2, title: "Meet with photographer", dueDate: "In 2 weeks" },
+    { id: 3, title: "Send save-the-dates", dueDate: "This month" }
+  ];
+  
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
