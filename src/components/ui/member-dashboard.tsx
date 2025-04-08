@@ -1,10 +1,9 @@
-import { UploadCloud, Users, DollarSign, Map, FileText, Video, Calendar, Settings, PenTool, Heart, Clock, Bell, Camera, MessageSquare, ArrowRight } from "lucide-react";
+import { UploadCloud, Users, DollarSign, Map, FileText, Video, Calendar, Settings, Camera, MessageSquare } from "lucide-react";
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import * as React from 'react';
-import { useTheme } from "@mui/material/styles";
-import { Typography, Box, Container, Grid, Card, CardContent, Button, Avatar, Paper } from "@mui/material";
+import { Button } from "@mui/material";
 
 interface DashboardTool {
   title: string;
@@ -16,7 +15,7 @@ interface DashboardTool {
 }
 
 function MemberDashboard() {
-  const theme = useTheme();
+  // Remove unused theme variable
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -69,92 +68,76 @@ function MemberDashboard() {
   // Define dashboard tools
   const dashboardTools: DashboardTool[] = [
     {
-      title: "Guest Directory",
-      description: "Manage your guest contact information",
+      title: "Wedding Planning Video Tutorials",
+      description: "Step-by-step video guides for planning your perfect day",
+      icon: <Video className="w-6 h-6" />,
+      href: "/tutorials",
+      category: "planning",
+      featured: true
+    },
+    {
+      title: "Address Book",
+      description: "Organize your guest addresses beautifully",
       icon: <Users className="w-6 h-6" />,
       href: "/directory",
       category: "essential",
       featured: true
     },
     {
-      title: "Video Tutorials",
-      description: "Learn how to use our wedding planning tools",
-      icon: <FileText className="w-6 h-6" />,
-      href: "/tutorials",
-      category: "planning"
-    },
-    {
-      title: "Seating Chart",
-      description: "Design your reception seating arrangement with grid layout",
-      icon: <Map className="w-6 h-6" />,
-      href: "/seating-chart",
-      category: "management"
-    },
-    {
       title: "Budget Calculator",
-      description: "Track expenses and manage your wedding budget",
+      description: "Track expenses and stay within your budget",
       icon: <DollarSign className="w-6 h-6" />,
       href: "/budget",
       category: "management",
       featured: true
     },
     {
-      title: "Checklist",
-      description: "Stay on track with wedding planning tasks",
+      title: "Wedding Planning Checklist Calculator",
+      description: "Never miss a planning milestone",
       icon: <FileText className="w-6 h-6" />,
-      href: "/checklist",
+      href: "/checklist-demo",
       category: "planning",
       featured: true
     },
     {
-      title: "Timeline",
-      description: "Plan and manage your wedding day schedule",
-      icon: <Calendar className="w-6 h-6" />,
-      href: "/timeline",
-      category: "planning"
-    },
-    {
-      title: "Vendor Directory",
-      description: "Find and manage your wedding vendors",
-      icon: <Settings className="w-6 h-6" />,
-      href: "/vendors",
-      category: "essential"
-    },
-    {
-      title: "Moodboard Creator",
-      description: "Design and visualize your wedding aesthetic",
-      icon: <PenTool className="w-6 h-6" />,
-      href: "/moodboard",
-      category: "design",
+      title: "Wedding Checklist",
+      description: "Comprehensive quarter-by-quarter planning guide",
+      icon: <FileText className="w-6 h-6" />,
+      href: "/wedding-checklist",
+      category: "planning",
       featured: true
     },
     {
-      title: "Wedding Journal",
-      description: "Document your wedding planning journey",
-      icon: <Heart className="w-6 h-6" />,
-      href: "/journal",
-      category: "design"
+      title: "Vendor Directory",
+      description: "Find trusted vendors in your area",
+      icon: <Settings className="w-6 h-6" />,
+      href: "/vendors",
+      category: "essential",
+      featured: true
     },
     {
-      title: "Countdown Timer",
-      description: "Track days until your special day",
-      icon: <Clock className="w-6 h-6" />,
-      href: "/countdown",
-      category: "essential"
+      title: "Day Of Timeline Calculator",
+      description: "Create the perfect wedding day schedule",
+      icon: <Calendar className="w-6 h-6" />,
+      href: "/timeline-creator",
+      category: "planning",
+      featured: true
     },
     {
-      title: "Notifications",
-      description: "Stay updated with important reminders",
-      icon: <Bell className="w-6 h-6" />,
-      href: "/notifications",
-      category: "management"
+      title: "Floor Plan + Seating Chart Creator",
+      description: "Design your perfect reception layout",
+      icon: <Map className="w-6 h-6" />,
+      href: "/seating-chart",
+      category: "management",
+      featured: true
     },
     {
-      title: "Photo Gallery",
-      description: "Collect and organize wedding photos",
+      title: "Moodboard",
+      description: "Visualize your dream wedding aesthetic",
       icon: <Camera className="w-6 h-6" />,
-      href: "/gallery",
-      category: "design"
+      href: "/mood-board",
+      category: "design",
+      featured: true
     }
   ];
 
@@ -304,7 +287,6 @@ function MemberDashboard() {
                           className="w-full mt-auto border border-[#FFE8E4] text-[#054697] py-2 text-sm font-medium hover:bg-[#FFE8E4]/10 transition-colors uppercase flex items-center justify-center"
                         >
                           <span>Open</span>
-                          <ArrowRight className="w-4 h-4 ml-2" />
                         </Link>
                       </div>
                     </div>
