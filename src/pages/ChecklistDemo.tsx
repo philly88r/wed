@@ -113,6 +113,8 @@ export default function ChecklistDemo() {
     }
   };
 
+  // This function is used for styling reference in comments
+  /* 
   const getStatusClass = (status: TimelineItem['status']) => {
     switch (status) {
       case 'COMPLETED':
@@ -123,6 +125,7 @@ export default function ChecklistDemo() {
         return 'bg-gray-100 border-gray-300 text-gray-800';
     }
   };
+  */
 
   // Group items by quarter and deadline
   const groupedItems: Record<number, Record<string, CategorizedTimelineItem[]>> = checklist.reduce<Record<number, Record<string, CategorizedTimelineItem[]>>>((acc, item) => {
@@ -162,48 +165,97 @@ export default function ChecklistDemo() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ mb: 6, textAlign: 'center' }}>
+      {/* Header section with improved styling */}
+      <Box 
+        sx={{ 
+          mb: 6, 
+          position: 'relative',
+          pb: 2,
+          borderBottom: '1px solid rgba(5, 70, 151, 0.1)'
+        }}
+      >
         <Typography 
-          variant="h2" 
+          variant="h4" 
+          component="h1" 
           sx={{ 
-            fontFamily: "'Playfair Display', serif",
-            mb: 2,
-            background: 'linear-gradient(45deg, #FF6B6B 30%, #FF8E53 90%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            fontFamily: "'Giaza', serif", 
+            color: '#054697',
+            letterSpacing: '-0.05em',
+            mb: 1
           }}
         >
-          Your Wedding Journey
+          Wedding Checklist
         </Typography>
         <Typography 
-          variant="h5" 
+          variant="body1" 
           sx={{ 
-            fontFamily: "'Lato', sans-serif",
+            color: '#054697', 
+            opacity: 0.8,
+            fontFamily: 'Poppins, sans-serif',
             fontWeight: 300,
-            mb: 4
+            mb: 2
           }}
         >
-          A beautiful path to your special day
+          Track your wedding planning progress with our comprehensive checklist
         </Typography>
+        
+        {/* Accent line at the top */}
+        <Box 
+          sx={{ 
+            position: 'absolute', 
+            top: -8, 
+            left: 0, 
+            width: '100%', 
+            height: '2px', 
+            background: 'linear-gradient(to right, #054697, #E8B4B4)' 
+          }} 
+        />
       </Box>
-      
-      {/* Dashboard */}
+
+      {/* Progress section with improved styling */}
       <Paper 
-        elevation={3} 
+        elevation={0} 
         sx={{ 
           p: 4, 
-          mb: 4, 
-          borderRadius: '16px',
-          background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
+          mb: 6, 
+          borderRadius: 0,
+          border: '1px solid rgba(5, 70, 151, 0.1)',
+          boxShadow: '0 4px 20px rgba(5, 70, 151, 0.05)',
+          position: 'relative',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '4px',
+            height: '100%',
+            backgroundColor: '#054697',
+          }
         }}
       >
         <Grid container spacing={4}>
           <Grid item xs={12} md={6}>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="h4" sx={{ fontFamily: "'Playfair Display', serif", mb: 1 }}>
+              <Typography 
+                variant="h4" 
+                sx={{ 
+                  fontFamily: "'Giaza', serif", 
+                  color: '#054697',
+                  letterSpacing: '-0.05em',
+                  mb: 1
+                }}
+              >
                 {weddingDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
               </Typography>
-              <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+              <Typography 
+                variant="body1" 
+                sx={{ 
+                  color: '#054697', 
+                  opacity: 0.8,
+                  fontFamily: 'Poppins, sans-serif',
+                  fontWeight: 300
+                }}
+              >
                 Your wedding date
               </Typography>
             </Box>
@@ -221,14 +273,15 @@ export default function ChecklistDemo() {
               }}
               style={{
                 padding: '8px 16px',
-                background: 'linear-gradient(45deg, #9c27b0 30%, #d81b60 90%)',
-                color: 'white',
+                backgroundColor: '#E8B4B4',
+                color: '#054697',
                 border: 'none',
-                borderRadius: '8px',
                 cursor: 'pointer',
-                boxShadow: '0 3px 5px 2px rgba(156, 39, 176, .3)',
                 transition: 'all 0.3s ease',
-                fontWeight: 'bold'
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 400,
+                textTransform: 'uppercase',
+                borderRadius: 0
               }}
             >
               Change Wedding Date
@@ -236,15 +289,41 @@ export default function ChecklistDemo() {
           </Grid>
           <Grid item xs={12} md={6}>
             <Box sx={{ mb: 2 }}>
-              <Typography variant="h4" sx={{ fontFamily: "'Playfair Display', serif", mb: 1 }}>
+              <Typography 
+                variant="h4" 
+                sx={{ 
+                  fontFamily: "'Giaza', serif", 
+                  color: '#054697',
+                  letterSpacing: '-0.05em',
+                  mb: 1
+                }}
+              >
                 {daysLeft} days left
               </Typography>
-              <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2 }}>
+              <Typography 
+                variant="body1" 
+                sx={{ 
+                  color: '#054697', 
+                  opacity: 0.8,
+                  fontFamily: 'Poppins, sans-serif',
+                  fontWeight: 300,
+                  mb: 2
+                }}
+              >
                 Until your special day
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body1" sx={{ mr: 2 }}>
+              <Typography 
+                variant="body1" 
+                sx={{ 
+                  mr: 2,
+                  color: '#054697', 
+                  opacity: 0.8,
+                  fontFamily: 'Poppins, sans-serif',
+                  fontWeight: 300
+                }}
+              >
                 {progress}% complete
               </Typography>
               <Box sx={{ flexGrow: 1 }}>
@@ -252,51 +331,66 @@ export default function ChecklistDemo() {
                   variant="determinate" 
                   value={progress} 
                   sx={{ 
-                    height: 10, 
-                    borderRadius: 5,
-                    backgroundColor: 'rgba(0,0,0,0.1)',
+                    height: 8, 
+                    borderRadius: 0,
+                    backgroundColor: 'rgba(5, 70, 151, 0.1)',
                     '& .MuiLinearProgress-bar': {
-                      background: 'linear-gradient(45deg, #9c27b0 30%, #d81b60 90%)',
-                      borderRadius: 5
+                      backgroundColor: '#E8B4B4',
                     }
-                  }} 
+                  }}
                 />
               </Box>
             </Box>
           </Grid>
         </Grid>
       </Paper>
-      
-      {/* Category filters */}
+
+      {/* Category filter section with improved styling */}
       <Box sx={{ mb: 4, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
         <Chip 
           label="All Categories" 
-          onClick={() => setActiveCategory(null)}
-          color={activeCategory === null ? "primary" : "default"}
+          onClick={() => setActiveCategory('')}
           sx={{ 
-            fontWeight: activeCategory === null ? 'bold' : 'normal',
-            '&.MuiChip-colorPrimary': {
-              background: 'linear-gradient(45deg, #9c27b0 30%, #d81b60 90%)',
-            }
+            backgroundColor: activeCategory === '' ? '#E8B4B4' : 'transparent',
+            color: '#054697',
+            border: '1px solid #E8B4B4',
+            borderRadius: 0,
+            '&:hover': {
+              backgroundColor: activeCategory === '' ? '#E8B4B4' : 'rgba(232, 180, 180, 0.1)',
+            },
+            fontFamily: 'Poppins, sans-serif',
+            fontWeight: 400,
+            textTransform: 'uppercase',
+            fontSize: '0.75rem'
           }}
         />
-        {categories.map(category => (
+        
+        {categories.map((category) => (
           <Chip 
             key={category}
             icon={categoryIcons[category] as React.ReactElement}
-            label={category} 
-            onClick={() => setActiveCategory(category)}
-            color={activeCategory === category ? "primary" : "default"}
+            label={category}
+            onClick={() => setActiveCategory(category === activeCategory ? '' : category)}
             sx={{ 
-              fontWeight: activeCategory === category ? 'bold' : 'normal',
-              '&.MuiChip-colorPrimary': {
-                background: 'linear-gradient(45deg, #9c27b0 30%, #d81b60 90%)',
-              }
+              backgroundColor: category === activeCategory ? '#E8B4B4' : 'transparent',
+              color: '#054697',
+              border: '1px solid #E8B4B4',
+              borderRadius: 0,
+              '&:hover': {
+                backgroundColor: category === activeCategory ? '#E8B4B4' : 'rgba(232, 180, 180, 0.1)',
+              },
+              '& .MuiChip-icon': {
+                color: '#054697',
+              },
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 400,
+              textTransform: 'uppercase',
+              fontSize: '0.75rem'
             }}
           />
         ))}
       </Box>
-      
+
       {/* Quarter navigation */}
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center', gap: 2 }}>
         {[1, 2, 3, 4].map(quarter => (
@@ -305,34 +399,42 @@ export default function ChecklistDemo() {
             onClick={() => setActiveQuarter(quarter)}
             style={{
               padding: '8px 16px',
-              background: activeQuarter === quarter 
-                ? 'linear-gradient(45deg, #9c27b0 30%, #d81b60 90%)' 
-                : '#f0f0f0',
-              color: activeQuarter === quarter ? 'white' : '#333',
+              backgroundColor: activeQuarter === quarter ? '#E8B4B4' : '#f0f0f0',
+              color: activeQuarter === quarter ? '#054697' : '#054697',
+              opacity: activeQuarter === quarter ? 1 : 0.8,
               border: 'none',
-              borderRadius: '8px',
+              borderRadius: 0,
               cursor: 'pointer',
-              boxShadow: activeQuarter === quarter 
-                ? '0 3px 5px 2px rgba(156, 39, 176, .3)'
-                : 'none',
               transition: 'all 0.3s ease',
-              fontWeight: 'bold'
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 400,
+              textTransform: 'uppercase'
             }}
           >
             Quarter {quarter}
           </button>
         ))}
       </Box>
-      
+        
       {/* Timeline */}
       <Paper 
-        elevation={3} 
+        elevation={0} 
         sx={{ 
           p: 4, 
           mb: 4, 
-          borderRadius: '16px',
-          background: 'white',
-          transition: 'all 0.3s ease',
+          borderRadius: 0,
+          border: '1px solid rgba(5, 70, 151, 0.1)',
+          boxShadow: '0 4px 20px rgba(5, 70, 151, 0.05)',
+          position: 'relative',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '4px',
+            height: '100%',
+            backgroundColor: '#054697',
+          }
         }}
       >
         {Object.entries(groupedItems[activeQuarter] || {})
@@ -345,8 +447,11 @@ export default function ChecklistDemo() {
                   mb: 2, 
                   pb: 1, 
                   borderBottom: '2px solid',
-                  borderImage: 'linear-gradient(45deg, #9c27b0 30%, #d81b60 90%) 1',
-                  display: 'inline-block'
+                  borderImage: 'linear-gradient(45deg, #054697, #E8B4B4) 1',
+                  display: 'inline-block',
+                  fontFamily: "'Giaza', serif",
+                  color: '#054697',
+                  letterSpacing: '-0.05em'
                 }}
               >
                 {deadline} Deadline
@@ -359,11 +464,18 @@ export default function ChecklistDemo() {
                       sx={{ 
                         p: 2, 
                         height: '100%',
-                        borderRadius: '12px',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                          transform: 'translateY(-5px)',
-                          boxShadow: '0 10px 20px rgba(0,0,0,0.1)'
+                        borderRadius: 0,
+                        border: '1px solid rgba(5, 70, 151, 0.1)',
+                        boxShadow: '0 4px 20px rgba(5, 70, 151, 0.05)',
+                        position: 'relative',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '4px',
+                          height: '100%',
+                          backgroundColor: '#054697',
                         }
                       }}
                     >
@@ -373,8 +485,20 @@ export default function ChecklistDemo() {
                           label={item.category} 
                           size="small"
                           sx={{ 
-                            background: 'rgba(156, 39, 176, 0.1)',
-                            color: '#9c27b0'
+                            backgroundColor: 'rgba(5, 70, 151, 0.1)',
+                            color: '#054697',
+                            border: '1px solid #E8B4B4',
+                            borderRadius: 0,
+                            '&:hover': {
+                              backgroundColor: 'rgba(232, 180, 180, 0.1)',
+                            },
+                            '& .MuiChip-icon': {
+                              color: '#054697',
+                            },
+                            fontFamily: 'Poppins, sans-serif',
+                            fontWeight: 400,
+                            textTransform: 'uppercase',
+                            fontSize: '0.75rem'
                           }}
                         />
                         <button
@@ -386,33 +510,32 @@ export default function ChecklistDemo() {
                             };
                             handleUpdateTaskStatus(item.id, nextStatus[item.status]);
                           }}
-                          className={getStatusClass(item.status)}
                           style={{
-                            width: '30px',
-                            height: '30px',
-                            borderRadius: '50%',
-                            border: '1px solid',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
+                            padding: '8px 16px',
+                            backgroundColor: '#E8B4B4',
+                            color: '#054697',
+                            border: 'none',
+                            borderRadius: 0,
                             cursor: 'pointer',
-                            transition: 'all 0.2s ease'
+                            transition: 'all 0.3s ease',
+                            fontFamily: 'Poppins, sans-serif',
+                            fontWeight: 400,
+                            textTransform: 'uppercase'
                           }}
-                          title="Click to change status"
                         >
                           {getStatusIcon(item.status)}
                         </button>
                       </Box>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1, fontFamily: 'Poppins, sans-serif', color: '#054697' }}>
                         {item.task}
                       </Typography>
                       {item.note && (
-                        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+                        <Typography variant="body2" sx={{ color: '#054697', opacity: 0.8, fontFamily: 'Poppins, sans-serif', fontWeight: 300, mb: 1 }}>
                           {item.note}
                         </Typography>
                       )}
                       {item.condition && (
-                        <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic', display: 'block' }}>
+                        <Typography variant="caption" sx={{ color: '#054697', opacity: 0.5, fontStyle: 'italic', display: 'block', fontFamily: 'Poppins, sans-serif' }}>
                           {item.condition}
                         </Typography>
                       )}
@@ -426,11 +549,11 @@ export default function ChecklistDemo() {
         {/* Empty state */}
         {(!groupedItems[activeQuarter] || Object.keys(groupedItems[activeQuarter]).length === 0) && (
           <Box sx={{ textAlign: 'center', py: 6 }}>
-            <Typography variant="h6" sx={{ color: 'text.secondary', mb: 2 }}>
+            <Typography variant="h6" sx={{ color: '#054697', opacity: 0.8, fontFamily: 'Poppins, sans-serif', fontWeight: 300, mb: 2 }}>
               No tasks found for this quarter
             </Typography>
             {activeCategory && (
-              <Typography variant="body2" sx={{ color: 'text.disabled' }}>
+              <Typography variant="body2" sx={{ color: '#054697', opacity: 0.5, fontFamily: 'Poppins, sans-serif', fontWeight: 300 }}>
                 Try selecting a different category or quarter
               </Typography>
             )}
