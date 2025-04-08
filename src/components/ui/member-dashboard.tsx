@@ -299,14 +299,6 @@ export function MemberDashboard() {
           <p className="mt-6 text-[#054697]/80">Your special day is approaching! Make sure to check your tasks regularly.</p>
         </div>
       </div>
-      
-      {/* Footer with inspirational quote */}
-      <div className="bg-[#FFE8E4]/20 py-8 text-center">
-        <div className="container mx-auto px-4">
-          <p className="text-[#054697]/80 italic font-light text-lg">"The best thing to hold onto in life is each other."</p>
-          <p className="text-[#054697]/60 mt-2">— Audrey Hepburn</p>
-        </div>
-      </div>
     </div>
   );
 }

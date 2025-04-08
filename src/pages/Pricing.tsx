@@ -14,10 +14,10 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  useTheme,
   Chip,
 } from '@mui/material';
 import { Check as CheckIcon } from '@mui/icons-material';
+import { Heart } from 'lucide-react';
 
 interface PricingTier {
   title: string;
@@ -98,208 +98,293 @@ const tiers: PricingTier[] = [
 ];
 
 export default function Pricing() {
-  const theme = useTheme();
   const [yearly, setYearly] = useState(false);
 
   return (
-    <Container maxWidth="lg" sx={{ py: 8 }}>
-      <Box textAlign="center" mb={8}>
-        <Typography
-          component="h1"
-          variant="h2"
-          sx={{
-            color: theme.palette.primary.main,
-            fontWeight: 700,
-          }}
-          gutterBottom
-        >
-          Simple, Transparent Pricing
-        </Typography>
-        <Typography
-          variant="h5"
-          sx={{
-            color: theme.palette.primary.main,
-            opacity: 0.8,
-          }}
-          component="p"
-        >
-          Choose the perfect plan for your perfect day
-        </Typography>
-        <Box mt={4}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={yearly}
-                onChange={() => setYearly(!yearly)}
-                color="primary"
-              />
-            }
-            label={
-              <Typography
-                variant="h6"
-                sx={{
-                  color: theme.palette.primary.main,
-                }}
-              >
-                {yearly ? 'Yearly (Save 17%)' : 'Monthly'}
-              </Typography>
-            }
-          />
-        </Box>
-      </Box>
-
-      <Grid container spacing={4} alignItems="flex-start">
-        {tiers.map((tier) => (
-          <Grid
-            item
-            key={tier.title}
-            xs={12}
-            sm={tier.highlighted ? 12 : 6}
-            md={4}
+    <div className="min-h-screen bg-gradient-to-b from-white to-[#F9F9FF]">
+      {/* Decorative elements */}
+      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-[#FFE8E4]/20 blur-3xl"></div>
+      <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-[#B8BDD7]/10 blur-3xl"></div>
+      
+      <Container maxWidth="lg" sx={{ py: 8, position: 'relative', zIndex: 1 }}>
+        {/* Header Section */}
+        <Box textAlign="center" mb={8} className="relative">
+          <div className="absolute left-1/2 -translate-x-1/2 top-0 -mt-6 text-[#FFE8E4]">
+            <Heart className="w-12 h-12 opacity-20" />
+          </div>
+          
+          <Typography
+            component="h1"
+            variant="h2"
+            sx={{
+              color: '#054697',
+              fontWeight: 600,
+              fontFamily: "'Giaza', serif",
+              mb: 2,
+            }}
           >
-            <Card
-              sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                position: 'relative',
-                transition: 'transform 0.2s ease-in-out',
-                ...(tier.highlighted && {
-                  transform: { sm: 'scale(1.05)' },
-                  zIndex: 1,
-                  boxShadow: theme.shadows[10],
-                  border: `2px solid ${theme.palette.primary.main}`,
-                }),
-                '&:hover': {
-                  transform: 'translateY(-8px)',
-                  boxShadow: theme.shadows[8],
-                },
-              }}
-            >
-              {tier.highlighted && (
-                <Chip
-                  label="Most Popular"
-                  color="primary"
+            Choose Your Perfect Plan
+          </Typography>
+          
+          <Typography
+            variant="h5"
+            sx={{
+              color: '#054697',
+              opacity: 0.8,
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: 300,
+              maxWidth: '700px',
+              mx: 'auto',
+            }}
+          >
+            Invest in your perfect day with our comprehensive wedding planning tools
+          </Typography>
+          
+          <Box mt={6} mb={2}>
+            <div className="w-24 h-1 bg-[#FFE8E4] mx-auto mb-6"></div>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={yearly}
+                  onChange={() => setYearly(!yearly)}
                   sx={{
-                    position: 'absolute',
-                    top: -16,
-                    right: 16,
-                    px: 2,
+                    '& .MuiSwitch-switchBase.Mui-checked': {
+                      color: '#FFE8E4',
+                      '&:hover': {
+                        backgroundColor: 'rgba(255, 232, 228, 0.08)',
+                      },
+                    },
+                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                      backgroundColor: '#FFE8E4',
+                    },
                   }}
                 />
-              )}
-              <CardContent sx={{ flexGrow: 1, p: 4 }}>
-                <Box mb={4}>
-                  <Typography
-                    component="h2"
-                    variant="h3"
-                    sx={{
-                      color: theme.palette.primary.main,
-                    }}
-                    gutterBottom
-                  >
-                    {tier.title}
-                  </Typography>
-                  <Typography
-                    component="h3"
-                    variant="h3"
-                    sx={{
-                      color: theme.palette.primary.main,
-                      fontWeight: 700,
-                    }}
-                  >
-                    ${yearly ? tier.price.yearly : tier.price.monthly}
-                    <Typography
-                      component="span"
-                      variant="h6"
-                      sx={{
-                        color: theme.palette.primary.main,
-                        opacity: 0.8,
-                      }}
-                    >
-                      {yearly ? '/year' : '/month'}
-                    </Typography>
-                  </Typography>
-                  <Typography
-                    variant="subtitle1"
-                    sx={{
-                      color: theme.palette.primary.main,
-                      opacity: 0.8,
-                      mt: 2,
-                    }}
-                  >
-                    {tier.description}
-                  </Typography>
-                </Box>
-
-                <List sx={{ mb: 4 }}>
-                  {tier.features.map((feature) => (
-                    <ListItem key={feature} sx={{ py: 1, px: 0 }}>
-                      <ListItemIcon sx={{ minWidth: 36 }}>
-                        <CheckIcon color="primary" />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={feature}
-                        sx={{
-                          color: theme.palette.primary.main,
-                          opacity: 0.8,
-                        }}
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              </CardContent>
-
-              <CardActions sx={{ p: 4, pt: 0 }}>
-                <Button
-                  fullWidth
-                  variant={tier.buttonVariant}
-                  color="primary"
-                  size="large"
+              }
+              label={
+                <Typography
+                  variant="h6"
                   sx={{
-                    py: 2,
-                    fontSize: '1.1rem',
-                    ...(tier.highlighted && {
-                      bgcolor: 'primary.main',
-                      color: 'primary.contrastText',
-                      '&:hover': {
-                        bgcolor: 'primary.dark',
-                      },
-                    }),
-                    color: theme.palette.primary.main,
+                    color: '#054697',
+                    fontFamily: "'Poppins', sans-serif",
+                    fontWeight: 400,
                   }}
                 >
-                  {tier.buttonText}
-                </Button>
-              </CardActions>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+                  {yearly ? 'YEARLY (SAVE 17%)' : 'MONTHLY'}
+                </Typography>
+              }
+            />
+          </Box>
+        </Box>
 
-      <Box mt={8} textAlign="center">
-        <Typography
-          variant="h6"
-          sx={{
-            color: theme.palette.primary.main,
-            opacity: 0.8,
-          }}
-          gutterBottom
-        >
-          Need something special?
-        </Typography>
-        <Button
-          variant="outlined"
-          color="primary"
-          size="large"
-          sx={{
-            mt: 2,
-            color: theme.palette.primary.main,
-          }}
-        >
-          Contact Us for Custom Plans
-        </Button>
-      </Box>
-    </Container>
+        {/* Pricing Cards */}
+        <Grid container spacing={4} alignItems="flex-start">
+          {tiers.map((tier) => (
+            <Grid
+              item
+              key={tier.title}
+              xs={12}
+              sm={tier.highlighted ? 12 : 6}
+              md={4}
+            >
+              <Card
+                sx={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  position: 'relative',
+                  transition: 'all 0.3s ease-in-out',
+                  borderRadius: 0,
+                  boxShadow: 'none',
+                  border: tier.highlighted ? '2px solid #FFE8E4' : '1px solid #B8BDD7',
+                  backgroundColor: tier.highlighted ? 'rgba(255, 232, 228, 0.05)' : 'white',
+                  '&:hover': {
+                    transform: 'translateY(-8px)',
+                    boxShadow: '0 10px 30px rgba(5, 70, 151, 0.1)',
+                    borderColor: tier.highlighted ? '#FFE8E4' : '#B8BDD7',
+                  },
+                }}
+              >
+                {tier.highlighted && (
+                  <Chip
+                    label="MOST POPULAR"
+                    sx={{
+                      position: 'absolute',
+                      top: -16,
+                      right: 16,
+                      px: 2,
+                      backgroundColor: '#FFE8E4',
+                      color: '#054697',
+                      fontFamily: "'Poppins', sans-serif",
+                      fontWeight: 500,
+                      borderRadius: 0,
+                      '& .MuiChip-label': {
+                        px: 2,
+                      },
+                    }}
+                  />
+                )}
+                
+                <CardContent sx={{ flexGrow: 1, p: 4 }}>
+                  <Box mb={4} textAlign="center">
+                    <Typography
+                      component="h2"
+                      variant="h3"
+                      sx={{
+                        color: '#054697',
+                        fontFamily: "'Giaza', serif",
+                        mb: 3,
+                      }}
+                    >
+                      {tier.title}
+                    </Typography>
+                    
+                    <Typography
+                      component="h3"
+                      variant="h3"
+                      sx={{
+                        color: '#054697',
+                        fontWeight: 600,
+                        fontFamily: "'Poppins', sans-serif",
+                        display: 'flex',
+                        alignItems: 'baseline',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Box component="span" sx={{ fontSize: '1.5rem', mr: 0.5 }}>$</Box>
+                      {yearly ? tier.price.yearly : tier.price.monthly}
+                      <Typography
+                        component="span"
+                        variant="h6"
+                        sx={{
+                          color: '#054697',
+                          opacity: 0.8,
+                          ml: 1,
+                          fontWeight: 300,
+                        }}
+                      >
+                        {yearly ? '/year' : '/month'}
+                      </Typography>
+                    </Typography>
+                    
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        color: '#054697',
+                        opacity: 0.8,
+                        mt: 2,
+                        fontFamily: "'Poppins', sans-serif",
+                        fontWeight: 300,
+                      }}
+                    >
+                      {tier.description}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ width: '100%', height: '1px', backgroundColor: '#B8BDD7', opacity: 0.3, my: 3 }} />
+
+                  <List sx={{ mb: 4 }}>
+                    {tier.features.map((feature) => (
+                      <ListItem key={feature} sx={{ py: 1, px: 0 }}>
+                        <ListItemIcon sx={{ minWidth: 36 }}>
+                          <CheckIcon sx={{ color: '#054697' }} />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={feature}
+                          sx={{
+                            '& .MuiListItemText-primary': {
+                              color: '#054697',
+                              opacity: 0.8,
+                              fontFamily: "'Poppins', sans-serif",
+                              fontWeight: 300,
+                            }
+                          }}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </CardContent>
+
+                <CardActions sx={{ p: 4, pt: 0 }}>
+                  <Button
+                    fullWidth
+                    variant={tier.buttonVariant}
+                    size="large"
+                    sx={{
+                      py: 2,
+                      fontSize: '1rem',
+                      fontFamily: "'Poppins', sans-serif",
+                      fontWeight: 500,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      borderRadius: 0,
+                      backgroundColor: tier.highlighted ? '#FFE8E4' : 'transparent',
+                      color: '#054697',
+                      border: '1px solid #FFE8E4',
+                      '&:hover': {
+                        backgroundColor: tier.highlighted ? '#FFD5CC' : 'rgba(255, 232, 228, 0.1)',
+                        border: '1px solid #FFE8E4',
+                      },
+                    }}
+                  >
+                    {tier.buttonText}
+                  </Button>
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Contact Section */}
+        <Box mt={12} textAlign="center" className="relative">
+          <div className="w-24 h-1 bg-[#FFE8E4] mx-auto mb-6"></div>
+          <Typography
+            variant="h5"
+            sx={{
+              color: '#054697',
+              fontFamily: "'Giaza', serif",
+              mb: 2,
+            }}
+          >
+            Need a Custom Solution?
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              color: '#054697',
+              opacity: 0.8,
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: 300,
+              maxWidth: '600px',
+              mx: 'auto',
+              mb: 4,
+            }}
+          >
+            Our team can create a tailored package to meet your unique wedding planning needs
+          </Typography>
+          <Button
+            variant="outlined"
+            size="large"
+            sx={{
+              py: 2,
+              px: 4,
+              fontSize: '1rem',
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: 500,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              borderRadius: 0,
+              color: '#054697',
+              border: '1px solid #FFE8E4',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 232, 228, 0.1)',
+                border: '1px solid #FFE8E4',
+              },
+            }}
+          >
+            Contact Us
+          </Button>
+        </Box>
+      </Container>
+    </div>
   );
 }
