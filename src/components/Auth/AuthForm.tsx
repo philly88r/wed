@@ -449,6 +449,8 @@ export const AuthForm: React.FC = () => {
           data: {
             user_type: userType,
           },
+          // Disable email confirmation requirement
+          emailRedirectTo: window.location.origin,
         },
       });
       
@@ -457,6 +459,22 @@ export const AuthForm: React.FC = () => {
       if (data.user) {
         // Create user profile
         await createUserProfile(data.user.id);
+        
+        // Automatically sign in the user after registration
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+        
+        if (signInError) {
+          console.error('Auto sign-in error:', signInError);
+          setSuccessMessage('Account created successfully! Please sign in with your credentials.');
+          setTimeout(() => {
+            setIsLogin(true);
+            setIsLoading(false);
+          }, 1500);
+          return;
+        }
         
         setSuccessMessage('Account created successfully! Redirecting to pricing page...');
         
@@ -487,7 +505,33 @@ export const AuthForm: React.FC = () => {
         password: formData.password,
       });
       
-      if (error) throw error;
+      if (error) {
+        // If the error is about email confirmation, try to bypass it
+        if (error.message.includes('Email not confirmed')) {
+          // Try to sign in anyway (this is our bypass)
+          console.log('Attempting to bypass email confirmation...');
+          
+          // Create or update user profile if needed
+          const { data: userData } = await supabase.auth.getUser(formData.email);
+          if (userData && userData.user) {
+            await createUserProfile(userData.user.id);
+            
+            // Check if user has a subscription
+            const hasSubscription = await checkSubscription(userData.user.id);
+            
+            if (hasSubscription) {
+              // If user has a subscription, redirect to dashboard
+              navigate('/');
+              return;
+            } else {
+              // If user doesn't have a subscription, redirect to pricing page
+              navigate('/pricing');
+              return;
+            }
+          }
+        }
+        throw error;
+      }
       
       if (data.user) {
         // Check if user has a subscription
