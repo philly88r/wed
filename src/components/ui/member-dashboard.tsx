@@ -33,6 +33,24 @@ function MemberDashboard() {
     { id: 3, title: "Send save-the-dates", dueDate: "This month" }
   ];
   
+  // State for category filtering
+  const [activeCategory, setActiveCategory] = useState<'planning' | 'design' | 'management' | 'essential' | null>(null);
+  
+  // Filter tools by category
+  const filterToolsByCategory = (category: 'planning' | 'design' | 'management' | 'essential' | null) => {
+    setActiveCategory(category);
+  };
+  
+  // Get featured tools
+  const getFeaturedTools = () => {
+    return dashboardTools.filter(tool => tool.featured === true);
+  };
+  
+  // Get filtered tools
+  const getFilteredTools = () => {
+    return dashboardTools.filter(tool => !tool.featured && (!activeCategory || tool.category === activeCategory));
+  };
+  
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -203,8 +221,8 @@ function MemberDashboard() {
                 accept="image/*"
               />
               <Button 
-                variant="outline" 
-                size="sm" 
+                variant="outlined" 
+                size="small" 
                 className="border-[#FFE8E4] text-[#054697] hover:bg-[#FFE8E4]/10"
                 onClick={triggerFileInput}
               >
