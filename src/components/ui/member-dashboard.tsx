@@ -41,39 +41,160 @@ export function MemberDashboard() {
   const [notification, setNotification] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("Wedding Planner");
+  const [weddingDate, setWeddingDate] = useState<Date>(new Date());
+  const [budget, setBudget] = useState<number>(0);
+  const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   
-  // Fetch user profile data
+  // Fetch user profile data and wedding details
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchUserData = async () => {
+      setIsLoading(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
         
         if (user) {
           // Get user profile from the profiles table
-          const { data, error } = await supabase
+          const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('first_name, last_name')
+            .select('first_name, last_name, wedding_date, budget, location, guest_count, selected_plan')
             .eq('id', user.id)
             .single();
             
-          if (error) {
-            console.error('Error fetching profile:', error);
-          } else if (data) {
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
+          } else if (profileData) {
             // Set user name based on available data
-            if (data.first_name) {
-              setUserName(data.first_name as string);
-            } else if (data.last_name) {
-              setUserName(`${data.last_name as string} Family`);
+            if (profileData.first_name) {
+              setUserName(profileData.first_name as string);
+            } else if (profileData.last_name) {
+              setUserName(`${profileData.last_name as string} Family`);
             }
+            
+            // Set wedding date if available
+            if (profileData.wedding_date) {
+              setWeddingDate(new Date(profileData.wedding_date as string));
+            }
+            
+            // Set budget if available
+            if (profileData.budget) {
+              setBudget(Number(profileData.budget) || 0);
+            }
+            
+            // Generate personalized tasks based on profile data
+            const personalizedTasks = generatePersonalizedTasks(
+              profileData.wedding_date ? new Date(profileData.wedding_date as string) : new Date(),
+              profileData.budget ? Number(profileData.budget) : 0,
+              profileData.location as string || '',
+              profileData.guest_count ? Number(profileData.guest_count) : 0,
+              profileData.selected_plan as string || ''
+            );
+            
+            setUpcomingTasks(personalizedTasks);
           }
         }
       } catch (error) {
         console.error('Error:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    fetchUserProfile();
+    fetchUserData();
   }, []);
+  
+  // Function to generate personalized tasks based on user profile
+  const generatePersonalizedTasks = (
+    weddingDate: Date,
+    budget: number = 0,
+    location: string = '',
+    guestCount: number = 0,
+    selectedPlan: string = ''
+  ): Task[] => {
+    const today = new Date();
+    const monthsUntilWedding = Math.floor((weddingDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30));
+    const tasks: Task[] = [];
+    
+    // Tasks based on timeline
+    if (monthsUntilWedding > 9) {
+      // 9+ months before wedding
+      tasks.push(
+        { id: 1, title: "Book Your Venue", dueDate: formatDueDate(1), category: "essential" },
+        { id: 2, title: "Start Guest List", dueDate: formatDueDate(2), category: "planning" },
+        { id: 3, title: "Research Photographers", dueDate: formatDueDate(3), category: "vendor" }
+      );
+    } else if (monthsUntilWedding > 6) {
+      // 6-9 months before wedding
+      tasks.push(
+        { id: 1, title: "Book Photographer & Videographer", dueDate: formatDueDate(1), category: "vendor" },
+        { id: 2, title: "Shop for Wedding Attire", dueDate: formatDueDate(2), category: "planning" },
+        { id: 3, title: "Book Caterer", dueDate: formatDueDate(2), category: "vendor" }
+      );
+    } else if (monthsUntilWedding > 3) {
+      // 3-6 months before wedding
+      tasks.push(
+        { id: 1, title: "Send Save-the-Dates", dueDate: formatDueDate(1), category: "planning" },
+        { id: 2, title: "Book Florist", dueDate: formatDueDate(2), category: "vendor" },
+        { id: 3, title: "Plan Honeymoon", dueDate: formatDueDate(3), category: "planning" }
+      );
+    } else if (monthsUntilWedding > 1) {
+      // 1-3 months before wedding
+      tasks.push(
+        { id: 1, title: "Send Invitations", dueDate: formatDueDate(0.5), category: "essential" },
+        { id: 2, title: "Finalize Menu", dueDate: formatDueDate(1), category: "vendor" },
+        { id: 3, title: "Wedding Dress Fitting", dueDate: formatDueDate(1.5), category: "planning" }
+      );
+    } else {
+      // Less than 1 month before wedding
+      tasks.push(
+        { id: 1, title: "Confirm All Vendors", dueDate: formatDueDate(0.25), category: "essential" },
+        { id: 2, title: "Create Seating Chart", dueDate: formatDueDate(0.5), category: "planning" },
+        { id: 3, title: "Pack for Honeymoon", dueDate: formatDueDate(0.75), category: "planning" }
+      );
+    }
+    
+    // Add budget-specific tasks if budget is set
+    if (budget > 0) {
+      if (budget > 30000) {
+        tasks.push({ id: 4, title: "Research Luxury Venues", dueDate: formatDueDate(1), category: "planning" });
+      } else if (budget < 15000) {
+        tasks.push({ id: 4, title: "DIY Decoration Planning", dueDate: formatDueDate(1.5), category: "budget" });
+      }
+    }
+    
+    // Add guest count specific tasks
+    if (guestCount > 150) {
+      tasks.push({ id: 5, title: "Book Larger Venue", dueDate: formatDueDate(2), category: "planning" });
+    } else if (guestCount < 50) {
+      tasks.push({ id: 5, title: "Plan Intimate Reception", dueDate: formatDueDate(2), category: "planning" });
+    }
+    
+    // Add location-specific tasks if location is set
+    if (location && location.trim() !== '') {
+      tasks.push({ id: 6, title: `Research Vendors in ${location}`, dueDate: formatDueDate(1.5), category: "vendor" });
+    }
+    
+    // Limit to 3 tasks for display
+    return tasks.slice(0, 3);
+  };
+  
+  // Helper function to format due dates based on months from now
+  const formatDueDate = (monthsFromNow: number): string => {
+    const dueDate = new Date();
+    dueDate.setMonth(dueDate.getMonth() + Math.floor(monthsFromNow));
+    
+    // For partial months, add the appropriate number of days
+    const fractionalPart = monthsFromNow % 1;
+    if (fractionalPart > 0) {
+      dueDate.setDate(dueDate.getDate() + Math.floor(fractionalPart * 30));
+    }
+    
+    return dueDate.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
   
   // Check if a plan was selected from the pricing page
   useEffect(() => {
@@ -90,8 +211,7 @@ export function MemberDashboard() {
     }
   }, [location]);
   
-  // Wedding date calculation
-  const weddingDate = new Date("2025-10-15");
+  // Calculate days until wedding
   const today = new Date();
   const daysUntilWedding = Math.ceil((weddingDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   const formattedWeddingDate = weddingDate.toLocaleDateString('en-US', { 
@@ -118,13 +238,6 @@ export function MemberDashboard() {
       reader.readAsDataURL(file);
     }
   };
-  
-  // Sample upcoming tasks
-  const upcomingTasks: Task[] = [
-    { id: 1, title: "Book Photographer", dueDate: "April 15, 2025", category: "vendor" },
-    { id: 2, title: "Send Save-the-Dates", dueDate: "April 20, 2025", category: "planning" },
-    { id: 3, title: "Cake Tasting", dueDate: "May 5, 2025", category: "vendor" }
-  ];
   
   // Dashboard tools definition
   const dashboardTools: DashboardTool[] = [
@@ -225,7 +338,7 @@ export function MemberDashboard() {
               </div>
               <div className="inline-flex items-center">
                 <span className="bg-[#B8BDD7] text-[#054697] font-medium px-4 py-2 shadow-sm">
-                  Budget: $25,000
+                  Budget: ${budget.toLocaleString()}
                 </span>
               </div>
             </div>
@@ -322,22 +435,30 @@ export function MemberDashboard() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {upcomingTasks.map((task) => (
-              <div 
-                key={task.id} 
-                className="bg-white border border-[#B8BDD7]/20 p-5 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 hover:border-[#B8BDD7]/40"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-lg font-medium text-[#054697]">{task.title}</h3>
-                  <span className="bg-[#FFE8E4]/50 text-[#054697] text-xs px-2 py-1">
-                    {task.category}
-                  </span>
+          {isLoading ? (
+            <div className="text-center py-8 text-[#054697]/70">Loading your personalized tasks...</div>
+          ) : upcomingTasks.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {upcomingTasks.map((task) => (
+                <div 
+                  key={task.id} 
+                  className="bg-white border border-[#B8BDD7]/20 p-5 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 hover:border-[#B8BDD7]/40"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-lg font-medium text-[#054697]">{task.title}</h3>
+                    <span className="bg-[#FFE8E4]/50 text-[#054697] text-xs px-2 py-1">
+                      {task.category}
+                    </span>
+                  </div>
+                  <p className="text-[#054697]/70 text-sm">Due: {task.dueDate}</p>
                 </div>
-                <p className="text-[#054697]/70 text-sm">Due: {task.dueDate}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-[#054697]/70">
+              No upcoming tasks. Please update your wedding details in your profile.
+            </div>
+          )}
         </div>
         
         {/* Wedding Countdown Section */}
