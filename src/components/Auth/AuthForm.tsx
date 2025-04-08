@@ -782,8 +782,6 @@ export const AuthForm: React.FC = () => {
               sx={{
                 bgcolor: 'accent.rose',
                 color: 'primary.main',
-                px: 3,
-                py: 1,
                 '&:hover': {
                   bgcolor: '#FFD5CC',
                 },
@@ -1104,7 +1102,7 @@ export const AuthForm: React.FC = () => {
             </Button>
           </Box>
           
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
             {['userType', 'basicInfo', 'weddingInfo', 'accountInfo'].map((step) => (
               <Box
                 key={step}
@@ -1168,18 +1166,20 @@ export const AuthForm: React.FC = () => {
             },
           }}
         >
-          <Typography 
-            component="h1" 
-            variant="h4" 
-            gutterBottom
-            sx={{ 
-              fontFamily: 'Giaza, serif',
-              color: 'primary.main',
-              letterSpacing: '-0.05em',
-            }}
-          >
-            {isLogin ? 'Welcome Back' : 'Create Your Account'}
-          </Typography>
+          {!isLogin && (
+            <Typography 
+              component="h1" 
+              variant="h4" 
+              gutterBottom
+              sx={{ 
+                fontFamily: 'Giaza, serif',
+                color: 'primary.main',
+                letterSpacing: '-0.05em',
+              }}
+            >
+              Create Your Account
+            </Typography>
+          )}
           
           {isLogin ? (
             renderLoginForm()
