@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, Box } from '@mui/material';
 import theme from './theme/theme';
+import './fonts.css'; // Import the custom fonts CSS
 import ServiceMenuWithTheme from './pages/ServiceMenuWithTheme';
 import SeatingChart from './pages/SeatingChart';
 import Budget from './pages/Budget';
