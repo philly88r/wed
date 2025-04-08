@@ -13,8 +13,10 @@ import {
   DialogContent,
   DialogActions,
   IconButton,
+  Snackbar,
+  InputAdornment,
 } from '@mui/material';
-import { MessageSquare, Upload, Download, Trash2, Edit2, X } from 'lucide-react';
+import { MessageSquare, Upload, Download, Trash2, Edit2, X, Link, Copy, Send } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '@mui/material/styles';
 
@@ -40,6 +42,11 @@ export default function GuestDirectory() {
     phone: '',
     email: ''
   });
+  const [customLinkInput, setCustomLinkInput] = useState('');
+  const [questionnaireLinkOpen, setQuestionnaireLinkOpen] = useState(false);
+  const [generatedLink, setGeneratedLink] = useState('');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   // Load contacts
   useEffect(() => {
@@ -165,6 +172,115 @@ export default function GuestDirectory() {
     }
     
     window.location.href = `sms:${phoneNumbers}`;
+  };
+
+  const handleSendQuestionnaireLink = () => {
+    const phoneNumbers = contacts
+      .filter(contact => contact.phone)
+      .map(contact => contact.phone)
+      .join(',');
+    
+    if (!phoneNumbers) {
+      alert('No phone numbers found in your contacts.');
+      return;
+    }
+    
+    if (!generatedLink) {
+      alert('Please generate a questionnaire link first.');
+      return;
+    }
+    
+    // Create SMS link with message body containing the questionnaire link
+    const messageBody = encodeURIComponent(`Please fill out our guest questionnaire: ${generatedLink}`);
+    window.location.href = `sms:${phoneNumbers}?body=${messageBody}`;
+  };
+
+  const generateQuestionnaireLink = async () => {
+    if (!customLinkInput.trim()) {
+      setSnackbarMessage('Please enter a name for your questionnaire link');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    try {
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('No authenticated user found');
+        return;
+      }
+
+      // Format the link name (remove spaces, lowercase)
+      const linkName = customLinkInput.toLowerCase().replace(/\s+/g, '');
+      const baseUrl = window.location.origin;
+      const link = `${baseUrl}/${linkName}`;
+      
+      // Check if link already exists
+      const { data: existingLink } = await supabase
+        .from('custom_links')
+        .select('id')
+        .eq('questionnaire_path', `/${linkName}`)
+        .maybeSingle();
+      
+      if (existingLink) {
+        // Update existing link
+        const { error } = await supabase
+          .from('custom_links')
+          .update({ 
+            name: customLinkInput,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingLink.id);
+          
+        if (error) {
+          console.error('Error updating link:', error);
+          setSnackbarMessage('Error updating questionnaire link');
+          setSnackbarOpen(true);
+          return;
+        }
+      } else {
+        // Create new link
+        const { error } = await supabase
+          .from('custom_links')
+          .insert([{ 
+            name: customLinkInput,
+            questionnaire_path: `/${linkName}`,
+            user_id: user.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }]);
+          
+        if (error) {
+          console.error('Error creating link:', error);
+          setSnackbarMessage('Error creating questionnaire link');
+          setSnackbarOpen(true);
+          return;
+        }
+      }
+      
+      setGeneratedLink(link);
+      setSnackbarMessage('Questionnaire link generated successfully');
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error('Error generating questionnaire link:', error);
+      setSnackbarMessage('Error generating questionnaire link');
+      setSnackbarOpen(true);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(
+      () => {
+        setSnackbarMessage('Link copied to clipboard');
+        setSnackbarOpen(true);
+      },
+      (err) => {
+        console.error('Could not copy text: ', err);
+        setSnackbarMessage('Failed to copy link');
+        setSnackbarOpen(true);
+      }
+    );
   };
 
   const downloadTemplate = () => {
@@ -305,7 +421,7 @@ export default function GuestDirectory() {
           variant="h5"
           sx={{
             fontFamily: "'Playfair Display', serif",
-            color: theme.palette.text.primary,
+            color: theme.palette.primary.main,
             mb: 3
           }}
         >
@@ -333,7 +449,7 @@ export default function GuestDirectory() {
             <Typography variant="h6">
               {contacts.filter(c => c.phone).length}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: theme.palette.primary.main, opacity: 0.8 }}>
               Contacts with phone numbers
             </Typography>
           </Box>
@@ -341,7 +457,7 @@ export default function GuestDirectory() {
             <Typography variant="h6">
               {contacts.length - contacts.filter(c => c.phone).length}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: theme.palette.primary.main, opacity: 0.8 }}>
               Contacts without phone numbers
             </Typography>
           </Box>
@@ -351,10 +467,32 @@ export default function GuestDirectory() {
           variant="contained"
           startIcon={<MessageSquare />}
           onClick={handleSendMessage}
-          sx={{ mt: 3 }}
+          sx={{ 
+            mt: 3,
+            mr: 2,
+            bgcolor: theme.palette.accent?.rose || '#FFE8E4',
+            color: theme.palette.primary.main,
+            '&:hover': {
+              bgcolor: '#FFD5CC',
+            }
+          }}
           size="large"
         >
           Open Messaging App
+        </Button>
+        
+        <Button
+          variant="outlined"
+          startIcon={<Link />}
+          onClick={() => setQuestionnaireLinkOpen(true)}
+          sx={{ 
+            mt: 3,
+            color: theme.palette.primary.main,
+            borderColor: theme.palette.primary.main,
+          }}
+          size="large"
+        >
+          Generate Questionnaire Link
         </Button>
       </Paper>
 
@@ -566,6 +704,120 @@ export default function GuestDirectory() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Questionnaire Link Dialog */}
+      <Dialog
+        open={questionnaireLinkOpen}
+        onClose={() => setQuestionnaireLinkOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            Generate Guest Questionnaire Link
+            <IconButton onClick={() => setQuestionnaireLinkOpen(false)} size="small">
+              <X size={18} />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="info" sx={{ mb: 3 }}>
+            Create a custom link to send to your guests. They can use this link to fill out their information for your wedding.
+          </Alert>
+          
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" sx={{ mb: 1, color: theme.palette.primary.main }}>
+              1. Name your questionnaire
+            </Typography>
+            <TextField
+              fullWidth
+              label="Questionnaire Name (e.g. Smith Wedding)"
+              value={customLinkInput}
+              onChange={(e) => setCustomLinkInput(e.target.value)}
+              variant="outlined"
+              helperText="This will be used to create your custom link"
+            />
+          </Box>
+          
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" sx={{ mb: 1, color: theme.palette.primary.main }}>
+              2. Generate your link
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={generateQuestionnaireLink}
+              disabled={!customLinkInput.trim()}
+              sx={{ 
+                bgcolor: theme.palette.accent?.rose || '#FFE8E4',
+                color: theme.palette.primary.main,
+                '&:hover': {
+                  bgcolor: '#FFD5CC',
+                }
+              }}
+            >
+              Generate Link
+            </Button>
+          </Box>
+          
+          {generatedLink && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1, color: theme.palette.primary.main }}>
+                3. Your questionnaire link
+              </Typography>
+              <TextField
+                fullWidth
+                value={generatedLink}
+                variant="outlined"
+                InputProps={{
+                  readOnly: true,
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton 
+                        onClick={() => copyToClipboard(generatedLink)}
+                        edge="end"
+                      >
+                        <Copy size={18} />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setQuestionnaireLinkOpen(false)}
+            sx={{ color: theme.palette.primary.main }}
+          >
+            Close
+          </Button>
+          {generatedLink && (
+            <Button
+              onClick={handleSendQuestionnaireLink}
+              variant="contained"
+              startIcon={<Send />}
+              sx={{ 
+                bgcolor: theme.palette.accent?.rose || '#FFE8E4',
+                color: theme.palette.primary.main,
+                '&:hover': {
+                  bgcolor: '#FFD5CC',
+                }
+              }}
+            >
+              Send via SMS
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMessage}
+      />
     </Container>
   );
 }
