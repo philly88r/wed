@@ -7,11 +7,13 @@ import {
   Menu,
   MenuItem,
   Box,
-  useTheme
+  useTheme,
+  Button
 } from '@mui/material';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
@@ -111,7 +113,7 @@ export default function Header() {
           >
             Pricing
           </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <IconButton
               size="large"
               color="inherit"
@@ -142,6 +144,26 @@ export default function Header() {
             >
               <AccountCircle />
             </IconButton>
+            <Button
+              variant="contained"
+              onClick={handleLogout}
+              startIcon={<LogoutIcon />}
+              sx={{
+                ml: 1,
+                bgcolor: theme.palette.accent?.rose,
+                color: theme.palette.primary.main,
+                '&:hover': {
+                  bgcolor: theme.palette.accent?.roseDark,
+                },
+                fontFamily: "'Poppins', sans-serif",
+                fontWeight: 400,
+                textTransform: 'uppercase',
+                fontSize: '0.875rem',
+                height: '36px'
+              }}
+            >
+              Sign Out
+            </Button>
           </Box>
         </Toolbar>
       </AppBar>
