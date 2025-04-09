@@ -54,8 +54,11 @@ export default function Login() {
         if (error) throw error;
         setMessage({ 
           type: 'success', 
-          text: 'Registration successful! Please check your email to verify your account.' 
+          text: 'Registration successful! Please check your email to verify your account before logging in.' 
         });
+        // Clear form fields after successful registration
+        setPassword('');
+        // Keep the form in registration mode to show the message clearly
       }
     } catch (error) {
       setMessage({ 
@@ -129,7 +132,13 @@ export default function Login() {
                   color: '#054697',
                   '& .MuiAlert-icon': {
                     color: message.type === 'error' ? '#d32f2f' : '#054697',
-                  }
+                  },
+                  ...(message.type === 'success' && {
+                    padding: '16px 16px',
+                    fontSize: '1rem',
+                    fontWeight: 500,
+                    borderLeft: '4px solid #054697'
+                  })
                 }}
               >
                 {message.text}
