@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'rea
 import { ThemeProvider, CssBaseline, Box } from '@mui/material';
 import theme from './theme/theme';
 import './fonts.css'; // Import the custom fonts CSS
+import SignOutButton from './components/SignOutButton';
 import ServiceMenuWithTheme from './pages/ServiceMenuWithTheme';
 import SeatingChart from './pages/SeatingChart';
 import Budget from './pages/Budget';
@@ -68,6 +69,7 @@ const AppContent = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <CssBaseline />
+      <SignOutButton />
       
       <Routes>
         {/* Public routes - accessible without authentication */}
