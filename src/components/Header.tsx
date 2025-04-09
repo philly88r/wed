@@ -150,16 +150,18 @@ export default function Header() {
               startIcon={<LogoutIcon />}
               sx={{
                 ml: 1,
-                bgcolor: theme.palette.accent?.rose,
-                color: theme.palette.primary.main,
+                bgcolor: '#FFE8E4', // Using the exact Soft Pink color from brand guidelines
+                color: '#054697', // Using the exact Primary Blue color from brand guidelines
+                border: '2px solid #054697', // Adding a border for more visibility
                 '&:hover': {
-                  bgcolor: theme.palette.accent?.roseDark,
+                  bgcolor: '#FFD5CC', // Darker Soft Pink for hover state
                 },
                 fontFamily: "'Poppins', sans-serif",
-                fontWeight: 400,
+                fontWeight: 600, // Increased font weight for better visibility
                 textTransform: 'uppercase',
                 fontSize: '0.875rem',
-                height: '36px'
+                height: '36px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)' // Adding subtle shadow for depth
               }}
             >
               Sign Out
