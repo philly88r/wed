@@ -57,7 +57,7 @@ export function MemberDashboard() {
           // Get user profile from the profiles table
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('first_name, last_name, wedding_date, budget, location, guest_count, selected_plan')
+            .select('first_name, last_name')
             .eq('id', user.id)
             .single();
             
@@ -70,27 +70,71 @@ export function MemberDashboard() {
             } else if (profileData.last_name) {
               setUserName(`${profileData.last_name as string} Family`);
             }
+          }
+          
+          // Get timeline tasks from the timeline_tasks table
+          const { data: tasksData, error: tasksError } = await supabase
+            .from('timeline_tasks')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('due_date', { ascending: true });
             
-            // Set wedding date if available
-            if (profileData.wedding_date) {
-              setWeddingDate(new Date(profileData.wedding_date as string));
-            }
+          if (tasksError) {
+            console.error('Error fetching timeline tasks:', tasksError);
+          } else if (tasksData && tasksData.length > 0) {
+            // Format tasks for display
+            const formattedTasks = tasksData.map((task, index) => ({
+              id: index + 1,
+              title: task.title as string,
+              dueDate: new Date(task.due_date as string).toLocaleDateString(),
+              category: task.category as string
+            }));
             
-            // Set budget if available
-            if (profileData.budget) {
-              setBudget(Number(profileData.budget) || 0);
-            }
-            
-            // Generate personalized tasks based on profile data
-            const personalizedTasks = generatePersonalizedTasks(
-              profileData.wedding_date ? new Date(profileData.wedding_date as string) : new Date(),
-              profileData.budget ? Number(profileData.budget) : 0,
-              profileData.location as string || '',
-              profileData.guest_count ? Number(profileData.guest_count) : 0,
-              profileData.selected_plan as string || ''
+            setUpcomingTasks(formattedTasks);
+          } else {
+            // If no tasks exist, generate some default ones
+            const defaultTasks = generatePersonalizedTasks(
+              weddingDate,
+              budget,
+              '',
+              0,
+              ''
             );
             
-            setUpcomingTasks(personalizedTasks);
+            setUpcomingTasks(defaultTasks);
+          }
+          
+          // Get timeline questionnaire data to find wedding date and other details
+          const { data: questionnaireData, error: questionnaireError } = await supabase
+            .from('timeline_questionnaire')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+            
+          if (!questionnaireError && questionnaireData) {
+            // Set wedding date if available
+            if (questionnaireData.wedding_date) {
+              // Make sure we have a valid date string before creating a Date object
+              const weddingDateStr = questionnaireData.wedding_date as string;
+              if (weddingDateStr && typeof weddingDateStr === 'string') {
+                setWeddingDate(new Date(weddingDateStr));
+              }
+            }
+            
+            // Try to fetch budget information from job_costs table
+            const { data: budgetData, error: budgetError } = await supabase
+              .from('job_costs')
+              .select('amount')
+              .eq('user_id', user.id);
+              
+            if (!budgetError && budgetData && budgetData.length > 0) {
+              // Calculate total budget from job costs
+              const totalBudget = budgetData.reduce((sum, item) => {
+                return sum + (Number(item.amount) || 0);
+              }, 0);
+              
+              setBudget(totalBudget);
+            }
           }
         }
       } catch (error) {
@@ -109,7 +153,7 @@ export function MemberDashboard() {
     budget: number = 0,
     location: string = '',
     guestCount: number = 0,
-    selectedPlan: string = ''
+    _unused: string = '' // Renamed to avoid unused variable warning
   ): Task[] => {
     const today = new Date();
     const monthsUntilWedding = Math.floor((weddingDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30));
