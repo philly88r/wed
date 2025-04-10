@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Download, RefreshCw, X, Check } from 'lucide-react';
+import { Download, RefreshCw, X, Check, Loader2 } from 'lucide-react';
+import { User } from '@supabase/supabase-js';
+import { getSupabase } from '../supabaseClient';
 import { essentialCategories, budgetCategories } from '../data/budgetCategories';
+import VendorSelector from '../components/budget/VendorSelector';
+import CategoryVendor from '../components/budget/CategoryVendor';
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -22,44 +26,299 @@ interface BudgetState {
   guestCount: number;
   essentials: Record<string, CategoryBudget>;
   discretionary: Record<string, CategoryBudget>;
+  customVendors: Array<{
+    id: string;
+    name: string;
+    allocated: number;
+    spent: number;
+    categoryId?: string;
+  }>;
+}
+
+// Function to handle adding a custom vendor to a specific category
+const addCustomVendorToCategory = async (name: string, allocated: number, categoryId: string, user: User | null) => {
+  if (!user) return;
+  
+  try {
+    // First save to database
+    const supabase = getSupabase();
+    if (!supabase) {
+      console.error('Supabase client is null');
+      return;
+    }
+    
+    const { data, error } = await supabase
+      .from('custom_vendors')
+      .insert([
+        {
+          user_id: user.id,
+          name,
+          allocated,
+          spent: 0,
+          category_id: categoryId
+        }
+      ])
+      .select('*')
+      .single();
+    
+    if (error) {
+      console.error('Error adding custom vendor:', error);
+      return;
+    }
+    
+    // Then update local state
+    if (data) {
+      const newVendor = {
+        id: data.id as string,
+        name: data.name as string,
+        allocated: typeof data.allocated === 'string' ? parseFloat(data.allocated) : Number(data.allocated),
+        spent: typeof data.spent === 'string' ? parseFloat(data.spent) : Number(data.spent),
+        categoryId
+      };
+      
+      return newVendor;
+    }
+  } catch (error) {
+    console.error('Error adding custom vendor:', error);
+  }
+  
+  return null;
+};
+
+// Define database types
+
+interface DbBudgetData {
+  id: string;
+  user_id: string;
+  total_budget: number;
+  guest_count: number;
+  essential_categories: Record<string, CategoryBudget>;
+  discretionary_categories: Record<string, CategoryBudget>;
+  disabled_vendors: string[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export default function Budget() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [budget, setBudget] = useState<BudgetState>({
     totalBudget: 100000,
     guestCount: 100,
     essentials: {},
-    discretionary: {}
+    discretionary: {},
+    customVendors: []
   });
   
   // Track which vendors are enabled/disabled
   const [disabledVendors, setDisabledVendors] = useState<string[]>([]);
 
+  // Get current user
   useEffect(() => {
-    const savedData = localStorage.getItem('wedding-budget-data-v2');
-    if (savedData) {
-      try {
-        const data = JSON.parse(savedData);
-        setBudget(data.budget);
-        setDisabledVendors(data.disabledVendors || []);
-      } catch (e) {
-        // If there's an error parsing the saved data, initialize with defaults
-        initializeBudget(100000, 100);
+    const getUser = async () => {
+      setIsLoading(true);
+      const supabase = getSupabase();
+      if (!supabase) {
+        console.error('Supabase client is null');
+        setIsLoading(false);
+        return;
       }
-    } else {
-      initializeBudget(100000, 100);
-    }
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setIsLoading(false);
+    };
+    
+    getUser();
   }, []);
 
+  // Load budget data from database
   useEffect(() => {
+    if (!user) return;
+    
+    // Load budget data from database
+    loadBudgetData();
+    
+    // Load custom vendors from database
+    loadCustomVendors();
+  }, [user]);
+  
+  // Load budget data from database
+  const loadBudgetData = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const supabase = getSupabase();
+      if (!supabase) {
+        console.error('Supabase client is null');
+        setIsLoading(false);
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from('budget_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No data found, initialize with defaults and save to database
+          console.log('No budget data found, initializing with defaults');
+          initializeBudget(100000, 100, true);
+        } else {
+          console.error('Error loading budget data:', error);
+        }
+        return;
+      }
+      
+      if (data) {
+        // Load budget data from database
+        const budgetData = data as unknown as DbBudgetData;
+        setBudget({
+          totalBudget: Number(budgetData.total_budget),
+          guestCount: budgetData.guest_count,
+          essentials: budgetData.essential_categories as Record<string, CategoryBudget>,
+          discretionary: budgetData.discretionary_categories as Record<string, CategoryBudget>,
+          customVendors: []
+        });
+        
+        // Load disabled vendors
+        setDisabledVendors(budgetData.disabled_vendors || []);
+      }
+    } catch (error) {
+      console.error('Error loading budget data:', error);
+      // Fall back to defaults
+      initializeBudget(100000, 100);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Save budget data to database whenever it changes
+  useEffect(() => {
+    if (!user) return;
+    
+    // Save to localStorage as a backup
     const data = { 
       budget,
       disabledVendors
     };
     localStorage.setItem('wedding-budget-data-v2', JSON.stringify(data));
-  }, [budget, disabledVendors]);
+    
+    // Save to database
+    saveBudgetData();
+  }, [budget, disabledVendors, user]);
+  
+  // Save budget data to database
+  const saveBudgetData = async () => {
+    if (!user) return;
+    
+    try {
+      const supabase = getSupabase();
+      if (!supabase) {
+        console.error('Supabase client is null');
+        return;
+      }
+      
+      // Check if budget data exists for this user
+      const { data: existingData, error: checkError } = await supabase
+        .from('budget_data')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking budget data:', checkError);
+        return;
+      }
+      
+      const budgetData: {
+        user_id: string;
+        total_budget: number;
+        guest_count: number;
+        essential_categories: Record<string, CategoryBudget>;
+        discretionary_categories: Record<string, CategoryBudget>;
+        disabled_vendors: string[];
+        updated_at: string;
+      } = {
+        user_id: user.id,
+        total_budget: budget.totalBudget,
+        guest_count: budget.guestCount,
+        essential_categories: budget.essentials,
+        discretionary_categories: budget.discretionary,
+        disabled_vendors: disabledVendors,
+        updated_at: new Date().toISOString()
+      };
+      
+      if (existingData) {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('budget_data')
+          .update(budgetData)
+          .eq('id', existingData.id);
+          
+        if (updateError) {
+          console.error('Error updating budget data:', updateError);
+        }
+      } else {
+        // Insert new record
+        const { error: insertError } = await supabase
+          .from('budget_data')
+          .insert([budgetData]);
+          
+        if (insertError) {
+          console.error('Error inserting budget data:', insertError);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving budget data:', error);
+    }
+  };
+  
+  // Load custom vendors from database
+  const loadCustomVendors = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from('custom_vendors')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error loading custom vendors:', error);
+        return;
+      }
+      
+      if (data && data.length > 0) {
+        // Convert database vendors to the format used in the component
+        const dbVendors = data.map((vendor: any) => ({
+          id: vendor.id,
+          name: vendor.name,
+          allocated: typeof vendor.allocated === 'string' ? parseFloat(vendor.allocated) : vendor.allocated,
+          spent: typeof vendor.spent === 'string' ? parseFloat(vendor.spent) : vendor.spent,
+          categoryId: vendor.category_id || undefined
+        }));
+        
+        // Update the budget state with the loaded vendors
+        setBudget(prev => ({
+          ...prev,
+          customVendors: dbVendors
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading custom vendors:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const initializeBudget = (amount: number, guests: number) => {
+  const initializeBudget = (amount: number, guests: number, saveToDb: boolean = false) => {
     const essentialAmount = amount * 0.5; // 50% of total budget
     const discretionaryAmount = amount * 0.5; // Remaining 50%
     
@@ -85,12 +344,54 @@ export default function Budget() {
       };
     });
     
-    setBudget({
+    // Keep existing custom vendors when reinitializing
+    const existingCustomVendors = budget?.customVendors || [];
+    
+    const newBudget = {
       totalBudget: amount,
       guestCount: guests,
       essentials,
-      discretionary
-    });
+      discretionary,
+      customVendors: existingCustomVendors
+    };
+    
+    setBudget(newBudget);
+    
+    // If saveToDb is true, save the initialized budget to the database
+    if (saveToDb && user) {
+      const budgetData: {
+        user_id: string;
+        total_budget: number;
+        guest_count: number;
+        essential_categories: Record<string, CategoryBudget>;
+        discretionary_categories: Record<string, CategoryBudget>;
+        disabled_vendors: string[];
+        updated_at: string;
+      } = {
+        user_id: user.id,
+        total_budget: amount,
+        guest_count: guests,
+        essential_categories: essentials,
+        discretionary_categories: discretionary,
+        disabled_vendors: disabledVendors,
+        updated_at: new Date().toISOString()
+      };
+      
+      const supabase = getSupabase();
+      if (!supabase) {
+        console.error('Supabase client is null');
+        return;
+      }
+      
+      supabase
+        .from('budget_data')
+        .insert([budgetData])
+        .then(({ error }: { error: any }) => {
+          if (error) {
+            console.error('Error saving initialized budget:', error);
+          }
+        });
+    }
   };
 
   const toggleVendor = (vendorId: string) => {
@@ -195,6 +496,10 @@ export default function Budget() {
         essentialBudget: budget.totalBudget * 0.5,
         discretionaryBudget: budget.totalBudget * 0.5,
         totalSpent: getTotalSpent(),
+        essentialSpent: getTotalEssentialSpent(),
+        discretionarySpent: getTotalDiscretionarySpent(),
+        customVendorsSpent: getTotalCustomVendorsSpent(),
+        customVendorsCount: budget.customVendors.length,
         remaining: budget.totalBudget - getTotalSpent()
       }
     };
@@ -228,9 +533,61 @@ export default function Budget() {
       item.enabled ? total + item.spent : total, 0);
   };
 
-  const getTotalSpent = () => {
-    return getTotalEssentialSpent() + getTotalDiscretionarySpent();
+  const getTotalCustomVendorsSpent = () => {
+    return budget.customVendors.reduce((total, vendor) => 
+      total + (vendor.spent || 0), 0);
   };
+  
+  // Get custom vendors for a specific category
+  const getCategoryVendors = (categoryId: string) => {
+    return budget.customVendors.filter(vendor => vendor.categoryId === categoryId);
+  };
+  
+  // Category expansion functionality was removed
+  
+  // Handle adding a vendor to a category
+  const handleAddVendorToCategory = async (name: string, allocated: number, categoryId: string) => {
+    if (!user) return;
+    
+    const newVendor = await addCustomVendorToCategory(name, allocated, categoryId, user);
+    
+    if (newVendor) {
+      setBudget(prev => ({
+        ...prev,
+        customVendors: [...prev.customVendors, newVendor]
+      }));
+    }
+  };
+  
+  // Handle selecting a vendor from the vendor directory
+  const handleSelectVendor = (vendorName: string, categoryId: string) => {
+    // Default allocation is 10% of the category budget or 5% of total if no category budget
+    let defaultAllocation = budget.totalBudget * 0.05;
+    
+    if (categoryId in budget.essentials) {
+      defaultAllocation = budget.essentials[categoryId].allocated * 0.1;
+    } else if (categoryId in budget.discretionary) {
+      defaultAllocation = budget.discretionary[categoryId].allocated * 0.1;
+    }
+    
+    handleAddVendorToCategory(vendorName, Math.round(defaultAllocation), categoryId);
+  };
+
+  const getTotalSpent = () => {
+    return getTotalEssentialSpent() + getTotalDiscretionarySpent() + getTotalCustomVendorsSpent();
+  };
+
+  // Display loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin mx-auto" style={{ color: '#054697' }} />
+          <p className="mt-4 text-lg" style={{ color: '#054697', opacity: 0.8, fontFamily: "'Poppins', sans-serif" }}>Loading your budget data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-8">
@@ -239,20 +596,9 @@ export default function Budget() {
         style={{
           border: '1px solid rgba(5, 70, 151, 0.1)',
           boxShadow: '0 4px 20px rgba(5, 70, 151, 0.05)',
-          position: 'relative'
+          borderRadius: '4px'
         }}
       >
-        <div 
-          style={{
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '4px',
-            height: '100%',
-            backgroundColor: '#054697'
-          }}
-        ></div>
         <div className="flex items-center justify-between">
           <h2 
             className="text-2xl font-semibold"
@@ -436,162 +782,320 @@ export default function Budget() {
       </div>
 
       {/* Essential Budget (First 50%) */}
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
-        <h2 
-          className="text-xl font-semibold"
-          style={{ 
-            fontFamily: "'Giaza', serif", 
-            color: '#054697',
-            letterSpacing: '-0.05em'
-          }}
-        >
-          Essential Budget (50% - {formatCurrency(budget.totalBudget * 0.5)})
-        </h2>
+      <div className="bg-white p-6 space-y-6" style={{ boxShadow: '0 4px 20px rgba(5, 70, 151, 0.05)', position: 'relative' }}>
         
-        <div className="space-y-4">
-          {essentialCategories.map((category) => (
-            <div key={category.id} className="border rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <category.icon className="h-5 w-5 text-gray-400" />
-                  <h3 
-                    className="text-lg font-medium"
+        <div className="flex items-center justify-between">
+          <h2 
+            className="text-2xl font-semibold"
+            style={{ 
+              fontFamily: "'Giaza', serif", 
+              color: '#054697',
+              letterSpacing: '-0.05em'
+            }}
+          >
+            Essential Budget
+          </h2>
+          <div className="text-lg font-medium" style={{ color: '#054697', fontFamily: 'Poppins, sans-serif' }}>
+            {formatCurrency(budget.totalBudget * 0.5)} <span className="text-sm opacity-70">(50%)</span>
+          </div>
+        </div>
+        
+        <div className="space-y-6 mt-4">
+          {essentialCategories.map((category) => {
+            const categoryVendors = getCategoryVendors(category.id);
+
+            
+            return (
+              <div 
+                key={category.id} 
+                className="border border-[#B8BDD7]/30 p-5 relative"
+                style={{ 
+                  boxShadow: '0 2px 10px rgba(5, 70, 151, 0.03)',
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }}
+              >
+                <div 
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '4px',
+                    height: '100%',
+                    backgroundColor: '#054697'
+                  }}
+                ></div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 flex items-center justify-center bg-[#E8B4B4]/30 text-[#054697]">
+                      <category.icon className="h-5 w-5" />
+                    </div>
+                    <h3 
+                      className="text-lg font-medium"
+                      style={{ 
+                        fontFamily: "'Giaza', serif", 
+                        color: '#054697',
+                        letterSpacing: '-0.05em'
+                      }}
+                    >
+                      {category.name}
+                    </h3>
+                  </div>
+                  <div 
+                    className="text-lg font-semibold"
                     style={{ 
                       fontFamily: "'Giaza', serif", 
                       color: '#054697',
                       letterSpacing: '-0.05em'
                     }}
                   >
-                    {category.name}
-                  </h3>
+                    {formatCurrency(budget.essentials[category.id]?.allocated || 0)}
+                  </div>
                 </div>
+                
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label 
+                      className="block text-sm font-medium"
+                      style={{ 
+                        fontFamily: 'Poppins, sans-serif', 
+                        color: '#054697',
+                        opacity: 0.8
+                      }}
+                    >
+                      Allocated
+                    </label>
+                    <input
+                      type="number"
+                      value={budget.essentials[category.id]?.allocated || 0}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        if (!isNaN(value) && value >= 0) {
+                          updateEssentialAllocation(category.id, value);
+                        }
+                      }}
+                      className="mt-1 block w-full border-[#B8BDD7] shadow-sm focus:ring-[#054697] focus:border-[#054697]"
+                      style={{ 
+                        fontFamily: 'Poppins, sans-serif', 
+                        color: '#054697'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label 
+                      className="block text-sm font-medium"
+                      style={{ 
+                        fontFamily: 'Poppins, sans-serif', 
+                        color: '#054697',
+                        opacity: 0.8
+                      }}
+                    >
+                      Spent
+                    </label>
+                    <input
+                      type="number"
+                      value={budget.essentials[category.id]?.spent || 0}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        if (!isNaN(value) && value >= 0) {
+                          updateSpentAmount('essentials', category.id, value);
+                        }
+                      }}
+                      className="mt-1 block w-full border-[#B8BDD7] shadow-sm focus:ring-[#054697] focus:border-[#054697]"
+                      style={{ 
+                        fontFamily: 'Poppins, sans-serif', 
+                        color: '#054697'
+                      }}
+                    />
+                  </div>
+                </div>
+                
                 <div 
-                  className="text-lg font-semibold"
+                  className="text-sm mt-2"
                   style={{ 
-                    fontFamily: "'Giaza', serif", 
+                    fontFamily: 'Poppins, sans-serif', 
                     color: '#054697',
-                    letterSpacing: '-0.05em'
+                    opacity: 0.6
                   }}
                 >
-                  {formatCurrency(budget.essentials[category.id]?.allocated || 0)}
+                  {category.defaultPercentage}% of essential budget ({(category.defaultPercentage / 2).toFixed(1)}% of total)
+                </div>
+                
+                {/* Vendor Selection Tools */}
+                <div className="mt-3 pt-3 border-t border-[#B8BDD7]/30">
+                  <div className="flex space-x-4">
+                    <VendorSelector 
+                      categoryId={category.id} 
+                      onSelectVendor={handleSelectVendor} 
+                    />
+                    
+                    <CategoryVendor 
+                      categoryId={category.id} 
+                      onAddVendor={handleAddVendorToCategory} 
+                    />
+                  </div>
+                  
+                  {/* Category Vendors */}
+                  {categoryVendors.length > 0 && (
+                    <div className="mt-4 space-y-3">
+                      <h4 
+                        className="text-sm font-medium"
+                        style={{ 
+                          fontFamily: 'Poppins, sans-serif', 
+                          color: '#054697'
+                        }}
+                      >
+                        Vendors for {category.name}
+                      </h4>
+                      
+                      <div className="space-y-2">
+                        {categoryVendors.map(vendor => (
+                          <div 
+                            key={vendor.id} 
+                            className="p-3 bg-[#E8B4B4]/5 border border-[#E8B4B4]/20 flex justify-between items-center"
+                          >
+                            <div>
+                              <div 
+                                className="font-medium"
+                                style={{ 
+                                  fontFamily: 'Poppins, sans-serif', 
+                                  color: '#054697'
+                                }}
+                              >
+                                {vendor.name}
+                              </div>
+                              <div 
+                                className="text-sm"
+                                style={{ 
+                                  fontFamily: 'Poppins, sans-serif', 
+                                  color: '#054697',
+                                  opacity: 0.7
+                                }}
+                              >
+                                Allocated: {formatCurrency(vendor.allocated)} | 
+                                Spent: {formatCurrency(vendor.spent)}
+                              </div>
+                            </div>
+                            
+                            <button
+                              onClick={async () => {
+                                if (!user) return;
+                                
+                                try {
+                                  const supabase = getSupabase();
+                                  // Remove from database first
+                                  const { error } = await supabase
+                                    .from('custom_vendors')
+                                    .delete()
+                                    .eq('id', vendor.id)
+                                    .eq('user_id', user.id);
+                                    
+                                  if (error) {
+                                    console.error('Error removing vendor:', error);
+                                    return;
+                                  }
+                                  
+                                  // Then update local state
+                                  setBudget(prev => ({
+                                    ...prev,
+                                    customVendors: prev.customVendors.filter(v => v.id !== vendor.id)
+                                  }));
+                                } catch (error) {
+                                  console.error('Error removing vendor:', error);
+                                }
+                              }}
+                              className="text-xs px-2 py-1"
+                              style={{ 
+                                backgroundColor: '#FFE8E4', 
+                                color: '#054697',
+                                fontFamily: 'Poppins, sans-serif',
+                                fontWeight: 400,
+                                textTransform: 'uppercase'
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-              
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label 
-                    className="block text-sm font-medium"
-                    style={{ 
-                      fontFamily: 'Poppins, sans-serif', 
-                      color: '#054697',
-                      opacity: 0.8
-                    }}
-                  >
-                    Allocated
-                  </label>
-                  <input
-                    type="number"
-                    value={budget.essentials[category.id]?.allocated || 0}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value);
-                      if (!isNaN(value) && value >= 0) {
-                        updateEssentialAllocation(category.id, value);
-                      }
-                    }}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-rose-500 focus:border-rose-500"
-                    style={{ 
-                      fontFamily: 'Poppins, sans-serif', 
-                      color: '#054697'
-                    }}
-                  />
-                </div>
-                <div>
-                  <label 
-                    className="block text-sm font-medium"
-                    style={{ 
-                      fontFamily: 'Poppins, sans-serif', 
-                      color: '#054697',
-                      opacity: 0.8
-                    }}
-                  >
-                    Spent
-                  </label>
-                  <input
-                    type="number"
-                    value={budget.essentials[category.id]?.spent || 0}
-                    onChange={(e) => {
-                      const value = parseInt(e.target.value);
-                      if (!isNaN(value) && value >= 0) {
-                        updateSpentAmount('essentials', category.id, value);
-                      }
-                    }}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-rose-500 focus:border-rose-500"
-                    style={{ 
-                      fontFamily: 'Poppins, sans-serif', 
-                      color: '#054697'
-                    }}
-                  />
-                </div>
-              </div>
-              
-              <div 
-                className="text-sm"
-                style={{ 
-                  fontFamily: 'Poppins, sans-serif', 
-                  color: '#054697',
-                  opacity: 0.6
-                }}
-              >
-                {category.defaultPercentage}% of essential budget ({(category.defaultPercentage / 2).toFixed(1)}% of total)
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       {/* Discretionary Budget (Remaining 50%) */}
-      <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
-        <h2 
-          className="text-xl font-semibold"
-          style={{ 
-            fontFamily: "'Giaza', serif", 
-            color: '#054697',
-            letterSpacing: '-0.05em'
-          }}
-        >
-          Discretionary Budget (50% - {formatCurrency(budget.totalBudget * 0.5)})
-        </h2>
+      <div className="bg-white p-6 space-y-6" style={{ 
+          boxShadow: '0 4px 20px rgba(5, 70, 151, 0.05)', 
+          borderRadius: '4px',
+          border: '1px solid rgba(5, 70, 151, 0.1)'
+        }}>
         
-        <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 
+            className="text-2xl font-semibold"
+            style={{ 
+              fontFamily: "'Giaza', serif", 
+              color: '#054697',
+              letterSpacing: '-0.05em'
+            }}
+          >
+            Discretionary Budget
+          </h2>
+          <div className="text-lg font-medium" style={{ color: '#054697', fontFamily: 'Poppins, sans-serif' }}>
+            {formatCurrency(budget.totalBudget * 0.5)} <span className="text-sm opacity-70">(50%)</span>
+          </div>
+        </div>
+        
+        <div className="space-y-6 mt-4">
           {budgetCategories.map((category) => {
             const isEnabled = budget.discretionary[category.id]?.enabled !== false;
+            const categoryVendors = getCategoryVendors(category.id);
+
+            
             return (
               <div 
                 key={category.id} 
-                className={`border rounded-lg p-4 ${!isEnabled ? 'opacity-50 bg-gray-50' : ''}`}
+                className={`border border-[#B8BDD7]/30 p-5 relative ${!isEnabled ? 'opacity-50 bg-[#F9F9FF]' : ''}`}
+                style={{ 
+                  boxShadow: '0 2px 10px rgba(5, 70, 151, 0.03)',
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }}
               >
+                <div 
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '4px',
+                    height: '100%',
+                    backgroundColor: '#054697'
+                  }}
+                ></div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={() => toggleVendor(category.id)}
-                      className={`flex items-center justify-center w-6 h-6 rounded-full border ${isEnabled ? 'border-green-500' : 'border-red-500'}`}
+                      className="flex items-center justify-center w-8 h-8 border border-[#E8B4B4]"
                       title={isEnabled ? "Click to exclude this vendor" : "Click to include this vendor"}
                       style={{ 
-                        backgroundColor: 'transparent',
-                        color: '#054697',
-                        border: '1px solid #E8B4B4',
-                        fontFamily: 'Poppins, sans-serif',
-                        fontWeight: 400,
-                        textTransform: 'uppercase'
+                        backgroundColor: isEnabled ? '#E8B4B4' : 'transparent',
+                        color: '#054697'
                       }}
                     >
                       {isEnabled ? (
-                        <Check className="h-4 w-4 text-green-500" />
+                        <Check className="h-4 w-4 text-[#054697]" />
                       ) : (
-                        <X className="h-4 w-4 text-red-500" />
+                        <X className="h-4 w-4 text-[#054697]" />
                       )}
                     </button>
-                    <category.icon className="h-5 w-5 text-gray-400" />
+                    <div className="w-10 h-10 flex items-center justify-center bg-[#E8B4B4]/30 text-[#054697]">
+                      <category.icon className="h-5 w-5" />
+                    </div>
                     <h3 
                       className="text-lg font-medium"
                       style={{ 
@@ -635,7 +1139,7 @@ export default function Budget() {
                           type="number"
                           value={budget.discretionary[category.id]?.allocated || 0}
                           disabled={true} // Automatically calculated based on percentages
-                          className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm"
+                          className="mt-1 block w-full border-[#B8BDD7] bg-[#F9F9FF] shadow-sm"
                           style={{ 
                             fontFamily: 'Poppins, sans-serif', 
                             color: '#054697'
@@ -662,7 +1166,7 @@ export default function Budget() {
                               updateSpentAmount('discretionary', category.id, value);
                             }
                           }}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-rose-500 focus:border-rose-500"
+                          className="mt-1 block w-full border-[#B8BDD7] shadow-sm focus:ring-[#054697] focus:border-[#054697]"
                           style={{ 
                             fontFamily: 'Poppins, sans-serif', 
                             color: '#054697'
@@ -672,7 +1176,7 @@ export default function Budget() {
                     </div>
                     
                     <div 
-                      className="text-sm"
+                      className="text-sm mt-2"
                       style={{ 
                         fontFamily: 'Poppins, sans-serif', 
                         color: '#054697',
@@ -681,11 +1185,197 @@ export default function Budget() {
                     >
                       {category.defaultPercentage}% of discretionary budget ({(category.defaultPercentage / 2).toFixed(1)}% of total)
                     </div>
+                    
+                    {/* Vendor Selection Tools */}
+                    <div className="mt-3 pt-3 border-t border-[#B8BDD7]/30">
+                      <div className="flex space-x-4">
+                        <VendorSelector 
+                          categoryId={category.id} 
+                          onSelectVendor={handleSelectVendor} 
+                        />
+                        
+                        <CategoryVendor 
+                          categoryId={category.id} 
+                          onAddVendor={handleAddVendorToCategory} 
+                        />
+                      </div>
+                      
+                      {/* Category Vendors */}
+                      {categoryVendors.length > 0 && (
+                        <div className="mt-4 space-y-3">
+                          <h4 
+                            className="text-sm font-medium"
+                            style={{ 
+                              fontFamily: 'Poppins, sans-serif', 
+                              color: '#054697'
+                            }}
+                          >
+                            Vendors for {category.name}
+                          </h4>
+                          
+                          <div className="space-y-2">
+                            {categoryVendors.map(vendor => (
+                              <div 
+                                key={vendor.id} 
+                                className="p-3 bg-[#E8B4B4]/5 border border-[#E8B4B4]/20 flex justify-between items-center"
+                              >
+                                <div>
+                                  <div 
+                                    className="font-medium"
+                                    style={{ 
+                                      fontFamily: 'Poppins, sans-serif', 
+                                      color: '#054697'
+                                    }}
+                                  >
+                                    {vendor.name}
+                                  </div>
+                                  <div 
+                                    className="text-sm"
+                                    style={{ 
+                                      fontFamily: 'Poppins, sans-serif', 
+                                      color: '#054697',
+                                      opacity: 0.7
+                                    }}
+                                  >
+                                    Allocated: {formatCurrency(vendor.allocated)} | 
+                                    Spent: {formatCurrency(vendor.spent)}
+                                  </div>
+                                </div>
+                                
+                                <button
+                                  onClick={async () => {
+                                    if (!user) return;
+                                    
+                                    try {
+                                      // Remove from database first
+                                      const { error } = await supabase
+                                        .from('custom_vendors')
+                                        .delete()
+                                        .eq('id', vendor.id)
+                                        .eq('user_id', user.id);
+                                        
+                                      if (error) {
+                                        console.error('Error removing vendor:', error);
+                                        return;
+                                      }
+                                      
+                                      // Then update local state
+                                      setBudget(prev => ({
+                                        ...prev,
+                                        customVendors: prev.customVendors.filter(v => v.id !== vendor.id)
+                                      }));
+                                    } catch (error) {
+                                      console.error('Error removing vendor:', error);
+                                    }
+                                  }}
+                                  className="text-xs px-2 py-1"
+                                  style={{ 
+                                    backgroundColor: '#FFE8E4', 
+                                    color: '#054697',
+                                    fontFamily: 'Poppins, sans-serif',
+                                    fontWeight: 400,
+                                    textTransform: 'uppercase'
+                                  }}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
             );
           })}
+          
+          {/* Show all uncategorized vendors */}
+          {budget.customVendors.filter(vendor => !vendor.categoryId).length > 0 && (
+            <div className="mt-8 p-5 border-t border-[#B8BDD7]/30">
+              <h3 
+                className="text-lg font-medium mb-4"
+                style={{ 
+                  fontFamily: "'Giaza', serif", 
+                  color: '#054697',
+                  letterSpacing: '-0.05em'
+                }}
+              >
+                Uncategorized Vendors
+              </h3>
+              
+              <div className="space-y-3">
+                {budget.customVendors.filter(vendor => !vendor.categoryId).map(vendor => (
+                  <div 
+                    key={vendor.id} 
+                    className="p-3 bg-[#E8B4B4]/5 border border-[#E8B4B4]/20 flex justify-between items-center"
+                  >
+                    <div>
+                      <div 
+                        className="font-medium"
+                        style={{ 
+                          fontFamily: 'Poppins, sans-serif', 
+                          color: '#054697'
+                        }}
+                      >
+                        {vendor.name}
+                      </div>
+                      <div 
+                        className="text-sm"
+                        style={{ 
+                          fontFamily: 'Poppins, sans-serif', 
+                          color: '#054697',
+                          opacity: 0.7
+                        }}
+                      >
+                        Allocated: {formatCurrency(vendor.allocated)} | 
+                        Spent: {formatCurrency(vendor.spent)}
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={async () => {
+                        if (!user) return;
+                        
+                        try {
+                          // Remove from database first
+                          const { error } = await supabase
+                            .from('custom_vendors')
+                            .delete()
+                            .eq('id', vendor.id)
+                            .eq('user_id', user.id);
+                            
+                          if (error) {
+                            console.error('Error removing vendor:', error);
+                            return;
+                          }
+                          
+                          // Then update local state
+                          setBudget(prev => ({
+                            ...prev,
+                            customVendors: prev.customVendors.filter(v => v.id !== vendor.id)
+                          }));
+                        } catch (error) {
+                          console.error('Error removing vendor:', error);
+                        }
+                      }}
+                      className="text-xs px-2 py-1"
+                      style={{ 
+                        backgroundColor: '#FFE8E4', 
+                        color: '#054697',
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 400,
+                        textTransform: 'uppercase'
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
