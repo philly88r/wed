@@ -15,9 +15,11 @@ import {
   IconButton,
   Snackbar,
   InputAdornment,
+  Radio,
 } from '@mui/material';
 import { MessageSquare, Upload, Download, Trash2, Edit2, X, Link, Copy, Send } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../supabaseClient';
+import { createCustomLink } from '../utils/customLinksHelper';
 
 interface GuestContact {
   id: string;
@@ -41,14 +43,17 @@ export default function GuestDirectory() {
     email: ''
   });
   const [customLinkInput, setCustomLinkInput] = useState('');
-  const [questionnaireLinkOpen, setQuestionnaireLinkOpen] = useState(false);
+  const [customLinkOpen, setCustomLinkOpen] = useState(false);
   const [generatedLink, setGeneratedLink] = useState('');
+  const [savedLinks, setSavedLinks] = useState<Array<{id: string, name: string, link: string}>>([]);
+  const [selectedLink, setSelectedLink] = useState<string>('');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
 
-  // Load contacts
+  // Load contacts and custom links
   useEffect(() => {
     loadContacts();
+    loadCustomLinks();
   }, []);
 
   const loadContacts = async () => {
@@ -172,7 +177,7 @@ export default function GuestDirectory() {
     window.location.href = `sms:${phoneNumbers}`;
   };
 
-  const handleSendQuestionnaireLink = () => {
+  const handleSendCustomLink = () => {
     const phoneNumbers = contacts
       .filter(contact => contact.phone)
       .map(contact => contact.phone)
@@ -183,13 +188,16 @@ export default function GuestDirectory() {
       return;
     }
     
-    if (!generatedLink) {
-      alert('Please generate a questionnaire link first.');
+    // Use selected link or generated link
+    const linkToSend = selectedLink || generatedLink;
+    
+    if (!linkToSend) {
+      alert('Please select or create a custom link first.');
       return;
     }
     
-    // Create SMS link with message body containing the questionnaire link
-    const messageBody = encodeURIComponent(`Please fill out our guest questionnaire: ${generatedLink}`);
+    // Create SMS link with message body containing the custom link
+    const messageBody = encodeURIComponent(`Please fill out our guest information form: ${linkToSend}`);
     window.location.href = `sms:${phoneNumbers}?body=${messageBody}`;
   };
 
@@ -201,6 +209,35 @@ export default function GuestDirectory() {
     }
 
     try {
+      // Format the link name (remove spaces, lowercase)
+      const linkName = customLinkInput.toLowerCase().replace(/\s+/g, '');
+      const baseUrl = window.location.origin;
+      const link = `${baseUrl}/${linkName}`;
+      
+      // Use the improved createCustomLink helper function
+      const success = await createCustomLink(linkName, customLinkInput);
+      
+      if (success) {
+        setGeneratedLink(link);
+        setSelectedLink(link); // Auto-select the newly created link
+        loadCustomLinks(); // Reload links to show the new one
+        setSnackbarMessage('Custom link created successfully');
+        setSnackbarOpen(true);
+        setCustomLinkOpen(false); // Close the dialog
+      } else {
+        setSnackbarMessage('Error creating questionnaire link');
+        setSnackbarOpen(true);
+      }
+    } catch (error) {
+      console.error('Error creating custom link:', error);
+      setSnackbarMessage('Error generating questionnaire link');
+      setSnackbarOpen(true);
+    }
+  };
+
+  // Load custom links from the database
+  const loadCustomLinks = async () => {
+    try {
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -208,65 +245,30 @@ export default function GuestDirectory() {
         console.error('No authenticated user found');
         return;
       }
-
-      // Format the link name (remove spaces, lowercase)
-      const linkName = customLinkInput.toLowerCase().replace(/\s+/g, '');
-      const baseUrl = window.location.origin;
-      const link = `${baseUrl}/${linkName}`;
       
-      // Check if link already exists
-      const { data: existingLink } = await supabase
+      const { data, error } = await supabase
         .from('custom_links')
-        .select('id')
-        .eq('questionnaire_path', `/${linkName}`)
-        .maybeSingle();
-      
-      if (existingLink) {
-        // Update existing link
-        const { error } = await supabase
-          .from('custom_links')
-          .update({ 
-            name: customLinkInput,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingLink.id);
-          
-        if (error) {
-          console.error('Error updating link:', error);
-          setSnackbarMessage('Error updating questionnaire link');
-          setSnackbarOpen(true);
-          return;
-        }
-      } else {
-        // Create new link
-        const { error } = await supabase
-          .from('custom_links')
-          .insert([{ 
-            name: customLinkInput,
-            questionnaire_path: `/${linkName}`,
-            user_id: user.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }]);
-          
-        if (error) {
-          console.error('Error creating link:', error);
-          setSnackbarMessage('Error creating questionnaire link');
-          setSnackbarOpen(true);
-          return;
+        .select('id, name, link')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading custom links:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setSavedLinks(data);
+        // If no link is currently selected, select the most recent one
+        if (!selectedLink && data.length > 0) {
+          setSelectedLink(data[0].link);
         }
       }
-      
-      setGeneratedLink(link);
-      setSnackbarMessage('Questionnaire link generated successfully');
-      setSnackbarOpen(true);
     } catch (error) {
-      console.error('Error generating questionnaire link:', error);
-      setSnackbarMessage('Error generating questionnaire link');
-      setSnackbarOpen(true);
+      console.error('Error loading custom links:', error);
     }
   };
-
+  
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(
       () => {
@@ -520,25 +522,135 @@ export default function GuestDirectory() {
           Open Messaging App
         </Button>
         
-        <Button
-          variant="outlined"
-          startIcon={<Link />}
-          onClick={() => setQuestionnaireLinkOpen(true)}
-          sx={{ 
-            mt: 3,
-            color: '#054697',
-            borderColor: '#054697',
-            borderRadius: 0,
-            textTransform: 'uppercase',
-            fontFamily: 'Poppins, sans-serif',
-            '&:hover': {
-              backgroundColor: 'rgba(5, 70, 151, 0.05)',
-            },
-          }}
-          size="large"
-        >
-          Generate Questionnaire Link
-        </Button>
+        <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<Link />}
+            onClick={() => setCustomLinkOpen(true)}
+            sx={{ 
+              color: '#054697',
+              borderColor: '#054697',
+              borderRadius: 0,
+              textTransform: 'uppercase',
+              fontFamily: 'Poppins, sans-serif',
+              '&:hover': {
+                backgroundColor: 'rgba(5, 70, 151, 0.05)',
+              },
+            }}
+            size="large"
+          >
+            Create Custom Link
+          </Button>
+          
+          {/* Display saved custom links */}
+          {savedLinks.length > 0 && (
+            <Paper 
+              elevation={0} 
+              sx={{ 
+                p: 2, 
+                border: '1px solid', 
+                borderColor: 'divider',
+                mt: 2
+              }}
+            >
+              <Typography 
+                variant="h6" 
+                sx={{
+                  fontFamily: "'Giaza', serif",
+                  color: '#054697',
+                  mb: 2
+                }}
+              >
+                Your Custom Links
+              </Typography>
+              
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {savedLinks.map((link) => (
+                  <Box 
+                    key={link.id} 
+                    sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      p: 1,
+                      border: '1px solid',
+                      borderColor: selectedLink === link.link ? '#054697' : 'divider',
+                      backgroundColor: selectedLink === link.link ? 'rgba(5, 70, 151, 0.05)' : 'transparent',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        backgroundColor: 'rgba(5, 70, 151, 0.05)'
+                      }
+                    }}
+                    onClick={() => setSelectedLink(link.link)}
+                  >
+                    <Radio 
+                      checked={selectedLink === link.link}
+                      onChange={() => setSelectedLink(link.link)}
+                      sx={{ 
+                        color: '#054697',
+                        '&.Mui-checked': {
+                          color: '#054697',
+                        },
+                      }}
+                    />
+                    <Box sx={{ ml: 1, flexGrow: 1 }}>
+                      <Typography 
+                        sx={{ 
+                          fontFamily: 'Poppins, sans-serif',
+                          fontWeight: 500,
+                          color: '#054697'
+                        }}
+                      >
+                        {link.name}
+                      </Typography>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: '#054697', 
+                          opacity: 0.7,
+                          fontFamily: 'Poppins, sans-serif',
+                          fontSize: '0.8rem'
+                        }}
+                      >
+                        {link.link}
+                      </Typography>
+                    </Box>
+                    <IconButton 
+                      size="small" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        copyToClipboard(link.link);
+                      }}
+                      sx={{ color: '#054697' }}
+                    >
+                      <Copy size={16} />
+                    </IconButton>
+                  </Box>
+                ))}
+              </Box>
+              
+              {/* Button to send selected link via SMS */}
+              <Button
+                variant="contained"
+                startIcon={<Send />}
+                onClick={handleSendCustomLink}
+                sx={{ 
+                  mt: 2,
+                  backgroundColor: '#FFE8E4', 
+                  color: '#054697',
+                  fontFamily: 'Poppins, sans-serif',
+                  fontWeight: 400,
+                  textTransform: 'uppercase',
+                  '&:hover': {
+                    backgroundColor: '#FFD5CC'
+                  },
+                  alignSelf: 'flex-start'
+                }}
+              >
+                Send Link to Contacts
+              </Button>
+            </Paper>
+          )}
+        </Box>
       </Paper>
 
       {/* Contact List */}
@@ -900,10 +1012,10 @@ export default function GuestDirectory() {
         </DialogActions>
       </Dialog>
 
-      {/* Questionnaire Link Dialog */}
+      {/* Custom Link Dialog */}
       <Dialog
-        open={questionnaireLinkOpen}
-        onClose={() => setQuestionnaireLinkOpen(false)}
+        open={customLinkOpen}
+        onClose={() => setCustomLinkOpen(false)}
         maxWidth="md"
         fullWidth
         PaperProps={{
@@ -921,9 +1033,9 @@ export default function GuestDirectory() {
                 letterSpacing: '-0.05em',
               }}
             >
-              Generate Guest Questionnaire Link
+              Create Custom Guest Link
             </Typography>
-            <IconButton onClick={() => setQuestionnaireLinkOpen(false)} size="small">
+            <IconButton onClick={() => setCustomLinkOpen(false)} size="small">
               <X size={18} />
             </IconButton>
           </Box>
@@ -1064,7 +1176,7 @@ export default function GuestDirectory() {
         </DialogContent>
         <DialogActions>
           <Button 
-            onClick={() => setQuestionnaireLinkOpen(false)}
+            onClick={() => setCustomLinkOpen(false)}
             sx={{
               color: '#054697',
               textTransform: 'uppercase',
@@ -1078,7 +1190,7 @@ export default function GuestDirectory() {
           </Button>
           {generatedLink && (
             <Button
-              onClick={handleSendQuestionnaireLink}
+              onClick={handleSendCustomLink}
               variant="contained"
               startIcon={<Send />}
               sx={{ 
