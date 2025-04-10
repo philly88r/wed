@@ -129,7 +129,7 @@ export default function VendorDirectory() {
         .from('vendors')
         .select(`
           *,
-          category:vendor_categories(*)
+          category:vendor_categories(id, name)
         `);
 
       // Apply filters
@@ -488,7 +488,11 @@ export default function VendorDirectory() {
                       mb: 1,
                     }}
                   >
-                    {vendor.category?.name}
+                    {typeof vendor.category === 'object' && vendor.category !== null 
+                      ? vendor.category.name 
+                      : typeof vendor.category === 'string' 
+                        ? vendor.category 
+                        : 'Unknown Category'}
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <LocationOnIcon sx={{ color: theme.palette.primary.main, fontSize: '1rem' }} />

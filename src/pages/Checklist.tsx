@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Check, Clock, ChevronUp, ChevronDown, Calendar } from 'lucide-react';
+import { getSupabase } from '../supabaseClient';
 
 interface ChecklistItem {
   id: string;
@@ -43,6 +44,7 @@ export default function Checklist() {
   const [items, setItems] = useState<ChecklistItem[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [weddingDate, setWeddingDate] = useState<string | null>(null);
   const [newItem, setNewItem] = useState<Partial<ChecklistItem>>({
     completed: false,
     category: categories[0],
@@ -54,6 +56,41 @@ export default function Checklist() {
     if (savedItems) {
       setItems(JSON.parse(savedItems));
     }
+    
+    // Fetch the wedding date from the user's profile
+    const fetchWeddingDate = async () => {
+      try {
+        const supabaseClient = getSupabase();
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        
+        if (user) {
+          // Get the wedding date from the profiles table
+          const { data: profileData, error } = await supabaseClient
+            .from('profiles')
+            .select('wedding_date')
+            .eq('id', user.id)
+            .single();
+          
+          if (error) {
+            console.error('Error fetching wedding date:', error);
+            return;
+          }
+          
+          if (profileData && profileData.wedding_date) {
+            setWeddingDate(profileData.wedding_date);
+            // Update the newItem state with the wedding date
+            setNewItem(prev => ({
+              ...prev,
+              dueDate: profileData.wedding_date
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+    
+    fetchWeddingDate();
   }, []);
 
   useEffect(() => {
@@ -64,10 +101,12 @@ export default function Checklist() {
     e.preventDefault();
     if (newItem.title) {
       setItems(prev => [...prev, { ...newItem, id: Date.now().toString() } as ChecklistItem]);
+      // Reset form but keep the wedding date
       setNewItem({
         completed: false,
         category: categories[0],
-        priority: 'medium'
+        priority: 'medium',
+        dueDate: weddingDate || undefined
       });
       setShowForm(false);
     }
@@ -160,6 +199,12 @@ export default function Checklist() {
                   onChange={e => setNewItem(prev => ({ ...prev, dueDate: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-rose-500 focus:border-rose-500"
                 />
+                {weddingDate && newItem.dueDate === weddingDate && (
+                  <p className="mt-1 text-xs text-blue-600 flex items-center">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    Pre-filled with your wedding date from registration
+                  </p>
+                )}
               </div>
 
               <div>
