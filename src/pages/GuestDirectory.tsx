@@ -58,6 +58,12 @@ export default function GuestDirectory() {
 
   const loadContacts = async () => {
     try {
+      const supabase = getSupabase();
+      if (!supabase) {
+        console.error('Supabase client is null');
+        return;
+      }
+
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -78,7 +84,7 @@ export default function GuestDirectory() {
       }
 
       if (data) {
-        setContacts(data);
+        setContacts(data as GuestContact[]);
       }
     } catch (error) {
       console.error('Error loading contacts:', error);
@@ -89,6 +95,12 @@ export default function GuestDirectory() {
     if (!newContact.full_name) return;
 
     try {
+      const supabase = getSupabase();
+      if (!supabase) {
+        console.error('Supabase client is null');
+        return;
+      }
+
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -108,7 +120,7 @@ export default function GuestDirectory() {
       }
 
       if (data) {
-        setContacts([...contacts, data[0]]);
+        setContacts([...contacts, data[0] as GuestContact]);
         setNewContact({
           full_name: '',
           phone: '',
@@ -123,6 +135,13 @@ export default function GuestDirectory() {
   const handleBulkAdd = async () => {
     try {
       setLoading(true);
+      
+      const supabase = getSupabase();
+      if (!supabase) {
+        console.error('Supabase client is null');
+        setLoading(false);
+        return;
+      }
       
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -151,7 +170,7 @@ export default function GuestDirectory() {
       if (error) throw error;
 
       if (data) {
-        setContacts([...contacts, ...data]);
+        setContacts([...contacts, ...(data as GuestContact[])]);
         setBulkAddOpen(false);
         setBulkInput('');
       }
@@ -238,6 +257,12 @@ export default function GuestDirectory() {
   // Load custom links from the database
   const loadCustomLinks = async () => {
     try {
+      const supabase = getSupabase();
+      if (!supabase) {
+        console.error('Supabase client is null');
+        return;
+      }
+
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -258,10 +283,10 @@ export default function GuestDirectory() {
       }
 
       if (data && data.length > 0) {
-        setSavedLinks(data);
+        setSavedLinks(data as { id: string; name: string; link: string }[]);
         // If no link is currently selected, select the most recent one
         if (!selectedLink && data.length > 0) {
-          setSelectedLink(data[0].link);
+          setSelectedLink((data[0] as { id: string; name: string; link: string }).link);
         }
       }
     } catch (error) {
