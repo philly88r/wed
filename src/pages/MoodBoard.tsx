@@ -91,13 +91,30 @@ export default function MoodBoard() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-semibold text-gray-900">Mood Board</h1>
-        <div className="flex space-x-3">
+        <h1 
+          className="text-3xl font-bold" 
+          style={{ 
+            fontFamily: "'Giaza', serif", 
+            color: '#054697',
+            letterSpacing: '-0.05em'
+          }}
+        >
+          Wedding Mood Board
+        </h1>
+        <div className="flex gap-4">
           <button
             onClick={downloadBoard}
-            className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium"
+            style={{
+              backgroundColor: 'transparent',
+              color: '#054697',
+              borderColor: '#E8B4B4',
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 400,
+              textTransform: 'uppercase'
+            }}
           >
             <Download className="w-5 h-5 mr-2" />
             Export Board
@@ -107,7 +124,14 @@ export default function MoodBoard() {
               setNewImage({ category: categories[0] });
               setShowForm(true);
             }}
-            className="inline-flex items-center px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700"
+            className="inline-flex items-center px-4 py-2 text-sm font-medium"
+            style={{
+              backgroundColor: '#E8B4B4',
+              color: '#054697',
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 400,
+              textTransform: 'uppercase'
+            }}
           >
             <Plus className="w-5 h-5 mr-2" />
             Add Image
@@ -119,11 +143,13 @@ export default function MoodBoard() {
         <div className="flex flex-wrap gap-4 mb-8">
           <button
             onClick={() => setSelectedCategory('all')}
-            className={`px-4 py-2 rounded-full text-sm font-medium ${
-              selectedCategory === 'all'
-                ? 'bg-rose-100 text-rose-800'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
+            className="px-4 py-2 rounded-full text-sm font-medium"
+            style={{
+              backgroundColor: selectedCategory === 'all' ? '#E8B4B4' : 'rgba(5, 70, 151, 0.1)',
+              color: '#054697',
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 400
+            }}
           >
             All
           </button>
@@ -131,11 +157,13 @@ export default function MoodBoard() {
             <button
               key={index}
               onClick={() => setSelectedCategory(category === selectedCategory ? 'all' : category)}
-              className={`px-4 py-2 rounded-full text-sm font-medium ${
-                category === selectedCategory
-                  ? 'bg-rose-100 text-rose-800'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              className="px-4 py-2 rounded-full text-sm font-medium"
+              style={{
+                backgroundColor: category === selectedCategory ? '#E8B4B4' : 'rgba(5, 70, 151, 0.1)',
+                color: '#054697',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 400
+              }}
             >
               {category}
             </button>
@@ -145,8 +173,35 @@ export default function MoodBoard() {
 
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Add Inspiration Image</h2>
+          <div 
+            className="bg-white p-6 w-full max-w-md"
+            style={{
+              position: 'relative',
+              boxShadow: '0 4px 20px rgba(5, 70, 151, 0.1)',
+              border: '1px solid rgba(5, 70, 151, 0.1)'
+            }}
+          >
+            <div 
+              style={{
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '4px',
+                height: '100%',
+                backgroundColor: '#054697'
+              }}
+            ></div>
+            <h2 
+              className="text-xl font-semibold mb-4"
+              style={{ 
+                fontFamily: "'Giaza', serif", 
+                color: '#054697',
+                letterSpacing: '-0.05em'
+              }}
+            >
+              Add Inspiration Image
+            </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -217,17 +272,31 @@ export default function MoodBoard() {
                 />
               </div>
 
-              <div className="flex justify-end space-x-3 mt-6">
+              <div className="flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 text-sm font-medium"
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: '#054697',
+                    fontFamily: 'Poppins, sans-serif',
+                    fontWeight: 400,
+                    textTransform: 'uppercase'
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-rose-600 rounded-md hover:bg-rose-700"
+                  className="px-4 py-2 text-sm font-medium"
+                  style={{
+                    backgroundColor: '#E8B4B4',
+                    color: '#054697',
+                    fontFamily: 'Poppins, sans-serif',
+                    fontWeight: 400,
+                    textTransform: 'uppercase'
+                  }}
                 >
                   Add Image
                 </button>
@@ -237,13 +306,28 @@ export default function MoodBoard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredImages.map(image => (
-          <div
-            key={image.id}
-            className="bg-white rounded-xl shadow-sm overflow-hidden group"
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {filteredImages.map((image) => (
+          <div 
+            key={image.id} 
+            className="bg-white shadow-md overflow-hidden flex flex-col"
+            style={{
+              border: '1px solid rgba(5, 70, 151, 0.1)',
+              position: 'relative'
+            }}
           >
-            <div className="relative aspect-w-16 aspect-h-9">
+            <div 
+              style={{
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '4px',
+                height: '100%',
+                backgroundColor: '#054697'
+              }}
+            ></div>
+            <div className="relative aspect-w-16 aspect-h-9 bg-gray-200">
               <img
                 src={image.url}
                 alt={image.title}
@@ -251,31 +335,62 @@ export default function MoodBoard() {
               />
               <button
                 onClick={() => deleteImage(image.id)}
-                className="absolute top-2 right-2 p-1 bg-white rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-2 right-2 p-1 rounded-full bg-white text-gray-700 hover:bg-gray-100"
               >
-                <X className="w-4 h-4 text-gray-500" />
+                <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900">
+            <div className="p-4 flex-grow">
+              <div className="flex justify-between items-start mb-2">
+                <h3 
+                  className="text-lg font-semibold line-clamp-1"
+                  style={{ 
+                    fontFamily: "'Giaza', serif", 
+                    color: '#054697',
+                    letterSpacing: '-0.05em'
+                  }}
+                >
                   {image.title}
                 </h3>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                <span 
+                  className="text-xs px-2 py-1 rounded-full"
+                  style={{
+                    backgroundColor: 'rgba(5, 70, 151, 0.1)',
+                    color: '#054697',
+                    fontFamily: 'Poppins, sans-serif',
+                    fontWeight: 400
+                  }}
+                >
                   {image.category}
                 </span>
               </div>
               {image.description && (
-                <p className="mt-2 text-sm text-gray-500">{image.description}</p>
+                <p 
+                  className="text-sm mb-3 line-clamp-2"
+                  style={{ 
+                    color: '#054697', 
+                    opacity: 0.8,
+                    fontFamily: 'Poppins, sans-serif',
+                    fontWeight: 300
+                  }}
+                >
+                  {image.description}
+                </p>
               )}
               {image.source && (
                 <a
                   href={image.source}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center text-sm text-rose-600 hover:text-rose-700"
+                  className="inline-flex items-center text-xs mt-2"
+                  style={{ 
+                    color: '#054697', 
+                    opacity: 0.8,
+                    fontFamily: 'Poppins, sans-serif',
+                    fontWeight: 300
+                  }}
                 >
-                  <ExternalLink className="w-4 h-4 mr-1" />
+                  <ExternalLink className="w-3 h-3 mr-1" />
                   Source
                 </a>
               )}
@@ -285,14 +400,51 @@ export default function MoodBoard() {
       </div>
 
       {filteredImages.length === 0 && (
-        <div className="text-center py-12">
-          <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No images yet</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {images.length === 0
-              ? "Get started by adding your first inspiration image."
-              : "No images found in this category."}
+        <div 
+          className="bg-gray-50 p-8 text-center rounded-lg border border-dashed"
+          style={{
+            borderColor: 'rgba(5, 70, 151, 0.2)',
+          }}
+        >
+          <ImageIcon className="w-12 h-12 mx-auto mb-4" style={{ color: 'rgba(5, 70, 151, 0.3)' }} />
+          <h3 
+            className="text-lg font-medium mb-2"
+            style={{ 
+              fontFamily: "'Giaza', serif", 
+              color: '#054697',
+              letterSpacing: '-0.05em'
+            }}
+          >
+            No images yet
+          </h3>
+          <p 
+            className="text-sm mb-4"
+            style={{ 
+              color: '#054697', 
+              opacity: 0.8,
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 300
+            }}
+          >
+            Start adding inspiration images to your mood board
           </p>
+          <button
+            onClick={() => {
+              setNewImage({ category: categories[0] });
+              setShowForm(true);
+            }}
+            className="inline-flex items-center px-4 py-2 text-sm font-medium"
+            style={{
+              backgroundColor: '#E8B4B4',
+              color: '#054697',
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 400,
+              textTransform: 'uppercase'
+            }}
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Add First Image
+          </button>
         </div>
       )}
     </div>

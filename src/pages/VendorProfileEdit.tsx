@@ -108,6 +108,7 @@ export default function VendorProfileEdit() {
   
   const initialData: FormData = {
     name: '',
+    slug: '',
     category_id: '',
     description: '',
     location: '',
@@ -317,8 +318,66 @@ export default function VendorProfileEdit() {
     }
   };
 
+  // Generate a slug from a string (name)
+  const generateSlug = (name: string): string => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
+  // Check if a slug exists in the database
+  const checkSlugExists = async (slug: string, excludeId?: string): Promise<boolean> => {
+    let query = supabase
+      .from('vendors')
+      .select('id')
+      .eq('slug', slug);
+    
+    // If we're updating an existing vendor, exclude its ID from the check
+    if (excludeId) {
+      query = query.neq('id', excludeId);
+    }
+
+    const { data, error } = await query;
+    
+    if (error) {
+      console.error('Error checking slug:', error);
+      return true; // Assume it exists to be safe
+    }
+    
+    return data && data.length > 0;
+  };
+
+  // Generate a unique slug
+  const generateUniqueSlug = async (baseName: string, excludeId?: string): Promise<string> => {
+    let slug = generateSlug(baseName);
+    let exists = await checkSlugExists(slug, excludeId);
+    let counter = 1;
+    
+    // If the slug exists, append a number until we find a unique one
+    while (exists && counter < 100) { // Limit to prevent infinite loops
+      slug = `${generateSlug(baseName)}-${counter}`;
+      exists = await checkSlugExists(slug, excludeId);
+      counter++;
+    }
+    
+    return slug;
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // If the name field is being changed, update the slug field too
+    if (name === 'name' && value !== formData.name) {
+      // We'll update the slug asynchronously
+      generateUniqueSlug(value, vendorId).then(uniqueSlug => {
+        setFormData(prev => ({
+          ...prev,
+          slug: uniqueSlug
+        }));
+      });
+    }
+    
     setFormData({ ...formData, [name]: value });
   };
 
@@ -337,10 +396,32 @@ export default function VendorProfileEdit() {
       
       console.log('Submitting form data:', formData);
       
+      // Only generate a new slug if one doesn't exist or if the name has changed
+      // First, get the original vendor data to compare
+      const { data: originalVendor } = await supabase
+        .from('vendors')
+        .select('name, slug')
+        .eq('id', vendorId)
+        .single();
+      
+      let slugToUse = formData.slug;
+      
+      // If there's no slug or the name has changed from the original, we need to ensure a unique slug
+      if (!slugToUse || (originalVendor && formData.name !== originalVendor.name)) {
+        // If we already have a slug and the name hasn't changed, keep using the existing slug
+        if (originalVendor && originalVendor.slug && formData.name === originalVendor.name) {
+          slugToUse = originalVendor.slug;
+        } else {
+          // Generate a new slug based on the new name
+          slugToUse = await generateUniqueSlug(formData.name, vendorId);
+        }
+      }
+
       const { error } = await supabase
         .from('vendors')
         .update({
           name: formData.name,
+          slug: slugToUse,
           category_id: formData.category_id,
           description: formData.description,
           location: formData.location,
@@ -397,6 +478,13 @@ export default function VendorProfileEdit() {
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
+        </Alert>
+      )}
+      
+      {/* Display current slug information */}
+      {formData.slug && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Your profile URL will be: /vendors/{formData.slug}
         </Alert>
       )}
       

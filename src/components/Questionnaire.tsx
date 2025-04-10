@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../supabaseClient';
 
 interface QuestionnaireProps {
   onComplete: (answers: Record<string, string>) => void;
@@ -31,10 +31,11 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onComplete }) => {
       setCurrentQuestion(prev => prev + 1);
     } else {
       try {
+        const supabaseClient = getSupabase();
         const {
           data: { user },
           error: authError,
-        } = await supabase.auth.getUser();
+        } = await supabaseClient.auth.getUser();
 
         if (authError) throw authError;
         if (!user) throw new Error('No user found');
@@ -50,7 +51,7 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onComplete }) => {
           onboarding_completed: true
         };
 
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseClient
           .from('profiles')
           .update(profileData)
           .eq('id', user.id);

@@ -24,7 +24,7 @@ import {
   EyeOff,
   Check
 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { getSupabase } from '../../supabaseClient';
 
 // Define the types of users
 type UserType = 'couple' | 'planner' | 'vendor';
@@ -355,8 +355,9 @@ export const AuthForm: React.FC = () => {
   // Check if user has a subscription
   const checkSubscription = async (userId: string) => {
     try {
+      const supabaseClient = getSupabase();
       // First, check if the user profile exists and has completed onboarding
-      const { data: profileData, error: profileError } = await supabase
+      const { data: profileData, error: profileError } = await supabaseClient
         .from('profiles')
         .select('*')
         .eq('id', userId)
@@ -370,7 +371,7 @@ export const AuthForm: React.FC = () => {
       }
       
       // Check if user has an active subscription
-      const { data: subscriptionData, error: subscriptionError } = await supabase
+      const { data: subscriptionData, error: subscriptionError } = await supabaseClient
         .from('subscriptions')
         .select('*')
         .eq('user_id', userId)
@@ -392,6 +393,7 @@ export const AuthForm: React.FC = () => {
   // Create user profile in Supabase
   const createUserProfile = async (userId: string) => {
     try {
+      const supabaseClient = getSupabase();
       // Extract relevant data from form
       const profileData: any = {
         id: userId,
@@ -406,6 +408,28 @@ export const AuthForm: React.FC = () => {
         profileData.partner_name = formData.partnerName;
         profileData.wedding_date = formData.weddingDate || null;
         profileData.wedding_location = formData.location || null;
+        profileData.guest_count = formData.guestCount || null;
+        
+        // Also create a wedding record with this information
+        try {
+          const weddingData = {
+            user_id: userId,
+            couple_name: `${formData.firstName} & ${formData.partnerName}`,
+            wedding_date: formData.weddingDate || null,
+            location: formData.location || null,
+            guest_count: parseInt(formData.guestCount) || 0,
+            created_at: new Date().toISOString(),
+            url_path: `${formData.firstName.toLowerCase()}${formData.partnerName.toLowerCase()}wedding`
+          };
+          
+          await supabaseClient
+            .from('weddings')
+            .upsert(weddingData);
+            
+          console.log('Wedding data saved successfully');
+        } catch (weddingError) {
+          console.error('Error creating wedding record:', weddingError);
+        }
       } else if (userType === 'planner') {
         profileData.full_name = `${formData.firstName} ${formData.lastName}`;
         profileData.company_name = formData.companyName || null;
@@ -419,7 +443,7 @@ export const AuthForm: React.FC = () => {
       }
       
       // Insert profile data
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('profiles')
         .upsert(profileData);
       
@@ -440,16 +464,19 @@ export const AuthForm: React.FC = () => {
     setError(null);
     
     try {
+      const supabaseClient = getSupabase();
       // Register user with Supabase
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await supabaseClient.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
             user_type: userType,
           },
-          // Disable email confirmation requirement
-          emailRedirectTo: window.location.origin,
+          // Use the current URL's origin for production or include port for development
+          emailRedirectTo: window.location.origin.includes('localhost') ? 
+            `${window.location.protocol}//${window.location.hostname}:${window.location.port}` : 
+            window.location.origin,
         },
       });
       
@@ -460,7 +487,7 @@ export const AuthForm: React.FC = () => {
         await createUserProfile(data.user.id);
         
         // Automatically sign in the user after registration
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        const { error: signInError } = await supabaseClient.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         });
@@ -498,8 +525,9 @@ export const AuthForm: React.FC = () => {
     setError(null);
     
     try {
+      const supabaseClient = getSupabase();
       // Sign in with Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
@@ -511,7 +539,7 @@ export const AuthForm: React.FC = () => {
           console.log('Attempting to bypass email confirmation...');
           
           // Create or update user profile if needed
-          const { data: userData } = await supabase.auth.getUser(formData.email);
+          const { data: userData } = await supabaseClient.auth.getUser(formData.email);
           if (userData && userData.user) {
             await createUserProfile(userData.user.id);
             

@@ -1,9 +1,10 @@
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../supabaseClient';
 import { VendorRegistrationData, VendorAuthResponse } from '../types/vendorAuth';
 
 export const registerVendor = async (data: VendorRegistrationData): Promise<{ success: boolean; error?: string }> => {
   try {
-    const { error } = await supabase
+    const supabaseClient = getSupabase();
+    const { error } = await supabaseClient
       .rpc('register_vendor', {
         vendor_id: data.vendor_id,
         username: data.username,
@@ -27,7 +28,8 @@ export const authenticateVendor = async (
   password: string
 ): Promise<{ success: boolean; vendorId?: string; error?: string }> => {
   try {
-    const { data, error } = await supabase
+    const supabaseClient = getSupabase();
+    const { data, error } = await supabaseClient
       .rpc('authenticate_vendor', {
         input_username: username,
         input_password: password

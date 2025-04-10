@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import { Check as CheckIcon } from '@mui/icons-material';
 import { Heart } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../supabaseClient';
 
 interface PricingTier {
   title: string;
@@ -105,12 +105,13 @@ export default function Pricing() {
     setLoading(plan);
     
     try {
+      const supabaseClient = getSupabase();
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await supabaseClient.auth.getUser();
       
       if (user) {
         // Update the user's profile with the selected plan
-        const { error } = await supabase
+        const { error } = await supabaseClient
           .from('profiles')
           .update({ selected_plan: plan })
           .eq('id', user.id);

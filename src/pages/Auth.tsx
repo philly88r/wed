@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthForm } from '../components/Auth/AuthForm';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../supabaseClient';
 import { Box, CircularProgress } from '@mui/material';
 
 interface LocationState {
@@ -20,8 +20,10 @@ export const Auth: React.FC = () => {
   // Check if user has a subscription
   const checkSubscription = async (userId: string) => {
     try {
+      const supabaseClient = getSupabase();
+      
       // First, check if the user profile exists and has completed onboarding
-      const { data: profileData, error: profileError } = await supabase
+      const { data: profileData, error: profileError } = await supabaseClient
         .from('profiles')
         .select('*')
         .eq('id', userId)
@@ -35,7 +37,7 @@ export const Auth: React.FC = () => {
       }
       
       // Check if user has an active subscription
-      const { data: subscriptionData, error: subscriptionError } = await supabase
+      const { data: subscriptionData, error: subscriptionError } = await supabaseClient
         .from('subscriptions')
         .select('*')
         .eq('user_id', userId)
@@ -55,8 +57,13 @@ export const Auth: React.FC = () => {
   };
 
   useEffect(() => {
+    const supabaseClient = getSupabase();
+    
     // Check if user is already authenticated
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    const checkAuthStatus = async () => {
+      const { data } = await supabaseClient.auth.getSession();
+      const session = data.session;
+      
       if (session) {
         // Check if user has a subscription
         const hasSubscription = await checkSubscription(session.user.id);
@@ -71,10 +78,12 @@ export const Auth: React.FC = () => {
       }
       
       setIsLoading(false);
-    });
+    };
+    
+    checkAuthStatus();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data } = supabaseClient.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
         // Check if user has a subscription
         const hasSubscription = await checkSubscription(session.user.id);
@@ -89,7 +98,7 @@ export const Auth: React.FC = () => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => data.subscription.unsubscribe();
   }, [navigate, from]);
 
   if (isLoading) {

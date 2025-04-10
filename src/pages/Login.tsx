@@ -12,7 +12,7 @@ import {
   Alert,
   CircularProgress
 } from '@mui/material';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../supabaseClient';
 import AuroraBackground from '../components/ui/AuroraBackground';
 import '../components/ui/aurora-background.css';
 
@@ -37,8 +37,9 @@ export default function Login() {
     setMessage(null);
 
     try {
+      const supabaseClient = getSupabase();
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabaseClient.auth.signInWithPassword({
           email,
           password,
         });
@@ -46,7 +47,7 @@ export default function Login() {
         if (error) throw error;
         navigate('/');
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { error } = await supabaseClient.auth.signUp({
           email,
           password,
         });
@@ -54,11 +55,8 @@ export default function Login() {
         if (error) throw error;
         setMessage({ 
           type: 'success', 
-          text: 'Registration successful! Please check your email to verify your account before logging in.' 
+          text: 'Registration successful! Please check your email to verify your account.' 
         });
-        // Clear form fields after successful registration
-        setPassword('');
-        // Keep the form in registration mode to show the message clearly
       }
     } catch (error) {
       setMessage({ 
@@ -132,13 +130,7 @@ export default function Login() {
                   color: '#054697',
                   '& .MuiAlert-icon': {
                     color: message.type === 'error' ? '#d32f2f' : '#054697',
-                  },
-                  ...(message.type === 'success' && {
-                    padding: '16px 16px',
-                    fontSize: '1rem',
-                    fontWeight: 500,
-                    borderLeft: '4px solid #054697'
-                  })
+                  }
                 }}
               >
                 {message.text}

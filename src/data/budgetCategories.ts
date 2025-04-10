@@ -26,34 +26,34 @@ export const essentialCategories = [
     id: 'venue',
     name: 'Venue site fee',
     icon: Building,
-    defaultPercentage: 20, // 20% of the first 50% (10% of total)
+    defaultPercentage: 15, // 15% of the first 50% (7.5% of total)
     isEssential: true
   },
   {
     id: 'catering',
     name: 'Catering',
     icon: Utensils,
-    defaultPercentage: 50, // 50% of the first 50% (25% of total)
+    defaultPercentage: 40, // 40% of the first 50% (20% of total)
     isEssential: true
   },
   {
     id: 'alcohol',
     name: 'Alcohol/Beverages',
     icon: Wine,
-    defaultPercentage: 30, // 30% of the first 50% (15% of total)
+    defaultPercentage: 25, // 25% of the first 50% (12.5% of total)
+    isEssential: true
+  },
+  {
+    id: 'rentals',
+    name: 'Rentals',
+    icon: Armchair,
+    defaultPercentage: 20, // 20% of the first 50% (10% of total)
     isEssential: true
   }
 ];
 
 // Remaining 50% of budget
 export const budgetCategories = [
-  {
-    id: 'rentals',
-    name: 'Rentals',
-    icon: Armchair,
-    defaultPercentage: 0, // Client didn't specify percentage
-    isEssential: false
-  },
   {
     id: 'florist',
     name: 'Florist',

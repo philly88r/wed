@@ -13,7 +13,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../supabaseClient';
 
 // Extend the theme type to include our custom properties
 declare module '@mui/material/styles' {
@@ -62,7 +62,8 @@ export default function Header() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    const supabaseClient = getSupabase();
+    await supabaseClient.auth.signOut();
     navigate('/login');
   };
 

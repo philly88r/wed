@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
 import { Plus, Users, Mail, Phone, MapPin, Filter, Download, Upload, Search, Copy, Link } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import ChairIcon from '@mui/icons-material/Chair';
 import {
@@ -73,7 +73,8 @@ export default function Guests() {
   }, [selectedLayoutId]);
 
   const fetchGuests = async () => {
-    const { data, error } = await supabase
+    const supabaseClient = getSupabase();
+    const { data, error } = await supabaseClient
       .from('guests')
       .select('*')
       .order('created_at', { ascending: false });
@@ -204,7 +205,8 @@ export default function Guests() {
   };
 
   const loadSavedLinks = async () => {
-    const { data, error } = await supabase
+    const supabaseClient = getSupabase();
+    const { data, error } = await supabaseClient
       .from('custom_links')
       .select('*')
       .order('created_at', { ascending: false })
@@ -229,12 +231,23 @@ export default function Guests() {
   const generateCustomLink = async () => {
     if (!customLinkInput) return;
     const linkName = customLinkInput.toLowerCase().replace(/\s+/g, '');
-    const link = `https://wedding-p.netlify.app/${linkName}`;
+    const baseUrl = window.location.origin;
+    const link = `${baseUrl}/${linkName}`;
     
     try {
+      const supabaseClient = getSupabase();
+      
+      // Get the current user
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      
+      if (!user) {
+        console.error('No authenticated user found');
+        return;
+      }
+      
       // If there's an existing link, delete it first
       if (existingLink) {
-        const { error: deleteError } = await supabase
+        const { error: deleteError } = await supabaseClient
           .from('custom_links')
           .delete()
           .eq('id', existingLink.id);
@@ -246,12 +259,13 @@ export default function Guests() {
       }
       
       // Create new link
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('custom_links')
         .insert([{ 
           name: linkName, 
           link: link,
           questionnaire_path: `/${linkName}`,
+          user_id: user.id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }])

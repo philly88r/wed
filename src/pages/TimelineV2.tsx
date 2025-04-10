@@ -463,359 +463,485 @@ export default function TimelineV2() {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4, flexWrap: 'wrap', gap: 2 }}>
-          <Typography variant="h4" component="h1">
+        <Box sx={{ mb: 4 }}>
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            gutterBottom
+            sx={{ 
+              fontFamily: "'Giaza', serif",
+              color: '#054697',
+              letterSpacing: '-0.05em',
+              mb: 2
+            }}
+          >
             Wedding Timeline
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="outlined"
-              startIcon={<FilterListIcon />}
-              onClick={() => setShowFilters(!showFilters)}
-              color="secondary"
-            >
-              {showFilters ? 'Hide Filters' : 'Show Filters'}
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={viewMode === 'list' ? <CalendarMonthIcon /> : <ViewListIcon />}
-              onClick={() => setViewMode(viewMode === 'list' ? 'calendar' : 'list')}
-            >
-              {viewMode === 'list' ? 'Calendar View' : 'List View'}
-            </Button>
-            <Button
-              variant="contained"
-              sx={{
-                bgcolor: theme.palette.accent.rose,
-                color: theme.palette.primary.main,
-                '&:hover': {
-                  bgcolor: theme.palette.accent.roseDark,
+          <Typography 
+            variant="body1"
+            sx={{ 
+              color: '#054697', 
+              opacity: 0.8,
+              mb: 3,
+              fontFamily: 'Poppins, sans-serif',
+            }}
+          >
+            Keep track of all your wedding planning tasks and stay organized with your personalized timeline.
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Tabs 
+              value={currentTab} 
+              onChange={handleTabChange}
+              sx={{ 
+                '& .MuiTab-root': { 
+                  color: '#054697',
+                  opacity: 0.7,
+                  '&.Mui-selected': {
+                    color: '#054697',
+                    opacity: 1
+                  }
+                },
+                '& .MuiTabs-indicator': {
+                  backgroundColor: '#E8B4B4'
                 }
               }}
-              onClick={() => {
-                resetForm();
-                setOpenDialog(true);
-              }}
             >
-              Add Task
-            </Button>
-          </Box>
-        </Box>
-
-        <Tabs 
-          value={currentTab} 
-          onChange={handleTabChange} 
-          sx={{ mb: 3 }}
-          variant="fullWidth"
-        >
-          <Tab label="Upcoming" />
-          <Tab label="Past" />
-          <Tab label="All Tasks" />
-        </Tabs>
-
-        {showFilters && (
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} sm={6} md={3}>
-                  <TextField
-                    fullWidth
-                    label="Search"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <FormControl fullWidth>
-                    <InputLabel>Category</InputLabel>
-                    <Select
-                      value={categoryFilter}
-                      label="Category"
-                      onChange={(e: SelectChangeEvent<string>) => setCategoryFilter(e.target.value as string)}
-                    >
-                      <MenuItem value="">All Categories</MenuItem>
-                      {CATEGORIES.map((category) => (
-                        <MenuItem key={category} value={category}>{category}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <FormControl fullWidth>
-                    <InputLabel>Status</InputLabel>
-                    <Select
-                      value={statusFilter}
-                      label="Status"
-                      onChange={(e: SelectChangeEvent<string>) => setStatusFilter(e.target.value as string)}
-                    >
-                      <MenuItem value="">All Statuses</MenuItem>
-                      <MenuItem value="todo">To Do</MenuItem>
-                      <MenuItem value="in_progress">In Progress</MenuItem>
-                      <MenuItem value="completed">Completed</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <FormControl fullWidth>
-                    <InputLabel>Priority</InputLabel>
-                    <Select
-                      value={priorityFilter}
-                      label="Priority"
-                      onChange={(e: SelectChangeEvent<string>) => setPriorityFilter(e.target.value as string)}
-                    >
-                      <MenuItem value="">All Priorities</MenuItem>
-                      <MenuItem value="low">Low</MenuItem>
-                      <MenuItem value="medium">Medium</MenuItem>
-                      <MenuItem value="high">High</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <FormControlLabel
-                      control={
-                        <Switch 
-                          checked={groupByMonth} 
-                          onChange={(e) => setGroupByMonth(e.target.checked)} 
-                        />
-                      }
-                      label="Group by Month"
-                    />
-                    <FormControlLabel
-                      control={
-                        <Switch 
-                          checked={showCompletedTasks} 
-                          onChange={(e) => setShowCompletedTasks(e.target.checked)} 
-                        />
-                      }
-                      label="Show Completed Tasks"
-                    />
-                  </Box>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        )}
-
-        {filteredTasks.length === 0 ? (
-          <Paper sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="h6" color="text.secondary">
-              No tasks found
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              {searchTerm || categoryFilter || statusFilter || priorityFilter ? 
-                'Try adjusting your filters' : 
-                'Add your first task to get started'}
-            </Typography>
-          </Paper>
-        ) : (
-          viewMode === 'list' ? (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {sortedGroups.map(([group, groupTasks]) => {
-                // Sort tasks by due date
-                const sortedTasks = [...groupTasks].sort(
-                  (a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
-                );
-                
-                const today = new Date();
-                const hasUpcoming = sortedTasks.some(task => 
-                  isAfter(new Date(task.due_date), today) || 
-                  format(new Date(task.due_date), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
-                );
-                
-                const hasPast = sortedTasks.some(task => 
-                  isBefore(new Date(task.due_date), today) && 
-                  format(new Date(task.due_date), 'yyyy-MM-dd') !== format(today, 'yyyy-MM-dd')
-                );
-                
-                const hasIncomplete = sortedTasks.some(task => task.status !== 'completed');
-
-                return (
-                  <Card key={group} sx={{ border: '2px solid', borderColor: 'grey.200' }}>
-                    <Box sx={{ 
-                      p: 2, 
-                      bgcolor: 'grey.50', 
-                      display: 'flex', 
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
-                      <Typography variant="h6">{group}</Typography>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        {hasUpcoming && hasIncomplete && (
-                          <Chip 
-                            label={`${sortedTasks.filter(task => 
-                              (isAfter(new Date(task.due_date), today) || 
-                              format(new Date(task.due_date), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) &&
-                              task.status !== 'completed'
-                            ).length} Upcoming`} 
-                            size="small" 
-                            sx={{ 
-                              bgcolor: theme.palette.accent.rose,
-                              color: theme.palette.primary.main,
-                            }} 
-                            variant="filled" 
-                          />
-                        )}
-                        
-                        {hasPast && hasIncomplete && (
-                          <Chip 
-                            label={`${sortedTasks.filter(task => 
-                              isBefore(new Date(task.due_date), today) && 
-                              format(new Date(task.due_date), 'yyyy-MM-dd') !== format(today, 'yyyy-MM-dd') &&
-                              task.status !== 'completed'
-                            ).length} Overdue`} 
-                            size="small" 
-                            color="error" 
-                          />
-                        )}
-                      </Box>
-                    </Box>
-                    <Box sx={{ p: 0 }}>
-                      {sortedTasks.map((task) => {
-                        const isOverdue = isBefore(new Date(task.due_date), today) && 
-                                          task.status !== 'completed' &&
-                                          format(new Date(task.due_date), 'yyyy-MM-dd') !== format(today, 'yyyy-MM-dd');
-                        
-                        return (
-                          <Paper
-                            key={task.id}
-                            sx={{
-                              p: 2,
-                              m: 2,
-                              display: 'flex',
-                              alignItems: 'flex-start',
-                              gap: 2,
-                              bgcolor: isOverdue ? 'error.50' : 'background.paper',
-                              borderLeft: 4,
-                              borderColor: `${getPriorityColor(task.priority)}.main`,
-                            }}
-                          >
-                            <IconButton
-                              onClick={() => handleUpdateStatus(task, getNextStatus(task.status))}
-                              sx={{ color: theme.palette.primary.main }}
-                            >
-                              {getStatusIcon(task.status)}
-                            </IconButton>
-
-                            <Box sx={{ flexGrow: 1 }}>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <Typography
-                                  variant="h6"
-                                  sx={{
-                                    textDecoration: task.status === 'completed' ? 'line-through' : 'none',
-                                  }}
-                                >
-                                  {task.title}
-                                </Typography>
-                                <Chip
-                                  label={format(new Date(task.due_date), 'MMM d, yyyy')}
-                                  size="small"
-                                  color={
-                                    isOverdue ? 'error' :
-                                    task.status === 'completed' ? 'success' : 'primary'
-                                  }
-                                  variant="outlined"
-                                />
-                              </Box>
-                              <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
-                                <Chip 
-                                  label={task.category} 
-                                  size="small" 
-                                  icon={<CategoryIcon />}
-                                />
-                                <Chip 
-                                  label={task.priority} 
-                                  size="small" 
-                                  color={getPriorityColor(task.priority) as any}
-                                />
-                                {task.cost && (
-                                  <Chip
-                                    label={`$${task.cost.toLocaleString()}`}
-                                    size="small"
-                                    color="secondary"
-                                    icon={<AttachMoneyIcon />}
-                                  />
-                                )}
-                                {task.link && (
-                                  <Chip
-                                    label="Link"
-                                    size="small"
-                                    color="info"
-                                    icon={<LinkIcon />}
-                                    component="a"
-                                    href={task.link.startsWith('http') ? task.link : `https://${task.link}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    clickable
-                                  />
-                                )}
-                              </Box>
-                              {task.action_text && (
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                                  {task.action_text}
-                                </Typography>
-                              )}
-                            </Box>
-
-                            <Box sx={{ display: 'flex', gap: 1 }}>
-                              <IconButton
-                                onClick={() => handleEditTask(task)}
-                                sx={{ color: theme.palette.primary.main }}
-                              >
-                                <EditIcon />
-                              </IconButton>
-                              <IconButton
-                                onClick={() => handleDeleteTask(task.id)}
-                                sx={{ color: theme.palette.primary.main }}
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </Box>
-                          </Paper>
-                        );
-                      })}
-                    </Box>
-                  </Card>
-                );
-              })}
+              <Tab label="Upcoming" />
+              <Tab label="Past" />
+              <Tab label="All" />
+            </Tabs>
+            
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <IconButton 
+                onClick={() => setViewMode(viewMode === 'list' ? 'calendar' : 'list')}
+                sx={{ 
+                  color: '#054697',
+                  '&:hover': {
+                    backgroundColor: 'rgba(232, 180, 180, 0.1)'
+                  }
+                }}
+              >
+                {viewMode === 'list' ? <CalendarMonthIcon /> : <ViewListIcon />}
+              </IconButton>
+              
+              <IconButton 
+                onClick={() => setShowFilters(!showFilters)}
+                sx={{ 
+                  color: '#054697',
+                  '&:hover': {
+                    backgroundColor: 'rgba(232, 180, 180, 0.1)'
+                  }
+                }}
+              >
+                <FilterListIcon />
+              </IconButton>
+              
+              <Button
+                variant="contained"
+                onClick={() => {
+                  resetForm();
+                  setOpenDialog(true);
+                }}
+                sx={{ 
+                  backgroundColor: '#E8B4B4', 
+                  color: '#054697',
+                  '&:hover': {
+                    backgroundColor: '#E8B4B4CC'
+                  },
+                  textTransform: 'uppercase',
+                  fontFamily: 'Poppins, sans-serif',
+                  fontWeight: 400,
+                  borderRadius: 0
+                }}
+              >
+                Add Task
+              </Button>
             </Box>
-          ) : (
+          </Box>
+          {showFilters && (
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid item xs={12} sm={6} md={3}>
+                    <TextField
+                      fullWidth
+                      label="Search"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& .MuiInputLabel-root': {
+                          color: '#054697',
+                          opacity: 0.8,
+                        },
+                        '& .MuiOutlinedInput-root': {
+                          '& fieldset': {
+                            borderColor: '#054697',
+                            opacity: 0.3,
+                          },
+                          '&:hover fieldset': {
+                            borderColor: '#054697',
+                            opacity: 0.5,
+                          },
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#054697',
+                          },
+                        },
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <FormControl fullWidth>
+                      <InputLabel>Category</InputLabel>
+                      <Select
+                        value={categoryFilter}
+                        label="Category"
+                        onChange={(e: SelectChangeEvent<string>) => setCategoryFilter(e.target.value as string)}
+                      >
+                        <MenuItem value="">All Categories</MenuItem>
+                        {CATEGORIES.map((category) => (
+                          <MenuItem key={category} value={category}>{category}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <FormControl fullWidth>
+                      <InputLabel>Status</InputLabel>
+                      <Select
+                        value={statusFilter}
+                        label="Status"
+                        onChange={(e: SelectChangeEvent<string>) => setStatusFilter(e.target.value as string)}
+                      >
+                        <MenuItem value="">All Statuses</MenuItem>
+                        <MenuItem value="todo">To Do</MenuItem>
+                        <MenuItem value="in_progress">In Progress</MenuItem>
+                        <MenuItem value="completed">Completed</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <FormControl fullWidth>
+                      <InputLabel>Priority</InputLabel>
+                      <Select
+                        value={priorityFilter}
+                        label="Priority"
+                        onChange={(e: SelectChangeEvent<string>) => setPriorityFilter(e.target.value as string)}
+                      >
+                        <MenuItem value="">All Priorities</MenuItem>
+                        <MenuItem value="low">Low</MenuItem>
+                        <MenuItem value="medium">Medium</MenuItem>
+                        <MenuItem value="high">High</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <FormControlLabel
+                        control={
+                          <Switch 
+                            checked={groupByMonth} 
+                            onChange={(e) => setGroupByMonth(e.target.checked)} 
+                          />
+                        }
+                        label="Group by Month"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Switch 
+                            checked={showCompletedTasks} 
+                            onChange={(e) => setShowCompletedTasks(e.target.checked)} 
+                          />
+                        }
+                        label="Show Completed Tasks"
+                      />
+                    </Box>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          )}
+          {filteredTasks.length === 0 ? (
             <Paper sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="h6" color="text.secondary">
-                Calendar view coming soon!
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  color: '#054697',
+                  fontFamily: "'Giaza', serif",
+                  letterSpacing: '-0.05em'
+                }}
+              >
+                No tasks found
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                We're working on a calendar view for your timeline tasks.
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  mt: 1,
+                  color: '#054697',
+                  opacity: 0.8,
+                  fontFamily: 'Poppins, sans-serif'
+                }}
+              >
+                {searchTerm || categoryFilter || statusFilter || priorityFilter ? 
+                  'Try adjusting your filters' : 
+                  'Add your first task to get started'}
               </Typography>
             </Paper>
-          )
-        )}
+          ) : (
+            viewMode === 'list' ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {sortedGroups.map(([group, groupTasks]) => {
+                  // Sort tasks by due date
+                  const sortedTasks = [...groupTasks].sort(
+                    (a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
+                  );
+                  
+                  const today = new Date();
+                  const hasUpcoming = sortedTasks.some(task => 
+                    isAfter(new Date(task.due_date), today) || 
+                    format(new Date(task.due_date), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
+                  );
+                  
+                  const hasPast = sortedTasks.some(task => 
+                    isBefore(new Date(task.due_date), today) && 
+                    format(new Date(task.due_date), 'yyyy-MM-dd') !== format(today, 'yyyy-MM-dd')
+                  );
+                  
+                  const hasIncomplete = sortedTasks.some(task => task.status !== 'completed');
 
-        <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>{editingTask ? 'Edit Task' : 'Add New Task'}</DialogTitle>
-          <DialogContent>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+                  return (
+                    <Card key={group} sx={{ border: '2px solid', borderColor: 'grey.200' }}>
+                      <Box sx={{ 
+                        p: 2, 
+                        bgcolor: 'grey.50', 
+                        display: 'flex', 
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <Typography variant="h6">{group}</Typography>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          {hasUpcoming && hasIncomplete && (
+                            <Chip 
+                              label={`${sortedTasks.filter(task => 
+                                (isAfter(new Date(task.due_date), today) || 
+                                format(new Date(task.due_date), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) &&
+                                task.status !== 'completed'
+                              ).length} Upcoming`} 
+                              size="small" 
+                              sx={{ 
+                                bgcolor: theme.palette.accent.rose,
+                                color: theme.palette.primary.main,
+                              }} 
+                              variant="filled" 
+                            />
+                          )}
+                          
+                          {hasPast && hasIncomplete && (
+                            <Chip 
+                              label={`${sortedTasks.filter(task => 
+                                isBefore(new Date(task.due_date), today) && 
+                                format(new Date(task.due_date), 'yyyy-MM-dd') !== format(today, 'yyyy-MM-dd') &&
+                                task.status !== 'completed'
+                              ).length} Overdue`} 
+                              size="small" 
+                              color="error" 
+                            />
+                          )}
+                        </Box>
+                      </Box>
+                      <Box sx={{ p: 0 }}>
+                        {sortedTasks.map((task) => {
+                          const isOverdue = isBefore(new Date(task.due_date), today) && 
+                                            task.status !== 'completed' &&
+                                            format(new Date(task.due_date), 'yyyy-MM-dd') !== format(today, 'yyyy-MM-dd');
+                          
+                          return (
+                            <Paper
+                              key={task.id}
+                              sx={{
+                                p: 2,
+                                m: 2,
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: 2,
+                                bgcolor: isOverdue ? 'error.50' : 'background.paper',
+                                borderLeft: 4,
+                                borderColor: `${getPriorityColor(task.priority)}.main`,
+                              }}
+                            >
+                              <IconButton
+                                onClick={() => handleUpdateStatus(task, getNextStatus(task.status))}
+                                sx={{ color: theme.palette.primary.main }}
+                              >
+                                {getStatusIcon(task.status)}
+                              </IconButton>
+
+                              <Box sx={{ flexGrow: 1 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                  <Typography
+                                    variant="h6"
+                                    sx={{
+                                      textDecoration: task.status === 'completed' ? 'line-through' : 'none',
+                                    }}
+                                  >
+                                    {task.title}
+                                  </Typography>
+                                  <Chip
+                                    label={format(new Date(task.due_date), 'MMM d, yyyy')}
+                                    size="small"
+                                    color={
+                                      isOverdue ? 'error' :
+                                      task.status === 'completed' ? 'success' : 'primary'
+                                    }
+                                    variant="outlined"
+                                  />
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+                                  <Chip 
+                                    label={task.category} 
+                                    size="small" 
+                                    icon={<CategoryIcon />}
+                                  />
+                                  <Chip 
+                                    label={task.priority} 
+                                    size="small" 
+                                    color={getPriorityColor(task.priority) as any}
+                                  />
+                                  {task.cost && (
+                                    <Chip
+                                      label={`$${task.cost.toLocaleString()}`}
+                                      size="small"
+                                      color="secondary"
+                                      icon={<AttachMoneyIcon />}
+                                    />
+                                  )}
+                                  {task.link && (
+                                    <Chip
+                                      label="Link"
+                                      size="small"
+                                      color="info"
+                                      icon={<LinkIcon />}
+                                      component="a"
+                                      href={task.link.startsWith('http') ? task.link : `https://${task.link}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      clickable
+                                    />
+                                  )}
+                                </Box>
+                                {task.action_text && (
+                                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                    {task.action_text}
+                                  </Typography>
+                                )}
+                              </Box>
+
+                              <Box sx={{ display: 'flex', gap: 1 }}>
+                                <IconButton
+                                  onClick={() => handleEditTask(task)}
+                                  sx={{ color: theme.palette.primary.main }}
+                                >
+                                  <EditIcon />
+                                </IconButton>
+                                <IconButton
+                                  onClick={() => handleDeleteTask(task.id)}
+                                  sx={{ color: theme.palette.primary.main }}
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </Box>
+                            </Paper>
+                          );
+                        })}
+                      </Box>
+                    </Card>
+                  );
+                })}
+              </Box>
+            ) : (
+              <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Typography variant="h6" color="text.secondary">
+                  Calendar view coming soon!
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  We're working on a calendar view for your timeline tasks.
+                </Typography>
+              </Paper>
+            )
+          )}
+        </Container>
+      </LocalizationProvider>
+      <Dialog 
+        open={openDialog} 
+        onClose={() => setOpenDialog(false)}
+        fullWidth
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            borderRadius: 0,
+            p: 1,
+            boxShadow: '0 4px 20px rgba(5, 70, 151, 0.1)',
+            border: '1px solid rgba(5, 70, 151, 0.1)',
+            position: 'relative',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '4px',
+              height: '100%',
+              backgroundColor: '#054697',
+            }
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: '#054697', fontFamily: "'Giaza', serif", letterSpacing: '-0.05em' }}>
+          {editingTask ? 'Edit Task' : 'Add New Task'}
+        </DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12}>
               <TextField
-                label="Title"
-                name="title"
+                label="Task Title"
+                fullWidth
                 value={newTask.title}
                 onChange={handleInputChange}
-                fullWidth
-                required
+                sx={{
+                  '& .MuiInputLabel-root': {
+                    color: '#054697',
+                    opacity: 0.8,
+                  },
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: '#054697',
+                      opacity: 0.3,
+                    },
+                    '&:hover fieldset': {
+                      borderColor: '#054697',
+                      opacity: 0.5,
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#054697',
+                    },
+                  },
+                }}
               />
+            </Grid>
+            <Grid item xs={12}>
               <DatePicker
                 label="Due Date"
                 value={newTask.due_date ? new Date(newTask.due_date) : null}
                 onChange={handleDateChange}
                 slotProps={{ textField: { fullWidth: true, required: true } }}
               />
+            </Grid>
+            <Grid item xs={12}>
               <FormControl fullWidth required>
                 <InputLabel>Category</InputLabel>
                 <Select
@@ -829,6 +955,8 @@ export default function TimelineV2() {
                   ))}
                 </Select>
               </FormControl>
+            </Grid>
+            <Grid item xs={12}>
               <FormControl fullWidth required>
                 <InputLabel>Priority</InputLabel>
                 <Select
@@ -842,6 +970,8 @@ export default function TimelineV2() {
                   <MenuItem value="high">High</MenuItem>
                 </Select>
               </FormControl>
+            </Grid>
+            <Grid item xs={12}>
               <TextField
                 label="Cost"
                 name="cost"
@@ -853,6 +983,8 @@ export default function TimelineV2() {
                   startAdornment: <InputAdornment position="start">$</InputAdornment> 
                 }}
               />
+            </Grid>
+            <Grid item xs={12}>
               <TextField
                 label="Link"
                 name="link"
@@ -861,6 +993,8 @@ export default function TimelineV2() {
                 fullWidth
                 placeholder="e.g., https://example.com"
               />
+            </Grid>
+            <Grid item xs={12}>
               <TextField
                 label="Notes"
                 name="action_text"
@@ -870,25 +1004,43 @@ export default function TimelineV2() {
                 multiline
                 rows={3}
               />
-            </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-            <Button
-              sx={{
-                bgcolor: theme.palette.accent.rose,
-                color: theme.palette.primary.main,
-                '&:hover': {
-                  bgcolor: theme.palette.accent.roseDark,
-                }
-              }}
-              onClick={handleAddOrUpdateTask}
-            >
-              {editingTask ? 'Update Task' : 'Add Task'}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Container>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setOpenDialog(false)}
+            sx={{
+              color: '#054697',
+              textTransform: 'uppercase',
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 400,
+              '&:hover': {
+                backgroundColor: 'rgba(5, 70, 151, 0.05)',
+              },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleAddOrUpdateTask}
+            disabled={!newTask.title || !newTask.due_date}
+            sx={{
+              backgroundColor: '#E8B4B4', 
+              color: '#054697',
+              '&:hover': {
+                backgroundColor: '#E8B4B4CC'
+              },
+              textTransform: 'uppercase',
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 400,
+              borderRadius: 0
+            }}
+          >
+            {editingTask ? 'Update' : 'Add'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </LocalizationProvider>
   );
 }

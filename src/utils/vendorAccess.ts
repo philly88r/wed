@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../supabaseClient';
 import { customAlphabet } from 'nanoid';
 
 // Create a custom nanoid generator with only easily readable characters
@@ -20,7 +20,8 @@ export const generateVendorAccess = async (vendorId: string): Promise<VendorAcce
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    const { error } = await supabase
+    const supabaseClient = getSupabase();
+    const { error } = await supabaseClient
       .from('vendor_access')
       .insert({
         vendor_id: vendorId,
@@ -47,7 +48,8 @@ export const verifyVendorAccess = async (accessToken: string, password: string):
   try {
     console.log('Verifying access token:', accessToken);
     
-    const { data, error } = await supabase
+    const supabaseClient = getSupabase();
+    const { data, error } = await supabaseClient
       .from('vendor_access')
       .select('vendor_id, password_hash')
       .eq('access_token', accessToken)

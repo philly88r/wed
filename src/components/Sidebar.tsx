@@ -23,7 +23,7 @@ import {
   LogOut,
   LogIn
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../supabaseClient';
 import { useState, useEffect } from 'react';
 
 interface NavigationItem {
@@ -59,11 +59,12 @@ export function Sidebar() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const supabaseClient = getSupabase();
+    supabaseClient.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
 
@@ -72,7 +73,8 @@ export function Sidebar() {
 
   const handleAuthClick = () => {
     if (user) {
-      supabase.auth.signOut().then(() => {
+      const supabaseClient = getSupabase();
+      supabaseClient.auth.signOut().then(() => {
         navigate('/auth');
       });
     } else {

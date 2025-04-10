@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { getSupabase } from '../supabaseClient';
 import {
   Container,
   Paper,
@@ -37,7 +37,8 @@ export default function GuestQuestionnaire() {
 
   useEffect(() => {
     const fetchCoupleInfo = async () => {
-      const { data } = await supabase
+      const supabaseClient = getSupabase();
+      const { data } = await supabaseClient
         .from('custom_links')
         .select('name')
         .eq('questionnaire_path', `/${weddingName}`)
@@ -62,8 +63,9 @@ export default function GuestQuestionnaire() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const supabaseClient = getSupabase();
     // First, add to guests table
-    const { error: guestError } = await supabase
+    const { error: guestError } = await supabaseClient
       .from('guests')
       .insert([{
         full_name: formData.fullName,
@@ -81,7 +83,7 @@ export default function GuestQuestionnaire() {
     }
 
     // Also store in guest_responses for backup
-    const { error: responseError } = await supabase
+    const { error: responseError } = await supabaseClient
       .from('guest_responses')
       .insert([{
         wedding_name: weddingName,

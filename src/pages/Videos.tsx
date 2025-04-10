@@ -11,10 +11,10 @@ import {
   useTheme,
   useMediaQuery,
   Button,
-  Avatar,
 } from '@mui/material';
 import { Close as CloseIcon, PlayArrow as PlayArrowIcon } from '@mui/icons-material';
-import { supabase, mockVideos } from '../lib/supabase';
+import { getSupabase } from '../supabaseClient';
+import { mockVideos } from '../lib/supabase'; // Keep importing mockVideos for now
 import { JournalPrompts } from '../components/ui/journal-prompts';
 
 interface Video {
@@ -41,7 +41,7 @@ const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () 
       onClose={onClose}
       PaperProps={{
         sx: {
-          bgcolor: 'black',
+          bgcolor: '#FAFAFA', // Changed to #FAFAFA
           boxShadow: 'none',
           overflow: 'hidden',
           width: '100%',
@@ -66,16 +66,16 @@ const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () 
             position: 'absolute',
             right: 16,
             top: 16,
-            color: 'white',
-            bgcolor: theme.palette.accent?.rose || '#FFE8E4',
+            color: '#054697', // Updated to primary blue
+            bgcolor: '#E8B4B4', // Updated to blush color
             '&:hover': {
-              bgcolor: theme.palette.accent?.roseDark || '#FFD5CC'
+              bgcolor: '#E8B4B420'
             },
             zIndex: 2,
             borderRadius: 0 // Square corners per brand guidelines
           }}
         >
-          <CloseIcon sx={{ color: theme.palette.primary.main }} />
+          <CloseIcon sx={{ color: '#054697' }} />
         </IconButton>
         <Box sx={{
           position: 'relative',
@@ -104,7 +104,7 @@ const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () 
               left: 0,
               right: 0,
               height: '120px',
-              background: `linear-gradient(to bottom, ${theme.palette.primary.main}CC, ${theme.palette.accent?.rose || '#FFE8E4'}99, transparent)`,
+              background: `linear-gradient(to bottom, #054697CC, #E8B4B499, transparent)`,
               pointerEvents: 'none',
               zIndex: 1
             }}
@@ -117,7 +117,7 @@ const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () 
               left: 0,
               right: 0,
               height: '120px',
-              background: `linear-gradient(to top, ${theme.palette.primary.main}CC, ${theme.palette.accent?.rose || '#FFE8E4'}99, transparent)`,
+              background: `linear-gradient(to top, #054697CC, #E8B4B499, transparent)`,
               pointerEvents: 'none',
               zIndex: 1
             }}
@@ -130,7 +130,7 @@ const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () 
               left: 0,
               bottom: 0,
               width: '100px',
-              background: `linear-gradient(to right, ${theme.palette.primary.main}CC, ${theme.palette.accent?.rose || '#FFE8E4'}99, transparent)`,
+              background: `linear-gradient(to right, #054697CC, #E8B4B499, transparent)`,
               pointerEvents: 'none',
               zIndex: 1
             }}
@@ -142,7 +142,7 @@ const CustomVideoPlayer = ({ videoId, onClose }: { videoId: string; onClose: () 
               right: 0,
               bottom: 0,
               width: '100px',
-              background: `linear-gradient(to left, ${theme.palette.primary.main}CC, ${theme.palette.accent?.rose || '#FFE8E4'}99, transparent)`,
+              background: `linear-gradient(to left, #054697CC, #E8B4B499, transparent)`,
               pointerEvents: 'none',
               zIndex: 1
             }}
@@ -170,7 +170,7 @@ const VideoCard = ({ video, onPlay }: { video: Video; onPlay: (id: string) => vo
           boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)'
         },
         borderRadius: 0, // Square corners per brand guidelines
-        border: `1px solid ${theme.palette.divider}`
+        border: `1px solid #D3D3D3` // Changed to #D3D3D3
       }}
     >
       <Box
@@ -220,13 +220,13 @@ const VideoCard = ({ video, onPlay }: { video: Video; onPlay: (id: string) => vo
               width: '60px',
               height: '60px',
               borderRadius: 0, // Square corners per brand guidelines
-              backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
+              backgroundColor: '#E8B4B4', // Updated to blush color
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}
           >
-            <PlayArrowIcon sx={{ color: theme.palette.primary.main, fontSize: 32 }} />
+            <PlayArrowIcon sx={{ color: '#054697', fontSize: 32 }} />
           </Box>
         </Box>
       </Box>
@@ -235,7 +235,7 @@ const VideoCard = ({ video, onPlay }: { video: Video; onPlay: (id: string) => vo
           variant="h6" 
           gutterBottom 
           sx={{ 
-            color: theme.palette.primary.main,
+            color: '#054697', // Updated to primary blue
             fontWeight: 'medium'
           }}
         >
@@ -244,7 +244,7 @@ const VideoCard = ({ video, onPlay }: { video: Video; onPlay: (id: string) => vo
         <Typography 
           variant="body2" 
           sx={{ 
-            color: theme.palette.primary.main,
+            color: '#054697', // Updated to primary blue
             opacity: 0.8,
             mb: 1
           }}
@@ -254,7 +254,7 @@ const VideoCard = ({ video, onPlay }: { video: Video; onPlay: (id: string) => vo
         <Typography
           variant="body2"
           sx={{
-            color: theme.palette.primary.main,
+            color: '#054697', // Updated to primary blue
             opacity: 0.8,
             mb: 2,
             display: '-webkit-box',
@@ -275,13 +275,13 @@ const VideoCard = ({ video, onPlay }: { video: Video; onPlay: (id: string) => vo
                 onClick={() => setShowJournal(true)}
                 sx={{
                   width: '100%',
-                  color: theme.palette.primary.main,
-                  borderColor: theme.palette.accent?.rose || '#FFE8E4',
+                  color: '#054697', // Updated to primary blue
+                  borderColor: '#E8B4B4', // Updated to blush color
                   backgroundColor: 'transparent',
                   borderRadius: 0, // Square corners per brand guidelines
                   '&:hover': {
-                    backgroundColor: `${theme.palette.accent?.rose || '#FFE8E4'}20`,
-                    borderColor: theme.palette.accent?.rose || '#FFE8E4'
+                    backgroundColor: '#E8B4B420',
+                    borderColor: '#E8B4B4'
                   },
                   textTransform: 'uppercase',
                   fontWeight: 'regular'
@@ -318,7 +318,8 @@ export default function Videos() {
       setLoading(false);
       return;
 
-      const { data, error: supabaseError } = await supabase
+      const supabaseClient = getSupabase();
+      const { data, error: supabaseError } = await supabaseClient
         .from('videos')
         .select('*')
         .order('created_at', { ascending: false });
@@ -368,7 +369,7 @@ export default function Videos() {
             component="h1" 
             gutterBottom 
             sx={{ 
-              color: theme.palette.primary.main,
+              color: '#054697', // Updated to primary blue
               textAlign: 'center',
               fontFamily: 'Giaza, serif',
               letterSpacing: '-0.05em',
@@ -380,7 +381,7 @@ export default function Videos() {
           <Typography 
             variant="body1" 
             sx={{ 
-              color: theme.palette.primary.main, 
+              color: '#054697', // Updated to primary blue
               opacity: 0.8, 
               textAlign: 'center',
               maxWidth: '700px',
@@ -393,7 +394,7 @@ export default function Videos() {
 
         {loading && (
           <Box sx={{ textAlign: 'center', py: 8 }}>
-            <Typography sx={{ color: theme.palette.primary.main, opacity: 0.8 }}>
+            <Typography sx={{ color: '#054697', opacity: 0.8 }}>
               Loading videos...
             </Typography>
           </Box>
@@ -409,7 +410,7 @@ export default function Videos() {
 
         {!loading && !error && videos.length === 0 && (
           <Box sx={{ textAlign: 'center', py: 8 }}>
-            <Typography sx={{ color: theme.palette.primary.main, opacity: 0.8 }}>
+            <Typography sx={{ color: '#054697', opacity: 0.8 }}>
               No videos available yet.
             </Typography>
           </Box>
@@ -425,9 +426,9 @@ export default function Videos() {
           </Grid>
         )}
 
-      {selectedVideo && (
-        <CustomVideoPlayer videoId={selectedVideo} onClose={handleClose} />
-      )}
+        {selectedVideo && (
+          <CustomVideoPlayer videoId={selectedVideo} onClose={handleClose} />
+        )}
       </Container>
     </Box>
   );

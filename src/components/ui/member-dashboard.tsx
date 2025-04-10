@@ -15,7 +15,7 @@ import {
   Heart,
   ChevronRight
 } from "lucide-react";
-import { supabase } from "../../supabaseClient";
+import { getSupabase } from "../../supabaseClient";
 
 // Define the dashboard tool interface
 interface DashboardTool {
@@ -41,100 +41,70 @@ export function MemberDashboard() {
   const [notification, setNotification] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("Wedding Planner");
+  const [partnerName, setPartnerName] = useState<string>("");
   const [weddingDate, setWeddingDate] = useState<Date>(new Date());
   const [budget, setBudget] = useState<number>(0);
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [daysUntilWedding, setDaysUntilWedding] = useState<number>(0);
   
   // Fetch user profile data and wedding details
   useEffect(() => {
     const fetchUserData = async () => {
       setIsLoading(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const supabaseClient = getSupabase();
+        const { data: { user } } = await supabaseClient.auth.getUser();
         
         if (user) {
           // Get user profile from the profiles table
-          const { data: profileData, error: profileError } = await supabase
+          const { data: profileData, error: profileError } = await supabaseClient
             .from('profiles')
-            .select('first_name, last_name')
+            .select('*')
             .eq('id', user.id)
             .single();
             
           if (profileError) {
             console.error('Error fetching profile:', profileError);
           } else if (profileData) {
-            // Set user name based on available data
-            if (profileData.first_name) {
-              setUserName(profileData.first_name as string);
-            } else if (profileData.last_name) {
-              setUserName(`${profileData.last_name as string} Family`);
+            console.log('Profile data:', profileData);
+            
+            // Set user names based on available data
+            if (profileData.full_name) {
+              setUserName(profileData.full_name as string);
             }
-          }
-          
-          // Get timeline tasks from the timeline_tasks table
-          const { data: tasksData, error: tasksError } = await supabase
-            .from('timeline_tasks')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('due_date', { ascending: true });
             
-          if (tasksError) {
-            console.error('Error fetching timeline tasks:', tasksError);
-          } else if (tasksData && tasksData.length > 0) {
-            // Format tasks for display
-            const formattedTasks = tasksData.map((task, index) => ({
-              id: index + 1,
-              title: task.title as string,
-              dueDate: new Date(task.due_date as string).toLocaleDateString(),
-              category: task.category as string
-            }));
+            if (profileData.partner_name) {
+              setPartnerName(profileData.partner_name as string);
+            }
             
-            setUpcomingTasks(formattedTasks);
-          } else {
-            // If no tasks exist, generate some default ones
-            const defaultTasks = generatePersonalizedTasks(
-              weddingDate,
-              budget,
-              '',
-              0,
-              ''
+            // Set wedding date if available
+            if (profileData.wedding_date) {
+              const weddingDateObj = new Date(profileData.wedding_date as string);
+              setWeddingDate(weddingDateObj);
+              
+              // Calculate days until wedding
+              const today = new Date();
+              const timeDiff = weddingDateObj.getTime() - today.getTime();
+              const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+              setDaysUntilWedding(daysDiff > 0 ? daysDiff : 0);
+            }
+            
+            // Set budget if available
+            if (profileData.budget) {
+              setBudget(Number(profileData.budget) || 0);
+            }
+            
+            // Generate personalized tasks based on profile data
+            const personalizedTasks = generatePersonalizedTasks(
+              profileData.wedding_date ? new Date(profileData.wedding_date as string) : new Date(),
+              profileData.budget ? Number(profileData.budget) : 0,
+              profileData.location as string || '',
+              profileData.guest_count ? Number(profileData.guest_count) : 0,
+              profileData.selected_plan as string || ''
             );
             
-            setUpcomingTasks(defaultTasks);
-          }
-          
-          // Get timeline questionnaire data to find wedding date and other details
-          const { data: questionnaireData, error: questionnaireError } = await supabase
-            .from('timeline_questionnaire')
-            .select('*')
-            .eq('user_id', user.id)
-            .single();
-            
-          if (!questionnaireError && questionnaireData) {
-            // Set wedding date if available
-            if (questionnaireData.wedding_date) {
-              // Make sure we have a valid date string before creating a Date object
-              const weddingDateStr = questionnaireData.wedding_date as string;
-              if (weddingDateStr && typeof weddingDateStr === 'string') {
-                setWeddingDate(new Date(weddingDateStr));
-              }
-            }
-            
-            // Try to fetch budget information from job_costs table
-            const { data: budgetData, error: budgetError } = await supabase
-              .from('job_costs')
-              .select('amount')
-              .eq('user_id', user.id);
-              
-            if (!budgetError && budgetData && budgetData.length > 0) {
-              // Calculate total budget from job costs
-              const totalBudget = budgetData.reduce((sum, item) => {
-                return sum + (Number(item.amount) || 0);
-              }, 0);
-              
-              setBudget(totalBudget);
-            }
+            setUpcomingTasks(personalizedTasks);
           }
         }
       } catch (error) {
@@ -153,7 +123,7 @@ export function MemberDashboard() {
     budget: number = 0,
     location: string = '',
     guestCount: number = 0,
-    _unused: string = '' // Renamed to avoid unused variable warning
+    selectedPlan: string = ''
   ): Task[] => {
     const today = new Date();
     const monthsUntilWedding = Math.floor((weddingDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30));
@@ -259,9 +229,7 @@ export function MemberDashboard() {
     }
   }, [location]);
   
-  // Calculate days until wedding
-  const today = new Date();
-  const daysUntilWedding = Math.ceil((weddingDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  // Format the wedding date for display
   const formattedWeddingDate = weddingDate.toLocaleDateString('en-US', { 
     year: 'numeric', 
     month: 'long', 
@@ -374,8 +342,12 @@ export function MemberDashboard() {
           </div>
 
           <div className="flex flex-col gap-3 w-full md:w-2/3">
-            <h1 className="text-4xl md:text-5xl font-['Giaza',serif] text-[#054697] mb-3 tracking-[-0.05em]">Welcome, {userName}</h1>
-            <p className="text-[#054697]/80 font-light text-xl">Your wedding is in <span className="font-medium">{daysUntilWedding} days</span> ({formattedWeddingDate})</p>
+            <h1 className="text-4xl md:text-5xl font-['Giaza',serif] text-[#054697] mb-3 tracking-[-0.05em]">
+              Welcome, {userName}{partnerName ? ` & ${partnerName}` : ''}
+            </h1>
+            <p className="text-[#054697]/80 font-light text-xl">
+              Your wedding is in <span className="font-medium">{daysUntilWedding} days</span> ({formattedWeddingDate})
+            </p>
             
             {/* Quick Stats */}
             <div className="flex flex-wrap gap-4 mt-6">

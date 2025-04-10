@@ -1,14 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+// Import the singleton Supabase client from the main supabaseClient.ts file
+import { getSupabase, supabase } from '../supabaseClient';
 
-// In Vite, environment variables are accessed through import.meta.env
-const supabaseUrl = 'https://yemkduykvfdjmldxfphq.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllbWtkdXlrdmZkam1sZHhmcGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1NDY4NzQsImV4cCI6MjA1NTEyMjg3NH0.JoIg1NFwFPE8ucc7D4Du2qe8SEX3OvSKqJf_ecf-euk';
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Make sure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your .env file');
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Re-export the supabase client for backward compatibility
+export { supabase, getSupabase };
 
 // Temporary mock data until database is running
 export const mockVideos = [
