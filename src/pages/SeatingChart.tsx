@@ -508,6 +508,7 @@ export default function SeatingChart() {
       }
       
       // Query tables for the current user
+      const supabase = getSupabase();
       const { data: tableData, error } = await supabase
         .from('seating_tables')
         .select('*')
@@ -556,6 +557,7 @@ export default function SeatingChart() {
       }
       
       // First get all tables for this user
+      const supabase = getSupabase();
       const { data: userTables, error: tablesError } = await supabase
         .from('seating_tables')
         .select('id')
@@ -576,6 +578,7 @@ export default function SeatingChart() {
       const tableIds = userTables.map(table => table.id);
       
       // Fetch chairs for these tables
+      // Using the same supabase instance from above
       const { data, error } = await supabase
         .from('table_chairs')
         .select('*')
@@ -609,6 +612,7 @@ export default function SeatingChart() {
       }
       
       // Query guests for the current user
+      const supabase = getSupabase();
       const { data, error } = await supabase
         .from('guests')
         .select('*')
