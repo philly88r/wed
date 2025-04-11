@@ -14,7 +14,7 @@ import {
   Alert,
 } from '@mui/material';
 import { PhotoCamera } from '@mui/icons-material';
-import { supabase } from '../supabaseClient';
+import { getSupabase } from '../supabaseClient';
 
 // Define profile data interface
 interface ProfileData {
@@ -52,11 +52,12 @@ export default function Profile() {
     // Fetch user profile data
     const fetchUserProfile = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const supabaseClient = getSupabase();
+        const { data: { user } } = await supabaseClient.auth.getUser();
         
         if (user) {
           // Get user profile from the profiles table
-          const { data, error } = await supabase
+          const { data, error } = await supabaseClient
             .from('profiles')
             .select('*')
             .eq('id', user.id)
@@ -100,7 +101,8 @@ export default function Profile() {
     setLoading(true);
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const supabaseClient = getSupabase();
+      const { data: { user } } = await supabaseClient.auth.getUser();
       
       if (user) {
         // Format the wedding date properly for PostgreSQL (YYYY-MM-DD)
@@ -108,7 +110,7 @@ export default function Profile() {
           new Date(formData.weddingDate).toISOString().split('T')[0] : null;
 
         // Update the user profile
-        const { error } = await supabase
+        const { error } = await supabaseClient
           .from('profiles')
           .update({
             first_name: formData.firstName || '',
