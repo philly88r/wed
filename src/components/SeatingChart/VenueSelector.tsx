@@ -6,7 +6,6 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel,
   TextField,
   Paper,
   Dialog,
@@ -302,25 +301,43 @@ const VenueSelector: React.FC<VenueSelectorProps> = ({
               variant="subtitle1" 
               sx={{ 
                 color: theme.palette.primary.main,
-                fontWeight: 500 
+                fontWeight: 500,
+                fontFamily: "'Giaza', serif",
+                letterSpacing: '-0.05em'
               }}
             >
               Select Room
             </Typography>
-            <Button
-              size="small"
-              startIcon={<AddIcon />}
-              onClick={() => setShowAddRoomDialog(true)}
-              sx={{
-                color: theme.palette.primary.main,
-                borderColor: theme.palette.accent.rose,
-                '&:hover': {
-                  backgroundColor: theme.palette.accent.rose,
-                }
-              }}
-            >
-              Add
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              {selectedRoom && (
+                <Button
+                  size="small"
+                  startIcon={<UploadIcon />}
+                  onClick={() => setShowRoomFloorPlanDialog(true)}
+                  sx={{
+                    backgroundColor: theme.palette.accent.rose,
+                    color: theme.palette.primary.main,
+                    '&:hover': { backgroundColor: '#FFD5CC' }
+                  }}
+                >
+                  Floor Plan
+                </Button>
+              )}
+              <Button
+                size="small"
+                startIcon={<AddIcon />}
+                onClick={() => setShowAddRoomDialog(true)}
+                sx={{
+                  color: theme.palette.primary.main,
+                  borderColor: theme.palette.accent.rose,
+                  '&:hover': {
+                    backgroundColor: theme.palette.accent.rose,
+                  }
+                }}
+              >
+                Add
+              </Button>
+            </Box>
           </Box>
           
           <FormControl fullWidth size="small" sx={{ mb: 2 }}>
@@ -364,7 +381,7 @@ const VenueSelector: React.FC<VenueSelectorProps> = ({
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <Typography variant="body2" sx={{ color: theme.palette.primary.main, fontWeight: 500 }}>
+                  <Typography variant="body2" sx={{ color: theme.palette.primary.main, fontWeight: 500, fontFamily: "'Giaza', serif" }}>
                     {selectedRoom.name}
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
@@ -374,29 +391,55 @@ const VenueSelector: React.FC<VenueSelectorProps> = ({
                     </Typography>
                   </Box>
                 </div>
-                <Button
-                  size="small"
-                  startIcon={<UploadIcon />}
-                  onClick={() => setShowRoomFloorPlanDialog(true)}
-                  sx={{ 
-                    backgroundColor: theme.palette.accent.rose,
-                    color: theme.palette.primary.main,
-                    '&:hover': { backgroundColor: '#FFD5CC' },
-                    fontSize: '0.75rem',
-                    py: 0.5
-                  }}
-                >
-                  Floor Plan
-                </Button>
               </Box>
-              {selectedRoom.floor_plan_url && (
-                <Box sx={{ mt: 1, pt: 1, borderTop: '1px dashed rgba(5, 70, 151, 0.2)' }}>
-                  <Typography variant="caption" sx={{ color: theme.palette.primary.main, display: 'flex', alignItems: 'center' }}>
-                    <ImageIcon sx={{ fontSize: '0.875rem', mr: 0.5 }} />
-                    Floor Plan Available
+              
+              {/* Floor plan section */}
+              <Box sx={{ mt: 2, pt: 1, borderTop: '1px dashed rgba(5, 70, 151, 0.2)' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="body2" sx={{ color: theme.palette.primary.main, fontWeight: 500 }}>
+                    Room Floor Plan
                   </Typography>
+                  <Button
+                    size="small"
+                    startIcon={<UploadIcon />}
+                    onClick={() => setShowRoomFloorPlanDialog(true)}
+                    sx={{ 
+                      backgroundColor: theme.palette.accent.rose,
+                      color: theme.palette.primary.main,
+                      '&:hover': { backgroundColor: '#FFD5CC' },
+                      fontSize: '0.75rem',
+                      py: 0.5
+                    }}
+                  >
+                    {selectedRoom.floor_plan_url ? 'Update' : 'Upload'}
+                  </Button>
                 </Box>
-              )}
+                
+                {selectedRoom.floor_plan_url ? (
+                  <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <ImageIcon sx={{ fontSize: '1rem', mr: 0.5, color: theme.palette.primary.main }} />
+                      <Typography variant="caption" sx={{ color: theme.palette.primary.main }}>
+                        Floor plan available
+                      </Typography>
+                    </Box>
+                    <Button
+                      size="small"
+                      variant="text"
+                      component="a"
+                      href={selectedRoom.floor_plan_url}
+                      target="_blank"
+                      sx={{ color: theme.palette.primary.main, fontSize: '0.7rem', textDecoration: 'underline' }}
+                    >
+                      View
+                    </Button>
+                  </Box>
+                ) : (
+                  <Typography variant="caption" sx={{ color: 'rgba(5, 70, 151, 0.7)', display: 'block', mt: 1 }}>
+                    No floor plan uploaded yet. Upload one to position tables more accurately.
+                  </Typography>
+                )}
+              </Box>
             </Paper>
           )}
         </Box>
