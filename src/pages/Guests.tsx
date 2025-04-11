@@ -231,7 +231,8 @@ export default function Guests() {
   const generateCustomLink = async () => {
     if (!customLinkInput) return;
     const linkName = customLinkInput.toLowerCase().replace(/\s+/g, '');
-    const baseUrl = window.location.origin;
+    // Use the production domain instead of window.location.origin
+    const baseUrl = "https://wedding-p.netlify.app";
     const link = `${baseUrl}/${linkName}`;
     
     try {
