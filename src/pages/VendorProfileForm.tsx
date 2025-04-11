@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '../supabaseClient';
 import {
   Box,
   Button,
@@ -32,10 +32,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Supabase client will be retrieved using getSupabase() function
 
 // Define types
 interface Category {
@@ -332,6 +329,7 @@ const VendorProfileForm = () => {
   React.useEffect(() => {
     const fetchCategories = async () => {
       try {
+        const supabase = getSupabase();
         const { data, error } = await supabase
           .from('vendor_categories')
           .select('*')
@@ -363,6 +361,7 @@ const VendorProfileForm = () => {
         }
 
         // Fetch form link data to get vendor ID
+        const supabase = getSupabase();
         const { data: linkData, error: linkError } = await supabase
           .from('vendor_form_links')
           .select('vendor_id, is_used, expires_at')
@@ -381,7 +380,7 @@ const VendorProfileForm = () => {
           throw new Error('This form link has expired');
         }
 
-        // Fetch vendor data
+        // Fetch vendor data - using the same supabase instance from above
         const { data: vendorData, error: vendorError } = await supabase
           .from('vendors')
           .select('*')
@@ -582,6 +581,7 @@ const VendorProfileForm = () => {
       const filePath = `vendor-images/${fileName}`;
       
       // Upload file to Supabase Storage
+      const supabase = getSupabase();
       const { error: uploadError } = await supabase.storage
         .from('vendors')
         .upload(filePath, file);
@@ -616,6 +616,7 @@ const VendorProfileForm = () => {
     setError('');
 
     try {
+      const supabase = getSupabase();
       const { data: userData, error: userError } = await supabase.auth.getUser();
       
       if (userError) throw new Error(userError.message);
@@ -646,7 +647,7 @@ const VendorProfileForm = () => {
         services_offered: formData.services_offered
       };
       
-      // Insert vendor data into the database
+      // Insert vendor data into the database - using the same supabase instance from above
       const { data, error: insertError } = await supabase
         .from('vendors')
         .insert([vendorData])

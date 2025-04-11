@@ -18,18 +18,7 @@ import {
   Paper
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { createClient } from '@supabase/supabase-js';
-
-// Create a Supabase client with the correct credentials
-const supabaseUrl = 'https://yemkduykvfdjmldxfphq.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllbWtkdXlrdmZkam1sZHhmcGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1NDY4NzQsImV4cCI6MjA1NTEyMjg3NH0.JoIg1NFwFPE8ucc7D4Du2qe8SEX3OvSKqJf_ecf-euk';
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
-});
+import { getSupabase } from '../../supabaseClient';
 
 interface TableTemplate {
   id: string;
@@ -71,6 +60,7 @@ const AddTableButton: React.FC<AddTableButtonProps> = ({ onTableAdded }) => {
   const fetchTableTemplates = async () => {
     try {
       console.log('Fetching table templates...');
+      const supabase = getSupabase();
       const { data, error } = await supabase
         .from('table_templates')
         .select('*')
@@ -96,6 +86,7 @@ const AddTableButton: React.FC<AddTableButtonProps> = ({ onTableAdded }) => {
   // Get current user ID
   const getUserId = async () => {
     try {
+      const supabase = getSupabase();
       const { data: { user } } = await supabase.auth.getUser();
       return user?.id;
     } catch (error) {
@@ -140,6 +131,7 @@ const AddTableButton: React.FC<AddTableButtonProps> = ({ onTableAdded }) => {
       console.log('Adding table with template ID:', selectedTemplate);
       
       // Get the template
+      const supabase = getSupabase();
       const { data: template, error: templateError } = await supabase
         .from('table_templates')
         .select('*')
@@ -195,6 +187,7 @@ const AddTableButton: React.FC<AddTableButtonProps> = ({ onTableAdded }) => {
       };
       
       console.log('Creating table with data:', tableData);
+      // Using the same supabase instance from above
       const { data: newTable, error: tableError } = await supabase
         .from('seating_tables')
         .insert([tableData])
@@ -381,10 +374,7 @@ const AddTableButton: React.FC<AddTableButtonProps> = ({ onTableAdded }) => {
                     </Box>
 
                     <Box>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 'medium', color: '#054697' }}>
-                        {template.name}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: 'rgba(5, 70, 151, 0.8)' }}>
+                      <Typography variant="body1" sx={{ fontWeight: 'medium', color: '#054697' }}>
                         {template.seats} seats, {template.shape}
                       </Typography>
                     </Box>
