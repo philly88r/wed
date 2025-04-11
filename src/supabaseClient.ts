@@ -9,45 +9,46 @@ let supabaseInstance: SupabaseClient | null = null;
 
 // Initialize the Supabase client
 function createSupabaseClient(): SupabaseClient {
-  const client = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      storageKey: 'supabase_auth_token',
-      detectSessionInUrl: true
-    },
-    global: {
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    },
-  });
-  
-  return client;
-}
-
-// Export a function to get the Supabase client
-export const getSupabase = (): SupabaseClient => {
+  // Only create a new client if one doesn't exist
   if (!supabaseInstance) {
-    supabaseInstance = createSupabaseClient();
+    const client = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        storageKey: 'supabase_auth_token',
+        detectSessionInUrl: true
+      },
+      global: {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      },
+    });
     
     // Set up auth state change listener to persist session
-    supabaseInstance.auth.onAuthStateChange((event, session) => {
+    client.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         console.log('User signed in:', session.user.email);
       } else if (event === 'SIGNED_OUT') {
         console.log('User signed out');
       }
     });
+    
+    supabaseInstance = client;
   }
   
   return supabaseInstance;
-};
+}
 
 // Initialize the client immediately
-supabaseInstance = createSupabaseClient();
+const supabase = createSupabaseClient();
 
-// For backward compatibility with existing code
-// This is needed for any direct references to supabase in the codebase
-export const supabase = getSupabase();
+// Export a function to get the Supabase client
+export const getSupabase = (): SupabaseClient => {
+  return supabase;
+};
+
+// Export the supabase instance directly for backward compatibility
+// This ensures there's only one instance throughout the app
+export { supabase };
