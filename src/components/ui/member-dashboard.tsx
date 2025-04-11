@@ -238,12 +238,6 @@ export function MemberDashboard() {
     }
   }, [location]);
   
-  // Format the wedding date for display
-  const formattedWeddingDate = weddingDate.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
   
   // Handle file input trigger
   const triggerFileInput = () => {
