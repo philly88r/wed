@@ -11,7 +11,11 @@ import {
   Select, 
   MenuItem, 
   Snackbar, 
-  Alert
+  Alert,
+  Box,
+  Typography,
+  Grid,
+  Paper
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { createClient } from '@supabase/supabase-js';
@@ -311,12 +315,17 @@ const AddTableButton: React.FC<AddTableButtonProps> = ({ onTableAdded }) => {
     <>
       <Button 
         variant="contained" 
-        color="primary" 
         onClick={() => setDialogOpen(true)}
         startIcon={<AddIcon />}
-        sx={{ bgcolor: '#1976d2', '&:hover': { bgcolor: '#1565c0' } }}
+        sx={{ 
+          bgcolor: '#FFE8E4', 
+          color: '#054697',
+          '&:hover': { bgcolor: '#FFD5CC' },
+          fontWeight: 'medium',
+          border: '1px solid #FFE8E4'
+        }}
       >
-        ADD TABLE (NEW)
+        ADD TABLE
       </Button>
 
       {/* Add Table Dialog */}
@@ -326,7 +335,7 @@ const AddTableButton: React.FC<AddTableButtonProps> = ({ onTableAdded }) => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Add New Table</DialogTitle>
+        <DialogTitle sx={{ color: '#054697' }}>Add New Table</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -339,27 +348,68 @@ const AddTableButton: React.FC<AddTableButtonProps> = ({ onTableAdded }) => {
             sx={{ mb: 2 }}
           />
           
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Select Table Template</InputLabel>
-            <Select
-              value={selectedTemplate}
-              label="Select Table Template"
-              onChange={(e) => setSelectedTemplate(e.target.value)}
-            >
-              {tableTemplates.map((template) => (
-                <MenuItem key={template.id} value={template.id}>
-                  {template.name} ({template.seats} seats, {template.shape})
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Typography variant="subtitle1" sx={{ mb: 2, color: '#054697' }}>Select Table Template</Typography>
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            {tableTemplates.map((template) => (
+              <Grid item xs={12} sm={6} key={template.id}>
+                <Paper 
+                  elevation={selectedTemplate === template.id ? 3 : 1}
+                  sx={{
+                    p: 2, 
+                    cursor: 'pointer',
+                    border: selectedTemplate === template.id ? '2px solid #054697' : '1px solid #B8BDD7',
+                    backgroundColor: selectedTemplate === template.id ? '#FFE8E4' : 'white',
+                    '&:hover': { backgroundColor: '#FFE8E4' }
+                  }}
+                  onClick={() => setSelectedTemplate(template.id)}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    {/* Table Shape Icon */}
+                    <Box sx={{ width: 60, height: 60, flexShrink: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                      {template.shape === 'round' && (
+                        <Box sx={{ width: 50, height: 50, borderRadius: '50%', border: '2px solid #054697' }} />
+                      )}
+                      {template.shape === 'rectangular' && (
+                        <Box sx={{ width: 50, height: 25, border: '2px solid #054697' }} />
+                      )}
+                      {template.shape === 'square' && (
+                        <Box sx={{ width: 40, height: 40, border: '2px solid #054697' }} />
+                      )}
+                      {template.shape === 'oval' && (
+                        <Box sx={{ width: 50, height: 30, borderRadius: '50%', border: '2px solid #054697' }} />
+                      )}
+                    </Box>
+
+                    <Box>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'medium', color: '#054697' }}>
+                        {template.name}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'rgba(5, 70, 151, 0.8)' }}>
+                        {template.seats} seats, {template.shape}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button 
+            onClick={() => setDialogOpen(false)}
+            sx={{ color: 'rgba(5, 70, 151, 0.8)' }}
+          >
+            Cancel
+          </Button>
           <Button 
             onClick={handleAddTable} 
-            color="primary"
             disabled={!selectedTemplate || !tableName}
+            sx={{ 
+              bgcolor: '#FFE8E4', 
+              color: '#054697',
+              '&:hover': { bgcolor: '#FFD5CC' },
+              '&.Mui-disabled': { bgcolor: '#f5f5f5', color: 'rgba(0, 0, 0, 0.26)' }
+            }}
           >
             Add Table
           </Button>

@@ -21,28 +21,20 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction
+  ListItemSecondaryAction,
+  Grid
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 import { DragDropContext } from 'react-beautiful-dnd';
 import type { DropResult } from 'react-beautiful-dnd';
-import { createClient } from '@supabase/supabase-js';
 import GuestList from '../components/SeatingChart/GuestList';
+import VenueSelector from '../components/SeatingChart/VenueSelector';
 import { useNavigate } from 'react-router-dom';
 import { Guest } from '../types/Guest';
-
-// Create a Supabase client with the correct credentials
-const supabaseUrl = 'https://yemkduykvfdjmldxfphq.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllbWtkdXlrdmZkam1sZHhmcGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1NDY4NzQsImV4cCI6MjA1NTEyMjg3NH0.JoIg1NFwFPE8ucc7D4Du2qe8SEX3OvSKqJf_ecf-euk';
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
-});
+import { getSupabase } from '../supabaseClient';
+import { useTheme } from '@mui/material';
 
 interface TableTemplate {
   id: string;
@@ -85,6 +77,39 @@ interface SnackbarState {
   severity: 'success' | 'error' | 'info' | 'warning';
 }
 
+interface Venue {
+  id: string;
+  name: string;
+  address: string;
+  created_at: string;
+}
+
+interface VenueRoom {
+  id: string;
+  venue_id: string;
+  name: string;
+  width: number;
+  length: number;
+  floor_plan_url?: string;
+  room_type?: string;
+}
+
+interface Venue {
+  id: string;
+  name: string;
+  address: string;
+  created_at: string;
+}
+
+interface VenueRoom {
+  id: string;
+  venue_id: string;
+  name: string;
+  width: number;
+  length: number;
+  floor_plan_url?: string;
+}
+
 interface TableFormData {
   name: string;
   template_id: string;
@@ -93,6 +118,7 @@ interface TableFormData {
 
 export default function SeatingChart() {
   const navigate = useNavigate();
+  const theme = useTheme();
   const chartAreaRef = useRef<HTMLDivElement>(null);
 
   // Table management state
@@ -106,6 +132,12 @@ export default function SeatingChart() {
   const [selectedChair, setSelectedChair] = useState<Chair | null>(null);
   const [guestSearchTerm, setGuestSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
+  
+  // Venue management state
+  const [venues, setVenues] = useState<Venue[]>([]);
+  const [venueRooms, setVenueRooms] = useState<VenueRoom[]>([]);
+  const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<VenueRoom | null>(null);
   
   // Dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -143,6 +175,7 @@ export default function SeatingChart() {
   // Force navigation to seating-chart to ensure we're on the right page
   useEffect(() => {
     const currentPath = window.location.pathname;
+    
     if (currentPath !== '/seating-chart') {
       navigate('/seating-chart', { replace: true });
     }
@@ -253,6 +286,7 @@ export default function SeatingChart() {
 
   const fetchTableTemplates = async () => {
     try {
+      const supabase = getSupabase();
       const { data, error } = await supabase
         .from('table_templates')
         .select('*')
@@ -831,7 +865,7 @@ export default function SeatingChart() {
     
     return (
       <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
+        <DialogTitle sx={{ color: '#054697' }}>
           {editMode === 'add' ? 'Add New Table' : `Edit Table: ${selectedTable?.name}`}
         </DialogTitle>
         <DialogContent>
@@ -848,28 +882,57 @@ export default function SeatingChart() {
           
           {editMode === 'add' && (
             <>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Select Table Template</InputLabel>
-                <Select
-                  value={selectedTemplate}
-                  label="Select Table Template"
-                  onChange={(e) => setSelectedTemplate(e.target.value)}
-                >
-                  {tableTemplates.map((template) => (
-                    <MenuItem key={template.id} value={template.id}>
-                      {template.name} ({template.seats} seats, {template.shape})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Typography variant="subtitle1" sx={{ mb: 2, color: '#054697' }}>Select Table Template</Typography>
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                {tableTemplates.map((template) => (
+                  <Grid item xs={12} sm={6} key={template.id}>
+                    <Paper 
+                      elevation={selectedTemplate === template.id ? 3 : 1}
+                      sx={{
+                        p: 2, 
+                        cursor: 'pointer',
+                        border: selectedTemplate === template.id ? '2px solid #054697' : '1px solid #B8BDD7',
+                        backgroundColor: selectedTemplate === template.id ? '#FFE8E4' : 'white',
+                        '&:hover': { backgroundColor: '#FFE8E4' }
+                      }}
+                      onClick={() => setSelectedTemplate(template.id)}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        {/* Table Shape Icon */}
+                        <Box sx={{ width: 60, height: 60, flexShrink: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                          {template.shape === 'round' && (
+                            <Box sx={{ width: 50, height: 50, borderRadius: '50%', border: '2px solid #054697' }} />
+                          )}
+                          {template.shape === 'rectangular' && (
+                            <Box sx={{ width: 50, height: 25, border: '2px solid #054697' }} />
+                          )}
+                          {template.shape === 'square' && (
+                            <Box sx={{ width: 40, height: 40, border: '2px solid #054697' }} />
+                          )}
+                          {template.shape === 'oval' && (
+                            <Box sx={{ width: 50, height: 30, borderRadius: '50%', border: '2px solid #054697' }} />
+                          )}
+                        </Box>
 
-              {/* Button removed to avoid duplication with the one in DialogActions */}
+                        <Box>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 'medium', color: '#054697' }}>
+                            {template.name}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'rgba(5, 70, 151, 0.8)' }}>
+                            {template.seats} seats, {template.shape}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
             </>
           )}
           
           {editMode === 'edit' && selectedTable && (
             <>
-              <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
+              <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, color: '#054697' }}>
                 Assign Guest to Table
               </Typography>
               
@@ -892,7 +955,6 @@ export default function SeatingChart() {
               
               <Button
                 variant="contained"
-                color="primary"
                 disabled={!selectedGuest}
                 onClick={() => {
                   if (selectedGuest && selectedTable) {
@@ -900,14 +962,20 @@ export default function SeatingChart() {
                     setSelectedGuest('');
                   }
                 }}
-                sx={{ mb: 2 }}
+                sx={{ 
+                  mb: 2,
+                  bgcolor: '#FFE8E4', 
+                  color: '#054697',
+                  '&:hover': { bgcolor: '#FFD5CC' },
+                  '&.Mui-disabled': { bgcolor: '#f5f5f5', color: 'rgba(0, 0, 0, 0.26)' }
+                }}
               >
                 Assign Guest
               </Button>
               
               <Divider sx={{ my: 2 }} />
               
-              <Typography variant="subtitle1" sx={{ mb: 1 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1, color: '#054697' }}>
                 Assigned Guests
               </Typography>
               
@@ -937,8 +1005,20 @@ export default function SeatingChart() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSaveTable} color="primary">
+          <Button 
+            onClick={() => setEditDialogOpen(false)}
+            sx={{ color: 'rgba(5, 70, 151, 0.8)' }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSaveTable}
+            sx={{ 
+              bgcolor: '#FFE8E4', 
+              color: '#054697',
+              '&:hover': { bgcolor: '#FFD5CC' }
+            }}
+          >
             {editMode === 'add' ? 'Add Table' : 'Save Changes'}
           </Button>
         </DialogActions>
@@ -1541,7 +1621,7 @@ export default function SeatingChart() {
             </Box>
           </Paper>
           
-          {/* Guest list sidebar */}
+          {/* Venue selector sidebar */}
           <Paper 
             sx={{ 
               flex: 1, 
@@ -1565,22 +1645,15 @@ export default function SeatingChart() {
               }
             }}
           >
-              <Typography 
-                variant="h6" 
-                sx={{ 
-                  mb: 2, 
-                  fontFamily: "'Giaza', serif",
-                  color: '#054697',
-                  letterSpacing: '-0.05em',
-                }}
-              >
-                Guest List
-              </Typography>
-              <GuestList 
-                guests={guests} 
-                onAddGuest={handleAddGuest}
-                filter={filter}
-                onFilterChange={setFilter}
+              <VenueSelector 
+                venues={venues}
+                venueRooms={venueRooms}
+                selectedVenue={selectedVenue}
+                selectedRoom={selectedRoom}
+                onVenueChange={handleVenueChange}
+                onRoomChange={handleRoomChange}
+                onAddVenue={handleAddVenue}
+                onAddRoom={handleAddRoom}
               />
           </Paper>
         </Box>
