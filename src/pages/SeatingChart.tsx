@@ -186,6 +186,7 @@ export default function SeatingChart() {
     const checkAuth = async () => {
       try {
         // First try to get session which is more reliable and doesn't throw errors if no session exists
+        const supabase = getSupabase();
         const { data: sessionData } = await supabase.auth.getSession();
         const isAuthenticated = !!sessionData?.session?.user;
         
@@ -217,8 +218,154 @@ export default function SeatingChart() {
       fetchTables();
       fetchChairs();
       fetchGuests();
+      fetchVenues();
     }
   }, [isLoggedIn]);
+
+  // Venue management functions
+  const fetchVenues = async () => {
+    try {
+      const supabase = getSupabase();
+      const { data: venuesData, error: venuesError } = await supabase
+        .from('venues')
+        .select('*');
+
+      if (venuesError) throw venuesError;
+      setVenues(venuesData || []);
+
+      // If there's a selected venue, fetch its rooms
+      if (venuesData && venuesData.length > 0) {
+        if (!selectedVenue) {
+          setSelectedVenue(venuesData[0]);
+        }
+        
+        const { data: roomsData, error: roomsError } = await supabase
+          .from('venue_rooms')
+          .select('*')
+          .eq('venue_id', selectedVenue?.id || venuesData[0].id);
+
+        if (roomsError) throw roomsError;
+        setVenueRooms(roomsData || []);
+        
+        // Set the first room as selected if there are rooms and none is selected
+        if (roomsData && roomsData.length > 0 && !selectedRoom) {
+          setSelectedRoom(roomsData[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching venues:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to load venues',
+        severity: 'error'
+      });
+    }
+  };
+
+  const handleVenueChange = (venue: Venue) => {
+    setSelectedVenue(venue);
+    setSelectedRoom(null);
+    
+    // Fetch rooms for the selected venue
+    const supabase = getSupabase();
+    supabase
+      .from('venue_rooms')
+      .select('*')
+      .eq('venue_id', venue.id)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Error fetching rooms:', error);
+          return;
+        }
+        setVenueRooms(data || []);
+        if (data && data.length > 0) {
+          setSelectedRoom(data[0]);
+        }
+      });
+  };
+
+  const handleRoomChange = (room: VenueRoom) => {
+    setSelectedRoom(room);
+  };
+
+  const handleAddVenue = async (name: string, address: string) => {
+    try {
+      const userId = await getUserId();
+      if (!userId) return;
+
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from('venues')
+        .insert([{ name, address, created_by: userId }])
+        .select();
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setVenues([...venues, data[0]]);
+        setSelectedVenue(data[0]);
+        setSnackbar({
+          open: true,
+          message: 'Venue added successfully',
+          severity: 'success'
+        });
+      }
+    } catch (error) {
+      console.error('Error adding venue:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to add venue',
+        severity: 'error'
+      });
+    }
+  };
+
+  const handleAddRoom = async (name: string, width: number, length: number) => {
+    try {
+      if (!selectedVenue) {
+        setSnackbar({
+          open: true,
+          message: 'Please select a venue first',
+          severity: 'error'
+        });
+        return;
+      }
+
+      const userId = await getUserId();
+      if (!userId) return;
+
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from('venue_rooms')
+        .insert([{ 
+          venue_id: selectedVenue.id, 
+          name, 
+          width, 
+          length, 
+          created_by: userId 
+        }])
+        .select();
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setVenueRooms([...venueRooms, data[0]]);
+        setSelectedRoom(data[0]);
+        setSnackbar({
+          open: true,
+          message: 'Room added successfully',
+          severity: 'success'
+        });
+      }
+    } catch (error) {
+      console.error('Error adding room:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to add room',
+        severity: 'error'
+      });
+    }
+  };
 
   const handleLogin = async () => {
     try {
