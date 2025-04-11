@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -15,11 +15,16 @@ import {
   DialogActions,
   Divider,
   useTheme,
-  SelectChangeEvent
+  SelectChangeEvent,
+  CircularProgress,
+  IconButton
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
+import UploadIcon from '@mui/icons-material/Upload';
+import ImageIcon from '@mui/icons-material/Image';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { getSupabase } from '../../supabaseClient';
 
 interface Venue {
@@ -27,6 +32,7 @@ interface Venue {
   name: string;
   address: string;
   created_at: string;
+  floor_plan_id?: string;
 }
 
 interface VenueRoom {
@@ -38,6 +44,14 @@ interface VenueRoom {
   floor_plan_url?: string;
 }
 
+interface FloorPlan {
+  id: string;
+  name: string;
+  image_url: string;
+  created_at: string;
+  created_by: string;
+}
+
 interface VenueSelectorProps {
   venues: Venue[];
   venueRooms: VenueRoom[];
@@ -47,6 +61,7 @@ interface VenueSelectorProps {
   onRoomChange: (room: VenueRoom) => void;
   onAddVenue: (name: string, address: string) => Promise<void>;
   onAddRoom: (name: string, width: number, length: number) => Promise<void>;
+  onFloorPlanUpload?: (venueId: string, file: File) => Promise<void>;
 }
 
 const VenueSelector: React.FC<VenueSelectorProps> = ({
@@ -57,16 +72,45 @@ const VenueSelector: React.FC<VenueSelectorProps> = ({
   onVenueChange,
   onRoomChange,
   onAddVenue,
-  onAddRoom
+  onAddRoom,
+  onFloorPlanUpload
 }) => {
   const theme = useTheme();
   const [showAddVenueDialog, setShowAddVenueDialog] = useState(false);
   const [showAddRoomDialog, setShowAddRoomDialog] = useState(false);
+  const [showFloorPlanDialog, setShowFloorPlanDialog] = useState(false);
   const [newVenueName, setNewVenueName] = useState('');
   const [newVenueAddress, setNewVenueAddress] = useState('');
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomWidth, setNewRoomWidth] = useState(50);
   const [newRoomLength, setNewRoomLength] = useState(80);
+  const [uploading, setUploading] = useState(false);
+  const [floorPlans, setFloorPlans] = useState<FloorPlan[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  // Fetch floor plans when component mounts
+  useEffect(() => {
+    if (selectedVenue) {
+      fetchFloorPlans();
+    }
+  }, [selectedVenue]);
+  
+  const fetchFloorPlans = async () => {
+    if (!selectedVenue) return;
+    
+    try {
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from('floor_plans')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      setFloorPlans(data || []);
+    } catch (error) {
+      console.error('Error fetching floor plans:', error);
+    }
+  };
 
   const handleVenueChange = (event: SelectChangeEvent<string>) => {
     const venueId = event.target.value;
@@ -89,6 +133,28 @@ const VenueSelector: React.FC<VenueSelectorProps> = ({
     setNewVenueName('');
     setNewVenueAddress('');
     setShowAddVenueDialog(false);
+  };
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setSelectedFile(event.target.files[0]);
+    }
+  };
+  
+  const handleFloorPlanUpload = async () => {
+    if (!selectedFile || !selectedVenue || !onFloorPlanUpload) return;
+    
+    try {
+      setUploading(true);
+      await onFloorPlanUpload(selectedVenue.id, selectedFile);
+      setSelectedFile(null);
+      setShowFloorPlanDialog(false);
+      fetchFloorPlans();
+    } catch (error) {
+      console.error('Error uploading floor plan:', error);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleAddRoomSubmit = async () => {
@@ -122,20 +188,38 @@ const VenueSelector: React.FC<VenueSelectorProps> = ({
           >
             Select Venue
           </Typography>
-          <Button
-            size="small"
-            startIcon={<AddIcon />}
-            onClick={() => setShowAddVenueDialog(true)}
-            sx={{
-              color: theme.palette.primary.main,
-              borderColor: theme.palette.accent.rose,
-              '&:hover': {
-                backgroundColor: theme.palette.accent.rose,
-              }
-            }}
-          >
-            Add
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            {selectedVenue && (
+              <Button
+                size="small"
+                startIcon={<UploadIcon />}
+                onClick={() => setShowFloorPlanDialog(true)}
+                sx={{
+                  color: theme.palette.primary.main,
+                  borderColor: theme.palette.accent.rose,
+                  '&:hover': {
+                    backgroundColor: theme.palette.accent.rose,
+                  }
+                }}
+              >
+                Floor Plan
+              </Button>
+            )}
+            <Button
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={() => setShowAddVenueDialog(true)}
+              sx={{
+                color: theme.palette.primary.main,
+                borderColor: theme.palette.accent.rose,
+                '&:hover': {
+                  backgroundColor: theme.palette.accent.rose,
+                }
+              }}
+            >
+              Add
+            </Button>
+          </Box>
         </Box>
         
         <FormControl fullWidth size="small" sx={{ mb: 2 }}>
@@ -519,6 +603,130 @@ const VenueSelector: React.FC<VenueSelectorProps> = ({
             }}
           >
             Add Room
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Floor Plan Upload Dialog */}
+      <Dialog
+        open={showFloorPlanDialog}
+        onClose={() => setShowFloorPlanDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 0,
+            p: 1,
+            boxShadow: '0 4px 20px rgba(5, 70, 151, 0.1)',
+            border: '1px solid rgba(5, 70, 151, 0.1)',
+            position: 'relative',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '4px',
+              height: '100%',
+              backgroundColor: theme.palette.primary.main,
+            }
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: theme.palette.primary.main, fontFamily: "'Giaza', serif", letterSpacing: '-0.05em' }}>
+          Upload Venue Floor Plan
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2, color: 'rgba(5, 70, 151, 0.8)' }}>
+            Upload a floor plan image for {selectedVenue?.name}. This will help you position tables accurately.
+          </Typography>
+          
+          <Box sx={{ 
+            border: '2px dashed rgba(5, 70, 151, 0.3)', 
+            borderRadius: 1, 
+            p: 3, 
+            mb: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(5, 70, 151, 0.05)'
+          }}>
+            <input
+              accept="image/*"
+              style={{ display: 'none' }}
+              id="floor-plan-upload"
+              type="file"
+              onChange={handleFileChange}
+            />
+            <label htmlFor="floor-plan-upload">
+              <Button
+                component="span"
+                startIcon={<UploadIcon />}
+                sx={{ 
+                  mb: 1,
+                  backgroundColor: theme.palette.accent.rose,
+                  color: theme.palette.primary.main,
+                  '&:hover': { backgroundColor: '#FFD5CC' }
+                }}
+              >
+                Select Image
+              </Button>
+            </label>
+            {selectedFile && (
+              <Typography variant="body2" sx={{ mt: 1, color: theme.palette.primary.main }}>
+                {selectedFile.name}
+              </Typography>
+            )}
+          </Box>
+          
+          {floorPlans.length > 0 && (
+            <>
+              <Typography variant="subtitle2" sx={{ mt: 3, mb: 1, color: theme.palette.primary.main }}>
+                Existing Floor Plans
+              </Typography>
+              <Box sx={{ maxHeight: '150px', overflowY: 'auto', mb: 2 }}>
+                {floorPlans.map((plan) => (
+                  <Box key={plan.id} sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    p: 1, 
+                    mb: 1, 
+                    border: '1px solid rgba(5, 70, 151, 0.1)',
+                    borderRadius: 1
+                  }}>
+                    <ImageIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+                    <Typography variant="body2" sx={{ flex: 1, color: theme.palette.primary.main }}>
+                      {plan.name}
+                    </Typography>
+                    <IconButton size="small" sx={{ color: theme.palette.primary.main }}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                ))}
+              </Box>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setShowFloorPlanDialog(false)}
+            sx={{ color: theme.palette.primary.main }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleFloorPlanUpload}
+            disabled={!selectedFile || uploading}
+            variant="contained"
+            sx={{ 
+              backgroundColor: theme.palette.accent.rose,
+              color: theme.palette.primary.main,
+              '&:hover': {
+                backgroundColor: '#FFD5CC',
+              }
+            }}
+          >
+            {uploading ? <CircularProgress size={24} sx={{ color: theme.palette.primary.main }} /> : 'Upload'}
           </Button>
         </DialogActions>
       </Dialog>

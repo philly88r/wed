@@ -82,6 +82,7 @@ interface Venue {
   name: string;
   address: string;
   created_at: string;
+  floor_plan_id?: string;
 }
 
 interface VenueRoom {
@@ -99,6 +100,7 @@ interface Venue {
   name: string;
   address: string;
   created_at: string;
+  floor_plan_id?: string;
 }
 
 interface VenueRoom {
@@ -362,6 +364,86 @@ export default function SeatingChart() {
       setSnackbar({
         open: true,
         message: 'Failed to add room',
+        severity: 'error'
+      });
+    }
+  };
+  
+  // Handle floor plan upload for venues
+  const handleFloorPlanUpload = async (venueId: string, file: File) => {
+    try {
+      if (!file || !venueId) {
+        setSnackbar({
+          open: true,
+          message: 'Please select a file and venue',
+          severity: 'error'
+        });
+        return;
+      }
+      
+      const userId = await getUserId();
+      if (!userId) return;
+      
+      // Create a unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${venueId}-${Date.now()}.${fileExt}`;
+      const filePath = `floor_plans/${fileName}`;
+      
+      // Upload the file to Supabase Storage
+      const supabase = getSupabase();
+      const { error: uploadError } = await supabase
+        .storage
+        .from('venue-floor-plans')
+        .upload(filePath, file);
+        
+      if (uploadError) throw uploadError;
+      
+      // Get the public URL for the uploaded file
+      const { data: { publicUrl } } = supabase
+        .storage
+        .from('venue-floor-plans')
+        .getPublicUrl(filePath);
+      
+      // Create a new floor plan record in the database
+      const { data: floorPlanData, error: floorPlanError } = await supabase
+        .from('floor_plans')
+        .insert({
+          name: file.name,
+          image_url: publicUrl,
+          created_by: userId
+        })
+        .select();
+        
+      if (floorPlanError) throw floorPlanError;
+      
+      // Update the venue with the floor plan ID
+      if (floorPlanData && floorPlanData.length > 0) {
+        const { error: venueUpdateError } = await supabase
+          .from('venues')
+          .update({ floor_plan_id: floorPlanData[0].id })
+          .eq('id', venueId);
+          
+        if (venueUpdateError) throw venueUpdateError;
+        
+        // Update the selected venue in state
+        if (selectedVenue && selectedVenue.id === venueId) {
+          setSelectedVenue({
+            ...selectedVenue,
+            floor_plan_id: floorPlanData[0].id
+          });
+        }
+        
+        setSnackbar({
+          open: true,
+          message: 'Floor plan uploaded successfully',
+          severity: 'success'
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading floor plan:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to upload floor plan',
         severity: 'error'
       });
     }
@@ -1808,6 +1890,7 @@ export default function SeatingChart() {
                 onRoomChange={handleRoomChange}
                 onAddVenue={handleAddVenue}
                 onAddRoom={handleAddRoom}
+                onFloorPlanUpload={handleFloorPlanUpload}
               />
           </Paper>
         </Box>
