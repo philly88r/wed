@@ -369,6 +369,7 @@ export default function SeatingChart() {
 
   const handleLogin = async () => {
     try {
+      const supabase = getSupabase();
       const { data: userData, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -412,6 +413,7 @@ export default function SeatingChart() {
     
     try {
       // Check if we already have a session
+      const supabase = getSupabase();
       const { data: sessionData } = await supabase.auth.getSession();
       
       if (sessionData?.session) {
