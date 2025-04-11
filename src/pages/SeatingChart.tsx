@@ -457,6 +457,7 @@ export default function SeatingChart() {
   const createChairsForTable = async (tableId: string, numSeats: number, userId: string) => {
     try {
       // Check if chairs already exist for this table
+      const supabase = getSupabase();
       const { data: existingChairs, error: checkError } = await supabase
         .from('table_chairs')
         .select('*')
@@ -483,6 +484,7 @@ export default function SeatingChart() {
         });
       }
       
+      // Using the same supabase instance from above
       const { error: insertError } = await supabase
         .from('table_chairs')
         .insert(chairsToInsert);
@@ -1068,10 +1070,7 @@ export default function SeatingChart() {
                         </Box>
 
                         <Box>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 'medium', color: '#054697' }}>
-                            {template.name}
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: 'rgba(5, 70, 151, 0.8)' }}>
+                          <Typography variant="body1" sx={{ fontWeight: 'medium', color: '#054697' }}>
                             {template.seats} seats, {template.shape}
                           </Typography>
                         </Box>
@@ -1207,6 +1206,7 @@ export default function SeatingChart() {
           return;
         }
 
+        const supabase = getSupabase();
         const { error } = await supabase
           .from('seating_tables')
           .update({ name: newTableName })
@@ -1269,6 +1269,7 @@ export default function SeatingChart() {
       }
       
       // Assign guest to the chair
+      const supabase = getSupabase();
       const { error } = await supabase
         .from('table_chairs')
         .update({ guest_id: guestId })

@@ -257,7 +257,7 @@ export default function TableLayout() {
                       <option value="">Select a template</option>
                       {templates.map((template) => (
                         <option key={template.id} value={template.id}>
-                          {template.name} ({template.length}' × {template.width}', {template.seats} seats)
+                          {template.seats} seats, {template.shape}
                         </option>
                       ))}
                     </select>
