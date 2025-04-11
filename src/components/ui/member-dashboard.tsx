@@ -65,7 +65,7 @@ export function MemberDashboard() {
         
         if (user) {
           // Get user profile from the profiles table
-          const { data: profileData, error: profileError } = await supabaseClient
+          const { data, error: profileError } = await supabaseClient
             .from('profiles')
             .select('*')
             .eq('id', user.id)
@@ -73,7 +73,8 @@ export function MemberDashboard() {
             
           if (profileError) {
             console.error('Error fetching profile:', profileError);
-          } else if (profileData) {
+          } else if (data) {
+            const profileData = data;
             console.log('Profile data:', profileData);
             
             // Set user names based on available data
