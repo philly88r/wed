@@ -831,7 +831,8 @@ export default function SeatingChart() {
 
       // Get the template
       console.log('Fetching template with ID:', data.template_id);
-      const { data: template, error: templateError } = await supabase
+      const supabaseClient = getSupabase();
+      const { data: template, error: templateError } = await supabaseClient
         .from('table_templates')
         .select('*')
         .eq('id', data.template_id)
@@ -864,7 +865,7 @@ export default function SeatingChart() {
       };
       console.log('Creating table with data:', tableData);
 
-      const { data: newTable, error: tableError } = await supabase
+      const { data: newTable, error: tableError } = await supabaseClient
         .from('seating_tables')
         .insert([tableData])
         .select()
@@ -889,7 +890,7 @@ export default function SeatingChart() {
       console.log('Creating chairs:', chairPositions);
 
       // Insert chairs into the database
-      const { data: newChairs, error: chairsError } = await supabase
+      const { data: newChairs, error: chairsError } = await supabaseClient
         .from('table_chairs')
         .insert(chairPositions)
         .select();
@@ -952,7 +953,8 @@ export default function SeatingChart() {
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
       // Insert guest with all required fields
-      const { data, error } = await supabase
+      const supabaseClient = getSupabase();
+      const { data, error } = await supabaseClient
         .from('guests')
         .insert([{ 
           first_name: firstName,
@@ -1025,7 +1027,8 @@ export default function SeatingChart() {
         return;
       }
       
-      const { error } = await supabase
+      const supabaseClient = getSupabase();
+      const { error } = await supabaseClient
         .from('table_chairs')
         .update({ guest_id: null })
         .eq('id', chairId);
@@ -1090,7 +1093,8 @@ export default function SeatingChart() {
       }
       
       // Assign guest to the chair
-      const { error } = await supabase
+      const supabaseClient = getSupabase();
+      const { error } = await supabaseClient
         .from('table_chairs')
         .update({ guest_id: guestId })
         .eq('id', availableChair.id);
@@ -1139,7 +1143,8 @@ export default function SeatingChart() {
       }
 
       // Delete the table
-      const { error } = await supabase
+      const supabaseClient = getSupabase();
+      const { error } = await supabaseClient
         .from('seating_tables')
         .delete()
         .eq('id', selectedTable.id);
@@ -1527,7 +1532,8 @@ export default function SeatingChart() {
           console.log('Updating table position:', updatedTable.id, updatedTable.position_x, updatedTable.position_y);
           
           // Update the table position in the database
-          const { error } = await supabase
+          const supabaseClient = getSupabase();
+          const { error } = await supabaseClient
             .from('seating_tables')
             .update({ 
               position_x: updatedTable.position_x, 
@@ -1624,7 +1630,8 @@ export default function SeatingChart() {
           console.log('Updating table size:', updatedTable.id, updatedTable.width, updatedTable.length);
           
           // Update the table dimensions in the database
-          const { error } = await supabase
+          const supabaseClient = getSupabase();
+          const { error } = await supabaseClient
             .from('seating_tables')
             .update({ 
               width: updatedTable.width, 

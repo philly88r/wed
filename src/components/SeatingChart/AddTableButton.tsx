@@ -268,6 +268,7 @@ const AddTableButton: React.FC<AddTableButtonProps> = ({ onTableAdded }) => {
       }
       
       console.log('Creating chairs:', chairPositions);
+      // Use the same supabase client instance
       const { data: newChairs, error: chairsError } = await supabase
         .from('table_chairs')
         .insert(chairPositions)
