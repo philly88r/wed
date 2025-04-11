@@ -227,17 +227,19 @@ export default function VenueLayoutSelector() {
   
   // Handle venue change
   const handleVenueChange = (venue: Venue) => {
+    console.log('Venue changed:', venue);
     setSelectedVenue(venue);
     fetchVenueRooms(venue.id);
   };
   
   // Handle room change
   const handleRoomChange = (room: VenueRoom) => {
+    console.log('Room changed:', room);
     setSelectedRoom(room);
   };
   
   // Handle adding a new venue
-  const handleAddVenue = async (name: string, address: string) => {
+  const handleAddVenue = async (name: string, address: string): Promise<void> => {
     try {
       if (!name.trim()) {
         setSnackbar({
@@ -302,7 +304,7 @@ export default function VenueLayoutSelector() {
   };
   
   // Handle adding a new room to a venue
-  const handleAddRoom = async (name: string, width: number, length: number) => {
+  const handleAddRoom = async (name: string, width: number, length: number): Promise<void> => {
     try {
       if (!selectedVenue) {
         setSnackbar({
@@ -504,15 +506,16 @@ export default function VenueLayoutSelector() {
             }
           }}
         >
+          {/* Explicitly define the VenueSelector with all required props */}
           <VenueSelector 
             venues={venues}
             venueRooms={venueRooms}
             selectedVenue={selectedVenue}
             selectedRoom={selectedRoom}
-            onVenueChange={handleVenueChange}
-            onRoomChange={handleRoomChange}
-            onAddVenue={handleAddVenue}
-            onAddRoom={handleAddRoom}
+            onVenueChange={(venue) => handleVenueChange(venue)}
+            onRoomChange={(room) => handleRoomChange(room)}
+            onAddVenue={(name, address) => handleAddVenue(name, address)}
+            onAddRoom={(name, width, length) => handleAddRoom(name, width, length)}
           />
         </Paper>
         
