@@ -4,6 +4,7 @@ import theme from './theme/theme';
 import './fonts.css'; // Import the custom fonts CSS
 import ServiceMenuWithTheme from './pages/ServiceMenuWithTheme';
 import SeatingChart from './pages/SeatingChart';
+import VenueLayoutSelector from './pages/VenueLayoutSelector';
 import Budget from './pages/Budget';
 import Checklist from './pages/Checklist';
 import WeddingChecklist from './pages/WeddingChecklist';
@@ -33,6 +34,7 @@ import PricingProtectedRoute from './components/Auth/PricingProtectedRoute';
 // Define app routes to check against
 const appRoutes = [
   '/service-menu',
+  '/venue-layout',
   '/seating-chart',
   '/budget',
   '/checklist',
@@ -108,6 +110,11 @@ const AppContent = () => {
         <Route path="/service-menu" element={
           <ProtectedRoute>
             <ServiceMenuWithTheme />
+          </ProtectedRoute>
+        } />
+        <Route path="/venue-layout" element={
+          <ProtectedRoute>
+            <VenueLayoutSelector />
           </ProtectedRoute>
         } />
         <Route path="/seating-chart" element={
