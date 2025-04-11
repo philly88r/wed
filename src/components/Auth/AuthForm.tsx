@@ -357,7 +357,7 @@ export const AuthForm: React.FC = () => {
     try {
       const supabaseClient = getSupabase();
       // First, check if the user profile exists and has completed onboarding
-      const { data: profileData, error: profileError } = await supabaseClient
+      const { data, error: profileError } = await supabaseClient
         .from('profiles')
         .select('*')
         .eq('id', userId)
@@ -366,7 +366,7 @@ export const AuthForm: React.FC = () => {
       if (profileError) throw profileError;
       
       // If profile doesn't exist or onboarding not completed, redirect to pricing
-      if (!profileData || !profileData.onboarding_completed) {
+      if (!data || !data.onboarding_completed) {
         return false;
       }
       

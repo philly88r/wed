@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
+import { getSupabase } from '../../supabaseClient';
 import { CircularProgress, Box } from '@mui/material';
 import ProtectedRoute from './ProtectedRoute';
 
@@ -15,11 +15,12 @@ const PricingProtectedRoute: React.FC<PricingProtectedRouteProps> = ({ children 
   useEffect(() => {
     const checkUserPlan = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const supabaseClient = getSupabase();
+        const { data: { user } } = await supabaseClient.auth.getUser();
         
         if (user) {
           // Get user profile from the profiles table
-          const { data: profileData, error: profileError } = await supabase
+          const { data, error: profileError } = await supabaseClient
             .from('profiles')
             .select('selected_plan')
             .eq('id', user.id)
@@ -28,7 +29,7 @@ const PricingProtectedRoute: React.FC<PricingProtectedRouteProps> = ({ children 
           if (profileError) {
             console.error('Error fetching profile:', profileError);
             setHasSelectedPlan(false);
-          } else if (profileData && profileData.selected_plan) {
+          } else if (data && data.selected_plan) {
             // User has already selected a plan
             setHasSelectedPlan(true);
           } else {

@@ -1248,7 +1248,8 @@ export default function Budget() {
                                     
                                     try {
                                       // Remove from database first
-                                      const { error } = await supabase
+                                      const supabaseClient = getSupabase();
+                                      const { error } = await supabaseClient
                                         .from('custom_vendors')
                                         .delete()
                                         .eq('id', vendor.id)

@@ -47,6 +47,7 @@ export function MemberDashboard() {
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [daysUntilWedding, setDaysUntilWedding] = useState<number>(0);
+  const [profileData, setProfileData] = useState<any>(null);
   
   // Format the wedding date for display
   const formattedWeddingDate = weddingDate.toLocaleDateString('en-US', {
@@ -74,23 +75,24 @@ export function MemberDashboard() {
           if (profileError) {
             console.error('Error fetching profile:', profileError);
           } else if (data) {
-            const profileData = data;
-            console.log('Profile data:', profileData);
+            // Set the profileData state variable
+            setProfileData(data);
+            console.log('Profile data:', data);
             
             // Set user names based on available data
-            if (profileData.first_name || profileData.last_name) {
-              const firstName = profileData.first_name as string || '';
-              const lastName = profileData.last_name as string || '';
+            if (data.first_name || data.last_name) {
+              const firstName = data.first_name as string || '';
+              const lastName = data.last_name as string || '';
               setUserName(`${firstName} ${lastName}`.trim());
             }
             
-            if (profileData.partner_name) {
-              setPartnerName(profileData.partner_name as string);
+            if (data.partner_name) {
+              setPartnerName(data.partner_name as string);
             }
             
             // Set wedding date if available
-            if (profileData.wedding_date) {
-              const weddingDateObj = new Date(profileData.wedding_date as string);
+            if (data.wedding_date) {
+              const weddingDateObj = new Date(data.wedding_date as string);
               setWeddingDate(weddingDateObj);
               
               // Calculate days until wedding
@@ -101,17 +103,17 @@ export function MemberDashboard() {
             }
             
             // Set budget if available
-            if (profileData.budget) {
-              setBudget(Number(profileData.budget) || 0);
+            if (data.budget) {
+              setBudget(Number(data.budget) || 0);
             }
             
             // Generate personalized tasks based on profile data
             const personalizedTasks = generatePersonalizedTasks(
-              profileData.wedding_date ? new Date(profileData.wedding_date as string) : new Date(),
-              profileData.budget ? Number(profileData.budget) : 0,
-              profileData.location as string || '',
-              profileData.guest_count ? Number(profileData.guest_count) : 0,
-              profileData.selected_plan as string || ''
+              data.wedding_date ? new Date(data.wedding_date as string) : new Date(),
+              data.budget ? Number(data.budget) : 0,
+              data.location as string || '',
+              data.guest_count ? Number(data.guest_count) : 0,
+              data.selected_plan as string || ''
             );
             
             setUpcomingTasks(personalizedTasks);

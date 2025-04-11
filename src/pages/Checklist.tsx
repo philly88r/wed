@@ -65,7 +65,7 @@ export default function Checklist() {
         
         if (user) {
           // Get the wedding date from the profiles table
-          const { data: profileData, error } = await supabaseClient
+          const { data, error } = await supabaseClient
             .from('profiles')
             .select('wedding_date')
             .eq('id', user.id)
@@ -76,12 +76,12 @@ export default function Checklist() {
             return;
           }
           
-          if (profileData && profileData.wedding_date) {
-            setWeddingDate(profileData.wedding_date);
+          if (data && data.wedding_date) {
+            setWeddingDate(data.wedding_date);
             // Update the newItem state with the wedding date
             setNewItem(prev => ({
               ...prev,
-              dueDate: profileData.wedding_date
+              dueDate: data.wedding_date
             }));
           }
         }
