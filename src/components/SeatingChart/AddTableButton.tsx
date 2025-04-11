@@ -268,11 +268,33 @@ const AddTableButton: React.FC<AddTableButtonProps> = ({ onTableAdded }) => {
       }
       
       console.log('Creating chairs:', chairPositions);
-      // Use the same supabase client instance
-      const { data: newChairs, error: chairsError } = await supabase
+      
+      // First check if there are existing chairs for this table
+      const { data: existingChairs } = await supabase
         .from('table_chairs')
-        .insert(chairPositions)
-        .select();
+        .select('position')
+        .eq('table_id', newTable.id);
+      
+      // Create a set of existing positions
+      const existingPositions = new Set(existingChairs?.map(chair => chair.position) || []);
+      
+      // Filter out chairs with positions that already exist
+      const uniqueChairPositions = chairPositions.filter(chair => !existingPositions.has(chair.position));
+      
+      // Only insert chairs if there are unique positions to add
+      let newChairs = null;
+      let chairsError = null;
+      
+      if (uniqueChairPositions.length > 0) {
+        // Use the same supabase client instance
+        const result = await supabase
+          .from('table_chairs')
+          .insert(uniqueChairPositions)
+          .select();
+          
+        newChairs = result.data;
+        chairsError = result.error;
+      }
 
       console.log('New chairs result:', newChairs, 'Error:', chairsError);
       if (chairsError) {
