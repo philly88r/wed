@@ -61,23 +61,27 @@ export const Auth: React.FC = () => {
     
     // Check if user is already authenticated
     const checkAuthStatus = async () => {
-      const { data } = await supabaseClient.auth.getSession();
-      const session = data.session;
-      
-      if (session) {
-        // Check if user has a subscription
-        const hasSubscription = await checkSubscription(session.user.id);
+      try {
+        const { data } = await supabaseClient.auth.getSession();
+        const session = data.session;
         
-        if (hasSubscription) {
-          // If user has a subscription, redirect to dashboard or the page they tried to visit
-          navigate(from, { replace: true });
-        } else {
-          // If user doesn't have a subscription, redirect to pricing page
-          navigate('/pricing', { replace: true });
+        if (session) {
+          // Check if user has a subscription
+          const hasSubscription = await checkSubscription(session.user.id);
+          
+          if (hasSubscription) {
+            // If user has a subscription, redirect to dashboard or the page they tried to visit
+            navigate(from, { replace: true });
+          } else {
+            // If user doesn't have a subscription, redirect to pricing page
+            navigate('/pricing', { replace: true });
+          }
         }
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
     
     checkAuthStatus();
