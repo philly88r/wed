@@ -449,6 +449,87 @@ export default function SeatingChart() {
     }
   };
 
+  // Handle floor plan upload for venue rooms
+  const handleRoomFloorPlanUpload = async (roomId: string, file: File) => {
+    try {
+      if (!file || !roomId) {
+        setSnackbar({
+          open: true,
+          message: 'Please select a file and room',
+          severity: 'error'
+        });
+        return;
+      }
+      
+      const userId = await getUserId();
+      if (!userId) return;
+      
+      // Create a unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `room-${roomId}-${Date.now()}.${fileExt}`;
+      const filePath = `floor_plans/${fileName}`;
+      
+      // Upload the file to Supabase Storage
+      const supabase = getSupabase();
+      const { error: uploadError } = await supabase
+        .storage
+        .from('venue-floor-plans')
+        .upload(filePath, file);
+        
+      if (uploadError) throw uploadError;
+      
+      // Get the public URL for the uploaded file
+      const { data: { publicUrl } } = supabase
+        .storage
+        .from('venue-floor-plans')
+        .getPublicUrl(filePath);
+      
+      // Update the venue room with the floor plan URL directly
+      const { error: roomUpdateError } = await supabase
+        .from('venue_rooms')
+        .update({ 
+          floor_plan_url: publicUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', roomId);
+        
+      if (roomUpdateError) throw roomUpdateError;
+      
+      // Update the selected room in state
+      if (selectedRoom && selectedRoom.id === roomId) {
+        setSelectedRoom({
+          ...selectedRoom,
+          floor_plan_url: publicUrl
+        });
+      }
+      
+      // Refresh the venue rooms list
+      if (selectedVenue) {
+        const { data: updatedRooms } = await supabase
+          .from('venue_rooms')
+          .select('*')
+          .eq('venue_id', selectedVenue.id);
+          
+        if (updatedRooms) {
+          setVenueRooms(updatedRooms);
+        }
+      }
+      
+      setSnackbar({
+        open: true,
+        message: 'Room floor plan uploaded successfully',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error uploading room floor plan:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to upload room floor plan',
+        severity: 'error'
+      });
+    }
+  };
+
   const handleLogin = async () => {
     try {
       const supabase = getSupabase();
@@ -1891,6 +1972,7 @@ export default function SeatingChart() {
                 onAddVenue={handleAddVenue}
                 onAddRoom={handleAddRoom}
                 onFloorPlanUpload={handleFloorPlanUpload}
+                onRoomFloorPlanUpload={handleRoomFloorPlanUpload}
               />
           </Paper>
         </Box>

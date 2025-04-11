@@ -404,10 +404,13 @@ export const AuthForm: React.FC = () => {
       
       // Add user type specific data
       if (userType === 'couple') {
-        profileData.full_name = formData.firstName;
+        profileData.first_name = formData.firstName;
+        profileData.last_name = ''; // Add an empty last name if not available
         profileData.partner_name = formData.partnerName;
-        profileData.wedding_date = formData.weddingDate || null;
-        profileData.wedding_location = formData.location || null;
+        // Format the wedding date properly for PostgreSQL (YYYY-MM-DD)
+        profileData.wedding_date = formData.weddingDate ? new Date(formData.weddingDate).toISOString().split('T')[0] : null;
+        // Ensure location is properly saved (this was missing or not working)
+        profileData.location = formData.location ? formData.location.trim() : '';
         profileData.guest_count = formData.guestCount || null;
         
         // Also create a wedding record with this information
@@ -415,8 +418,8 @@ export const AuthForm: React.FC = () => {
           const weddingData = {
             user_id: userId,
             couple_name: `${formData.firstName} & ${formData.partnerName}`,
-            wedding_date: formData.weddingDate || null,
-            location: formData.location || null,
+            wedding_date: formData.weddingDate ? new Date(formData.weddingDate).toISOString().split('T')[0] : null,
+            location: formData.location ? formData.location.trim() : '',
             guest_count: parseInt(formData.guestCount) || 0,
             created_at: new Date().toISOString(),
             url_path: `${formData.firstName.toLowerCase()}${formData.partnerName.toLowerCase()}wedding`
@@ -431,15 +434,20 @@ export const AuthForm: React.FC = () => {
           console.error('Error creating wedding record:', weddingError);
         }
       } else if (userType === 'planner') {
-        profileData.full_name = `${formData.firstName} ${formData.lastName}`;
+        profileData.first_name = formData.firstName;
+        profileData.last_name = formData.lastName;
         profileData.company_name = formData.companyName || null;
         profileData.experience_years = formData.experience || null;
         profileData.specialization = formData.specialization || null;
       } else if (userType === 'vendor') {
+        // Extract first and last name from contact name if possible
+        const nameParts = formData.contactName.split(' ');
+        profileData.first_name = nameParts[0] || '';
+        profileData.last_name = nameParts.slice(1).join(' ') || '';
         profileData.company_name = formData.companyName;
         profileData.contact_name = formData.contactName;
         profileData.vendor_type = formData.vendorType || null;
-        profileData.location = formData.location || null;
+        profileData.location = formData.location ? formData.location.trim() : '';
       }
       
       // Insert profile data

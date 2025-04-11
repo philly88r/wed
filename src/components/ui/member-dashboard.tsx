@@ -48,6 +48,13 @@ export function MemberDashboard() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [daysUntilWedding, setDaysUntilWedding] = useState<number>(0);
   
+  // Format the wedding date for display
+  const formattedWeddingDate = weddingDate.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  
   // Fetch user profile data and wedding details
   useEffect(() => {
     const fetchUserData = async () => {
@@ -70,8 +77,10 @@ export function MemberDashboard() {
             console.log('Profile data:', profileData);
             
             // Set user names based on available data
-            if (profileData.full_name) {
-              setUserName(profileData.full_name as string);
+            if (profileData.first_name || profileData.last_name) {
+              const firstName = profileData.first_name as string || '';
+              const lastName = profileData.last_name as string || '';
+              setUserName(`${firstName} ${lastName}`.trim());
             }
             
             if (profileData.partner_name) {
@@ -348,6 +357,34 @@ export function MemberDashboard() {
             <p className="text-[#054697]/80 font-light text-xl">
               Your wedding is in <span className="font-medium">{daysUntilWedding} days</span> ({formattedWeddingDate})
             </p>
+            
+            {/* Profile completion prompt */}
+            {(!profileData?.location || !profileData?.wedding_date) && (
+              <div className="mt-2 p-3 bg-[#FFE8E4] border-l-4 border-[#054697]">
+                <p className="text-[#054697] text-sm">
+                  <span className="font-medium">Complete your profile: </span>
+                  {!profileData?.wedding_date && 'Add your wedding date'}
+                  {!profileData?.wedding_date && !profileData?.location && ' and '}
+                  {!profileData?.location && 'specify your wedding location'}
+                  {' to get personalized planning recommendations.'}
+                  <Button 
+                    size="small"
+                    sx={{ 
+                      ml: 2, 
+                      color: '#054697',
+                      borderColor: '#054697',
+                      '&:hover': { backgroundColor: '#FFD5CC' },
+                      fontSize: '0.75rem',
+                      textTransform: 'none'
+                    }}
+                    variant="outlined"
+                    onClick={() => window.location.href = '/profile'}
+                  >
+                    Update Profile
+                  </Button>
+                </p>
+              </div>
+            )}
             
             {/* Quick Stats */}
             <div className="flex flex-wrap gap-4 mt-6">

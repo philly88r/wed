@@ -36,6 +36,7 @@ export default function Profile() {
     phone: '',
     weddingDate: '',
     partnerName: '',
+    location: '',
   });
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState('');
@@ -72,6 +73,7 @@ export default function Profile() {
               phone: profileData.phone || '',
               weddingDate: profileData.wedding_date || '',
               partnerName: profileData.partner_name || '',
+              location: profileData.location || '',
             });
           }
         }
@@ -101,15 +103,20 @@ export default function Profile() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
+        // Format the wedding date properly for PostgreSQL (YYYY-MM-DD)
+        const formattedWeddingDate = formData.weddingDate ? 
+          new Date(formData.weddingDate).toISOString().split('T')[0] : null;
+
         // Update the user profile
         const { error } = await supabase
           .from('profiles')
           .update({
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            phone: formData.phone,
-            wedding_date: formData.weddingDate,
-            partner_name: formData.partnerName,
+            first_name: formData.firstName || '',
+            last_name: formData.lastName || '',
+            phone: formData.phone || '',
+            wedding_date: formattedWeddingDate,
+            partner_name: formData.partnerName || '',
+            location: formData.location ? formData.location.trim() : '',
             updated_at: new Date(),
           })
           .eq('id', user.id);
@@ -388,6 +395,35 @@ export default function Profile() {
                 label="Partner's Name"
                 name="partnerName"
                 value={formData.partnerName}
+                onChange={handleChange}
+                sx={{
+                  '& .MuiInputLabel-root': {
+                    color: 'primary.main',
+                    opacity: 0.8,
+                  },
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: 'primary.main',
+                      opacity: 0.3,
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'primary.main',
+                      opacity: 0.5,
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: 'primary.main',
+                    },
+                  },
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Wedding Location"
+                name="location"
+                placeholder="City, State"
+                value={formData.location}
                 onChange={handleChange}
                 sx={{
                   '& .MuiInputLabel-root': {
