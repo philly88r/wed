@@ -585,7 +585,7 @@ export default function VenueLayoutSelector() {
                       top: '50%', 
                       left: '50%', 
                       transform: 'translate(-50%, -50%)',
-                      color: theme.palette.primary.main,
+                      color: '#054697',
                       opacity: 0.6
                     }}
                   >
@@ -603,10 +603,10 @@ export default function VenueLayoutSelector() {
               flexDirection: 'column',
               gap: 2
             }}>
-              <Typography variant="h6" sx={{ color: theme.palette.primary.main, opacity: 0.6 }}>
+              <Typography variant="h6" sx={{ color: '#054697', opacity: 0.6 }}>
                 Select a venue and room to view layout
               </Typography>
-              <MeetingRoomIcon sx={{ fontSize: 60, color: theme.palette.primary.main, opacity: 0.3 }} />
+              <MeetingRoomIcon sx={{ fontSize: 60, color: '#054697', opacity: 0.3 }} />
             </Box>
           )}
         </Paper>
