@@ -147,7 +147,7 @@ export default function VendorDirectory() {
       
       if (selectedPriceRange !== 'all') {
         // Filter by price tier if selected
-        query = query.eq('price_tier', selectedPriceRange);
+        query = query.eq('price_tier->>tier', selectedPriceRange);
       }
 
       if (searchTerm) {
@@ -457,7 +457,13 @@ export default function VendorDirectory() {
                     {vendor.pricing_tier && (
                       <Chip 
                         size="small" 
-                        label={vendor.pricing_tier} 
+                        label={
+                          typeof vendor.pricing_tier === 'object' && vendor.pricing_tier !== null
+                            ? vendor.pricing_tier.tier || 'Standard'
+                            : typeof vendor.pricing_tier === 'string'
+                              ? vendor.pricing_tier
+                              : 'Standard'
+                        } 
                         icon={<MoneyIcon fontSize="small" />}
                         sx={{ 
                           bgcolor: theme.palette.accent.rose, 
