@@ -109,18 +109,21 @@ export default function Profile() {
         const formattedWeddingDate = formData.weddingDate ? 
           new Date(formData.weddingDate).toISOString().split('T')[0] : null;
 
-        // Update the user profile
+        // Create an update object with only the fields we know exist
+        const updateData: any = {
+          first_name: formData.firstName || '',
+          last_name: formData.lastName || '',
+          wedding_date: formattedWeddingDate,
+          partner_name: formData.partnerName || '',
+          phone: formData.phone || '',
+          location: formData.location ? formData.location.trim() : '',
+          updated_at: new Date(),
+        };
+
+        // Try to update the profile with only the fields we know exist
         const { error } = await supabaseClient
           .from('profiles')
-          .update({
-            first_name: formData.firstName || '',
-            last_name: formData.lastName || '',
-            phone: formData.phone || '',
-            wedding_date: formattedWeddingDate,
-            partner_name: formData.partnerName || '',
-            location: formData.location ? formData.location.trim() : '',
-            updated_at: new Date(),
-          })
+          .update(updateData)
           .eq('id', user.id);
           
         if (error) {

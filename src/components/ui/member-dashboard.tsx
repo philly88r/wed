@@ -127,7 +127,7 @@ export function MemberDashboard() {
     };
     
     fetchUserData();
-  }, []);
+  }, [location]); // Add location as a dependency
   
   // Function to generate personalized tasks based on user profile
   const generatePersonalizedTasks = (

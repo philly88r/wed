@@ -30,6 +30,7 @@ import Pricing from './pages/Pricing';
 import Auth from './pages/Auth';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import PricingProtectedRoute from './components/Auth/PricingProtectedRoute';
+import Profile from './pages/Profile'; // Import the Profile component
 
 // Define app routes to check against
 const appRoutes = [
@@ -207,7 +208,11 @@ const AppContent = () => {
             <Pricing />
           </PricingProtectedRoute>
         } />
-        
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        } />
         {/* Wedding name route - use a separate component to handle the logic */}
         <Route path="/:weddingName" element={
           <ProtectedRoute>
