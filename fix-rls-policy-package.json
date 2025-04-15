@@ -1,0 +1,10 @@
+{
+  "name": "fix-rls-policy",
+  "version": "1.0.0",
+  "description": "Script to fix RLS policies in Supabase",
+  "main": "fix-rls-policy.js",
+  "type": "module",
+  "dependencies": {
+    "pg": "^8.11.3"
+  }
+}

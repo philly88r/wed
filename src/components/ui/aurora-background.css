@@ -1,0 +1,49 @@
+:root {
+  --white: rgba(255, 255, 255, 1);
+  --transparent: rgba(255, 255, 255, 0);
+  --black: rgba(0, 0, 0, 1);
+  --blue-300: rgba(147, 197, 253, 1);
+  --blue-400: rgba(96, 165, 250, 1);
+  --blue-500: rgba(59, 130, 246, 1);
+  --indigo-300: rgba(165, 180, 252, 1);
+  --violet-200: rgba(221, 214, 254, 1);
+}
+
+.aurora-background {
+  --white-gradient: repeating-linear-gradient(100deg, var(--white) 0%, var(--white) 7%, var(--transparent) 10%, var(--transparent) 12%, var(--white) 16%);
+  --dark-gradient: repeating-linear-gradient(100deg, var(--black) 0%, var(--black) 7%, var(--transparent) 10%, var(--transparent) 12%, var(--black) 16%);
+  --aurora: repeating-linear-gradient(100deg, var(--blue-500) 10%, var(--indigo-300) 15%, var(--blue-300) 20%, var(--violet-200) 25%, var(--blue-400) 30%);
+  background-image: var(--white-gradient), var(--aurora);
+  background-size: 300%, 200%;
+  background-position: 50% 50%, 50% 50%;
+  filter: blur(10px);
+  position: absolute;
+  inset: 0;
+}
+
+.aurora-background::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--white-gradient), var(--aurora);
+  background-size: 200%, 100%;
+  background-attachment: fixed;
+  mix-blend-mode: difference;
+  animation: aurora 7s linear infinite;
+}
+
+.radial-mask {
+  mask-image: radial-gradient(circle at center, black, transparent 80%);
+}
+
+@keyframes aurora {
+  0% {
+    background-position: 0% 0%, 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%, 0% 100%;
+  }
+  100% {
+    background-position: 0% 0%, 0% 0%;
+  }
+}

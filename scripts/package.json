@@ -1,0 +1,7 @@
+{
+  "name": "wed-scripts",
+  "version": "1.0.0",
+  "description": "Scripts for the wedding planning application",
+  "type": "module",
+  "private": true
+}
