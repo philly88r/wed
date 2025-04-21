@@ -1098,7 +1098,9 @@ export const AuthForm: React.FC = () => {
                 endAdornment: question.type === 'password' ? (
                   <InputAdornment position="end">
                     <IconButton
+                      aria-label="toggle password visibility"
                       onClick={() => setShowPassword(!showPassword)}
+                      onMouseDown={(e) => e.preventDefault()}
                       edge="end"
                     >
                       {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
