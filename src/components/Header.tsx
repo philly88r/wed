@@ -143,6 +143,32 @@ export default function Header() {
             >
               <AccountCircle />
             </IconButton>
+            <Box 
+              component="button"
+              onClick={handleLogout}
+              sx={{ 
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                ml: 1,
+                px: 2,
+                py: 0.5,
+                bgcolor: theme.palette.accent.rose,
+                color: theme.palette.primary.main,
+                border: 'none',
+                borderRadius: 1,
+                cursor: 'pointer',
+                fontFamily: "'Poppins', sans-serif",
+                fontWeight: 500,
+                textTransform: 'uppercase',
+                fontSize: '0.875rem',
+                '&:hover': {
+                  bgcolor: '#FFD5CC',
+                },
+              }}
+            >
+              Logout
+            </Box>
           </Box>
         </Toolbar>
       </AppBar>
