@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Image as ImageIcon, X, ExternalLink } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { createCustomLink } from '../utils/customLinksHelper';
+import { setupMoodboardDatabase, ensureUserHasMoodboard } from '../utils/databaseSetup';
 import MoodboardGenerator from '../components/MoodboardGenerator/MoodboardGenerator';
 import MoodboardTemplate from '../components/MoodboardGenerator/MoodboardTemplate';
 import { 
@@ -90,19 +91,27 @@ export default function VisionBoard() {
   }, []);
 
   useEffect(() => {
-    const fetchMoodboard = async () => {
+    const initializeMoodboard = async () => {
       try {
-        // Check if user is authenticated
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user;
+        // First, ensure the database structure is set up correctly
+        await setupMoodboardDatabase();
+        
+        // Then ensure the user has a moodboard and get its ID
+        const moodboardId = await ensureUserHasMoodboard();
+        
+        if (!moodboardId) {
+          console.error('Could not get or create moodboard');
+          return;
+        }
         
         // Default colors following brand guidelines
         const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
         
-        // First, get or create a moodboard for the user
-        let { data: moodboards, error: boardError } = await supabase
+        // Get the moodboard details
+        const { data: moodboards, error: boardError } = await supabase
           .from('moodboards')
           .select('*')
+          .eq('id', moodboardId)
           .limit(1);
         
         if (boardError) {
@@ -110,12 +119,9 @@ export default function VisionBoard() {
           return;
         }
         
-        let moodboardId;
-        
         if (moodboards && moodboards.length > 0) {
           // Use existing moodboard
           setMoodboard(moodboards[0]);
-          moodboardId = moodboards[0].id;
           
           // Set colors if available
           if (moodboards[0].colors) {
@@ -135,50 +141,29 @@ export default function VisionBoard() {
               console.error('Error updating moodboard colors:', updateError);
             }
           }
-        } else {
-          // Create a new moodboard
-          const { data: newBoard, error: createError } = await supabase
-            .from('moodboards')
-            .insert([{ 
-              user_id: user?.id,
-              title: 'My Wedding Moodboard',
-              description: 'Inspiration for my wedding',
-              colors: defaultColors
-            }])
-            .select();
           
-          if (createError) {
-            console.error('Error creating moodboard:', createError);
+          // Now fetch the images for this moodboard
+          const { data: imageData, error: imageError } = await supabase
+            .from('moodboard_images')
+            .select('*')
+            .eq('moodboard_id', moodboardId)
+            .order('position', { ascending: true });
+          
+          if (imageError) {
+            console.error('Error fetching images:', imageError);
             return;
           }
           
-          setMoodboard(newBoard[0]);
-          moodboardId = newBoard[0].id;
-          setSelectedColors(defaultColors);
-          setClassicColors(defaultColors);
-        }
-        
-        // Now fetch the images for this moodboard
-        const { data: imageData, error: imageError } = await supabase
-          .from('moodboard_images')
-          .select('*')
-          .eq('moodboard_id', moodboardId)
-          .order('position', { ascending: true });
-        
-        if (imageError) {
-          console.error('Error fetching images:', imageError);
-          return;
-        }
-        
-        if (imageData && imageData.length > 0) {
-          setImages(imageData);
+          if (imageData && imageData.length > 0) {
+            setImages(imageData);
+          }
         }
       } catch (error) {
         console.error('Unexpected error:', error);
       }
     };
     
-    fetchMoodboard();
+    initializeMoodboard();
   }, []);
 
   useEffect(() => {
