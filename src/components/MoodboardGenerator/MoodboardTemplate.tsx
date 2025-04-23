@@ -466,13 +466,11 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                       src={image.url}
                       alt={image.title || `Moodboard image ${index + 1}`}
                       style={{
-                        maxWidth: '100%',
-                        maxHeight: '100%',
-                        objectFit: 'contain', // Changed from 'cover' to 'contain' to prevent stretching
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover', // Changed from 'contain' to 'cover' to fill the box
                         objectPosition: 'center', // Centers the image in the container
-                        display: 'block', // Removes any extra space below the image
-                        width: 'auto',
-                        height: 'auto'
+                        display: 'block' // Removes any extra space below the image
                       }}
                       crossOrigin="anonymous"
                     />
