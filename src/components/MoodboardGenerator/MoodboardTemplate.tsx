@@ -156,10 +156,80 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
     }
   };
   
-  // Get grid size based on total number of images
-  const getGridSize = (totalImages: number) => {
-    // For 10 images, use a consistent 4-column grid
-    return 3; // 4 images per row (12/3 = 4 columns)
+  // Get layout configuration based on number of images
+  const getLayoutConfig = (index: number, totalImages: number) => {
+    // Different layouts based on total number of images
+    switch (totalImages) {
+      case 1:
+        return { xs: 12, height: '80vh' }; // Full width for single image
+      
+      case 2:
+        return { xs: 6, height: '60vh' }; // Two equal columns
+      
+      case 3:
+        if (index === 0) {
+          return { xs: 12, height: '40vh' }; // First image full width
+        }
+        return { xs: 6, height: '30vh' }; // Other two split bottom row
+      
+      case 4:
+        if (index < 2) {
+          return { xs: 6, height: '40vh' }; // Top row: 2 equal columns
+        }
+        return { xs: 6, height: '30vh' }; // Bottom row: 2 equal columns
+      
+      case 5:
+        if (index === 0) {
+          return { xs: 12, height: '35vh' }; // First image full width
+        }
+        return { xs: 6, height: '25vh' }; // Other 4 in 2x2 grid
+      
+      case 6:
+        if (index === 0) {
+          return { xs: 8, height: '35vh' }; // First image larger
+        }
+        if (index === 1) {
+          return { xs: 4, height: '35vh' }; // Second image smaller
+        }
+        return { xs: 4, height: '25vh' }; // Other 4 in bottom row
+      
+      case 7:
+        if (index === 0) {
+          return { xs: 8, height: '35vh' }; // First image larger
+        }
+        if (index === 1) {
+          return { xs: 4, height: '35vh' }; // Second image smaller
+        }
+        return { xs: 4, height: '20vh' }; // Other 5 in bottom rows
+      
+      case 8:
+        if (index < 2) {
+          return { xs: 6, height: '30vh' }; // Top row: 2 equal columns
+        }
+        return { xs: 3, height: '25vh' }; // Bottom rows: 6 equal columns (3x2)
+      
+      case 9:
+        if (index === 0) {
+          return { xs: 6, height: '30vh' }; // First image larger
+        }
+        if (index < 3) {
+          return { xs: 3, height: '30vh' }; // Complete top row
+        }
+        return { xs: 3, height: '20vh' }; // Bottom two rows: 6 equal columns (3x2)
+      
+      case 10:
+        if (index < 2) {
+          return { xs: 6, height: '25vh' }; // Top row: 2 equal columns
+        }
+        if (index < 5) {
+          return { xs: 4, height: '20vh' }; // Middle row: 3 equal columns
+        }
+        return { xs: 3, height: '20vh' }; // Bottom rows: 5 equal columns
+      
+      default:
+        // For more than 10 images, use a standard grid
+        return { xs: 3, height: '20vh' };
+    }
   };
   
   return (
@@ -303,40 +373,43 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
             </Box>
           ) : (
             <Grid container spacing={1}>
-              {validImages.map((image, index) => (
-                <Grid item xs={getGridSize(validImages.length)} key={image.id}>
-                  <Box
-                    sx={{
-                      width: '100%',
-                      paddingTop: '100%', // 1:1 Aspect ratio
-                      position: 'relative',
-                      overflow: 'hidden',
-                      border: '1px solid #FFFFFF',
-                    }}
-                  >
-                    <img
-                      src={image.url}
-                      alt={image.title || `Moodboard image ${index + 1}`}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
+              {validImages.map((image, index) => {
+                const { xs, height } = getLayoutConfig(index, validImages.length);
+                return (
+                  <Grid item xs={xs} key={image.id}>
+                    <Box
+                      sx={{
                         width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        objectPosition: 'center',
-                        display: 'block'
+                        height,
+                        position: 'relative',
+                        overflow: 'hidden',
+                        border: '1px solid #FFFFFF',
                       }}
-                      crossOrigin="anonymous"
-                      loading="eager"
-                      onError={(e) => {
-                        console.error(`Failed to load image: ${image.url}`);
-                        (e.target as HTMLImageElement).src = '/placeholder-image.jpg';
-                      }}
-                    />
-                  </Box>
-                </Grid>
-              ))}
+                    >
+                      <img
+                        src={image.url}
+                        alt={image.title || `Moodboard image ${index + 1}`}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          objectPosition: 'center',
+                          display: 'block'
+                        }}
+                        crossOrigin="anonymous"
+                        loading="eager"
+                        onError={(e) => {
+                          console.error(`Failed to load image: ${image.url}`);
+                          (e.target as HTMLImageElement).src = '/placeholder-image.jpg';
+                        }}
+                      />
+                    </Box>
+                  </Grid>
+                );
+              })}
             </Grid>
           )}
         </Box>
