@@ -21,7 +21,6 @@ import {
   useTheme
 } from '@mui/material';
 import { HexColorPicker } from 'react-colorful';
-import { v4 as uuidv4 } from 'uuid';
 
 interface InspirationImage {
   id: string;
@@ -97,17 +96,13 @@ export default function VisionBoard() {
         const { data: { session } } = await supabase.auth.getSession();
         const user = session?.user;
         
-        if (!user) {
-          console.error('User not authenticated');
-          // Redirect to login or handle unauthenticated state
-          return;
-        }
+        // Default colors following brand guidelines
+        const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
         
         // First, get or create a moodboard for the user
         let { data: moodboards, error: boardError } = await supabase
           .from('moodboards')
           .select('*')
-          .eq('user_id', user.id)
           .limit(1);
         
         if (boardError) {
@@ -127,8 +122,6 @@ export default function VisionBoard() {
             setSelectedColors(moodboards[0].colors);
             setClassicColors(moodboards[0].colors);
           } else {
-            // Default colors following brand guidelines
-            const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
             setSelectedColors(defaultColors);
             setClassicColors(defaultColors);
             
@@ -144,11 +137,10 @@ export default function VisionBoard() {
           }
         } else {
           // Create a new moodboard
-          const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
           const { data: newBoard, error: createError } = await supabase
             .from('moodboards')
             .insert([{ 
-              user_id: user.id,
+              user_id: user?.id,
               title: 'My Wedding Moodboard',
               description: 'Inspiration for my wedding',
               colors: defaultColors
@@ -418,7 +410,7 @@ export default function VisionBoard() {
         }
         
         // Import new images
-        for (let i = 0; i <importedData.length; i++) {
+        for (let i = 0; i < importedData.length; i++) {
           const img = importedData[i];
           await supabase
             .from('moodboard_images')
@@ -512,7 +504,7 @@ export default function VisionBoard() {
       <div 
         className="bg-white p-6 space-y-6"
         style={{
-          border: '1px solid rgba(5, 70, 151, 0.1)',
+          border: '1px solid #E8B4B4',
           boxShadow: '0 4px 20px rgba(5, 70, 151, 0.05)',
           borderRadius: '4px'
         }}
@@ -582,7 +574,7 @@ export default function VisionBoard() {
           <div 
             className="border-b mb-4"
             style={{
-              borderColor: 'rgba(5, 70, 151, 0.1)'
+              borderColor: '#E8B4B4'
             }}
           >
             <div className="flex">
@@ -713,7 +705,7 @@ export default function VisionBoard() {
                 </div>
 
                 {/* Color Palette Picker for Classic Board */}
-                <div className="mb-6 p-4 border" style={{ borderColor: 'rgba(5, 70, 151, 0.1)' }}>
+                <div className="mb-6 p-4 border" style={{ borderColor: '#E8B4B4' }}>
                   <h3 
                     className="text-lg font-medium mb-3"
                     style={{ 
@@ -747,7 +739,7 @@ export default function VisionBoard() {
                             width: '40px',
                             height: '40px',
                             backgroundColor: color,
-                            border: '1px solid rgba(5, 70, 151, 0.1)',
+                            border: '1px solid #E8B4B4',
                             cursor: 'pointer'
                           }}
                           onClick={() => {
@@ -766,7 +758,7 @@ export default function VisionBoard() {
                           className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-sm"
                           style={{
                             color: '#054697',
-                            border: '1px solid rgba(5, 70, 151, 0.1)'
+                            border: '1px solid #E8B4B4'
                           }}
                         >
                           <X className="w-3 h-3" />
@@ -780,7 +772,7 @@ export default function VisionBoard() {
                           width: '40px',
                           height: '40px',
                           backgroundColor: '#EEEEEE',
-                          border: '1px dashed rgba(5, 70, 151, 0.3)',
+                          border: '1px dashed #E8B4B4',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -813,7 +805,7 @@ export default function VisionBoard() {
                             height: '40px',
                             backgroundColor: currentClassicColor,
                             marginBottom: '8px',
-                            border: '1px solid rgba(5, 70, 151, 0.1)'
+                            border: '1px solid #E8B4B4'
                           }}
                         />
                         <input
@@ -822,7 +814,7 @@ export default function VisionBoard() {
                           onChange={(e) => setCurrentClassicColor(e.target.value)}
                           className="w-full p-2 text-sm"
                           style={{
-                            border: '1px solid rgba(5, 70, 151, 0.1)',
+                            border: '1px solid #E8B4B4',
                             color: '#054697',
                             fontFamily: 'Poppins, sans-serif'
                           }}
@@ -860,7 +852,7 @@ export default function VisionBoard() {
                       onClick={() => setSelectedCategory('all')}
                       className="px-3 py-1 text-sm font-medium"
                       style={{
-                        backgroundColor: selectedCategory === 'all' ? '#E8B4B4' : 'rgba(5, 70, 151, 0.1)',
+                        backgroundColor: selectedCategory === 'all' ? '#E8B4B4' : '#EEEEEE',
                         color: '#054697',
                         fontFamily: 'Poppins, sans-serif',
                         fontWeight: 400,
@@ -876,7 +868,7 @@ export default function VisionBoard() {
                         onClick={() => setSelectedCategory(category === selectedCategory ? 'all' : category)}
                         className="px-3 py-1 text-sm font-medium"
                         style={{
-                          backgroundColor: category === selectedCategory ? '#E8B4B4' : 'rgba(5, 70, 151, 0.1)',
+                          backgroundColor: category === selectedCategory ? '#E8B4B4' : '#EEEEEE',
                           color: '#054697',
                           fontFamily: 'Poppins, sans-serif',
                           fontWeight: 400,
@@ -907,7 +899,7 @@ export default function VisionBoard() {
                         key={image.id} 
                         className="bg-white overflow-hidden flex flex-col relative"
                         style={{
-                          border: '1px solid rgba(5, 70, 151, 0.1)',
+                          border: '1px solid #E8B4B4',
                           boxShadow: '0 2px 10px rgba(5, 70, 151, 0.03)',
                           borderRadius: '4px'
                         }}
@@ -1001,7 +993,7 @@ export default function VisionBoard() {
               <div 
                 className="bg-white p-6 space-y-6"
                 style={{ 
-                  border: '1px solid rgba(5, 70, 151, 0.1)',
+                  border: '1px solid #E8B4B4',
                   borderRadius: '4px'
                 }}
               >
@@ -1039,7 +1031,7 @@ export default function VisionBoard() {
           <div 
             className="bg-gray-50 p-8 text-center border border-dashed"
             style={{
-              borderColor: 'rgba(5, 70, 151, 0.2)',
+              borderColor: '#E8B4B4',
             }}
           >
             <ImageIcon className="w-12 h-12 mx-auto mb-4" style={{ color: 'rgba(5, 70, 151, 0.3)' }} />
