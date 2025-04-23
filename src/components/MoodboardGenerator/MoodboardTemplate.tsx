@@ -24,10 +24,11 @@ const ItemTypes = {
 };
 
 // Draggable image component
-const DraggableImage = ({ image, index, moveImage }: { 
+const DraggableImage = ({ image, index, moveImage, size }: { 
   image: MoodboardImage; 
   index: number; 
   moveImage: (dragIndex: number, hoverIndex: number) => void;
+  size: 'small' | 'medium' | 'large';
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   
@@ -41,7 +42,7 @@ const DraggableImage = ({ image, index, moveImage }: {
   
   const [, drop] = useDrop({
     accept: ItemTypes.IMAGE,
-    hover: (item: { index: number }, monitor) => {
+    hover: (item: { index: number }) => {
       if (!ref.current) {
         return;
       }
@@ -65,6 +66,33 @@ const DraggableImage = ({ image, index, moveImage }: {
   // Apply the drag and drop refs
   drag(drop(ref));
   
+  // Calculate grid span based on size
+  const getGridSpan = () => {
+    switch (size) {
+      case 'large':
+        return {
+          gridColumn: 'span 2',
+          gridRow: 'span 2',
+          minHeight: '300px'
+        };
+      case 'medium':
+        return {
+          gridColumn: 'span 2',
+          gridRow: 'span 1',
+          minHeight: '200px'
+        };
+      case 'small':
+      default:
+        return {
+          gridColumn: 'span 1',
+          gridRow: 'span 1',
+          minHeight: '150px'
+        };
+    }
+  };
+  
+  const gridSpan = getGridSpan();
+  
   return (
     <Box
       ref={ref}
@@ -79,7 +107,8 @@ const DraggableImage = ({ image, index, moveImage }: {
         justifyContent: 'center',
         border: '1px solid #B8BDD7',
         height: '100%',
-        transition: 'transform 0.2s ease'
+        transition: 'transform 0.2s ease',
+        ...gridSpan
       }}
     >
       <img
@@ -158,27 +187,54 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
   
   // Function to calculate grid layout based on image count
   const getGridLayout = (count: number) => {
-    // For 1-2 images, use 2 columns
+    // For 1-2 images, use 4 columns (to allow for spanning)
     if (count <= 2) {
       return {
-        columns: 2,
+        columns: 4,
         gap: 2
       };
     }
     
-    // For 3-5 images, use 3 columns
+    // For 3-5 images, use 6 columns (to allow for spanning)
     if (count <= 5) {
       return {
-        columns: 3,
+        columns: 6,
         gap: 2
       };
     }
     
-    // For 6+ images, use 4 columns
+    // For 6+ images, use 8 columns (to allow for spanning)
     return {
-      columns: 4,
+      columns: 8,
       gap: 2
     };
+  };
+
+  // Function to determine image size based on position and total count
+  const getImageSize = (index: number, totalCount: number): 'small' | 'medium' | 'large' => {
+    // For 1-2 images
+    if (totalCount <= 2) {
+      return index === 0 ? 'large' : 'medium';
+    }
+    
+    // For 3-5 images
+    if (totalCount <= 5) {
+      if (index === 0) return 'large';
+      if (index === 1) return 'medium';
+      return 'small';
+    }
+    
+    // For 6-9 images
+    if (totalCount <= 9) {
+      if (index === 0) return 'large';
+      if (index === 1 || index === 4) return 'medium';
+      return 'small';
+    }
+    
+    // For 10+ images
+    if (index === 0) return 'large';
+    if (index % 5 === 0 || index % 7 === 0) return 'medium';
+    return 'small';
   };
 
   // Function to download the template as PDF
@@ -418,7 +474,8 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                   width: '100%',
                   boxSizing: 'border-box',
                   backgroundColor: '#FBFBF7',
-                  minHeight: '400px'
+                  minHeight: '400px',
+                  padding: '2px'
                 }}
               >
                 {validImages.map((image, index) => (
@@ -427,6 +484,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                     image={image}
                     index={index}
                     moveImage={moveImage}
+                    size={getImageSize(index, validImages.length)}
                   />
                 ))}
               </Box>
