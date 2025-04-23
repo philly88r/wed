@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Box, Typography, Paper, Button, CircularProgress, alpha } from '@mui/material';
-import { Download as DownloadIcon } from 'lucide-react';
+import { Box, Typography, Paper, Button, CircularProgress, alpha, IconButton, Menu, MenuItem } from '@mui/material';
+import { Download as DownloadIcon, Maximize2, Minimize2, Move } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
@@ -24,14 +24,38 @@ const ItemTypes = {
 };
 
 // Draggable image component
-const DraggableImage = ({ image, index, moveImage, size, totalCount }: { 
+const DraggableImage = ({ 
+  image, 
+  index, 
+  moveImage, 
+  size, 
+  totalCount,
+  onSizeChange
+}: { 
   image: MoodboardImage; 
   index: number; 
   moveImage: (dragIndex: number, hoverIndex: number) => void;
   size: 'small' | 'medium' | 'large';
   totalCount: number;
+  onSizeChange: (index: number, newSize: 'small' | 'medium' | 'large') => void;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+  
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+  };
+  
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+  
+  const handleSizeChange = (newSize: 'small' | 'medium' | 'large') => {
+    onSizeChange(index, newSize);
+    handleClose();
+  };
   
   const [{ isDragging }, drag] = useDrag({
     type: ItemTypes.IMAGE,
@@ -71,32 +95,23 @@ const DraggableImage = ({ image, index, moveImage, size, totalCount }: {
   const gridSpan = (() => {
     switch (size) {
       case 'large':
-        // For fewer images, large takes more space
-        if (totalCount <= 5) {
-          return {
-            gridColumn: 'span 6',
-            gridRow: 'span 2',
-            minHeight: '300px'
-          };
-        }
-        // For more images, large takes less space
         return {
-          gridColumn: 'span 4',
+          gridColumn: 'span 3',
           gridRow: 'span 2',
-          minHeight: '280px'
+          minHeight: '350px'
         };
       case 'medium':
         return {
-          gridColumn: 'span 4',
+          gridColumn: 'span 2',
           gridRow: 'span 1',
-          minHeight: '200px'
+          minHeight: '250px'
         };
       case 'small':
       default:
         return {
-          gridColumn: 'span 2',
+          gridColumn: 'span 1',
           gridRow: 'span 1',
-          minHeight: '150px'
+          minHeight: '200px'
         };
     }
   })();
@@ -136,23 +151,66 @@ const DraggableImage = ({ image, index, moveImage, size, totalCount }: {
           (e.target as HTMLImageElement).src = '/placeholder-image.jpg';
         }}
       />
+      
+      {/* Resize controls */}
+      <IconButton
+        size="small"
+        onClick={handleClick}
+        sx={{
+          position: 'absolute',
+          top: '5px',
+          right: '5px',
+          backgroundColor: 'rgba(255, 255, 255, 0.7)',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.9)'
+          },
+          width: '30px',
+          height: '30px'
+        }}
+      >
+        <Move size={16} color="#054697" />
+      </IconButton>
+      
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+      >
+        <MenuItem onClick={() => handleSizeChange('small')} disabled={size === 'small'}>
+          <Minimize2 size={16} style={{ marginRight: '8px' }} />
+          Small
+        </MenuItem>
+        <MenuItem onClick={() => handleSizeChange('medium')} disabled={size === 'medium'}>
+          <Move size={16} style={{ marginRight: '8px' }} />
+          Medium
+        </MenuItem>
+        <MenuItem onClick={() => handleSizeChange('large')} disabled={size === 'large'}>
+          <Maximize2 size={16} style={{ marginRight: '8px' }} />
+          Large
+        </MenuItem>
+      </Menu>
     </Box>
   );
 };
 
-const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({ 
-  images, 
-  colors = []
-}) => {
+export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemplateProps) {
   const templateRef = useRef<HTMLDivElement>(null);
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [logoUrl, setLogoUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [moodboardImages, setMoodboardImages] = useState<MoodboardImage[]>([]);
+  const [imageSizes, setImageSizes] = useState<Record<number, 'small' | 'medium' | 'large'>>({});
   
   // Initialize moodboard images
   useEffect(() => {
     setMoodboardImages(images.filter(img => img.url));
+    
+    // Initialize image sizes
+    const initialSizes: Record<number, 'small' | 'medium' | 'large'> = {};
+    images.forEach((_, index) => {
+      initialSizes[index] = getInitialImageSize(index, images.length);
+    });
+    setImageSizes(initialSizes);
   }, [images]);
   
   // Function to move an image (for drag and drop)
@@ -162,6 +220,32 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
     newImages.splice(dragIndex, 1);
     newImages.splice(hoverIndex, 0, draggedImage);
     setMoodboardImages(newImages);
+    
+    // Update image sizes after reordering
+    const newSizes = { ...imageSizes };
+    const draggedSize = newSizes[dragIndex];
+    
+    // Shift all sizes between drag and hover indices
+    if (dragIndex < hoverIndex) {
+      for (let i = dragIndex; i < hoverIndex; i++) {
+        newSizes[i] = newSizes[i + 1];
+      }
+    } else {
+      for (let i = dragIndex; i > hoverIndex; i--) {
+        newSizes[i] = newSizes[i - 1];
+      }
+    }
+    
+    newSizes[hoverIndex] = draggedSize;
+    setImageSizes(newSizes);
+  };
+  
+  // Function to change image size
+  const handleSizeChange = (index: number, newSize: 'small' | 'medium' | 'large') => {
+    setImageSizes(prev => ({
+      ...prev,
+      [index]: newSize
+    }));
   };
   
   // Load the logo as a data URL to ensure it appears in the PDF
@@ -195,15 +279,15 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
   
   // Function to calculate grid layout based on image count
   const getGridLayout = () => {
-    // For all image counts, use a 12-column grid for maximum flexibility
+    // Use a 3-column grid for a maximum of 3 images per row
     return {
-      columns: 12,
+      columns: 3,
       gap: 2
     };
   };
   
-  // Function to determine image size based on position and total count
-  const getImageSize = (index: number, totalCount: number): 'small' | 'medium' | 'large' => {
+  // Function to determine initial image size based on position and total count
+  const getInitialImageSize = (index: number, totalCount: number): 'small' | 'medium' | 'large' => {
     // For 1-2 images
     if (totalCount <= 2) {
       return index === 0 ? 'large' : 'medium';
@@ -281,6 +365,12 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
           if (clonedTemplate) {
             (clonedTemplate as HTMLElement).style.backgroundColor = '#FBFBF7';
           }
+          
+          // Hide resize controls in the PDF
+          const resizeButtons = clonedDoc.querySelectorAll('.resize-control');
+          resizeButtons.forEach(button => {
+            (button as HTMLElement).style.display = 'none';
+          });
           
           // Ensure all images are visible
           const images = clonedDoc.querySelectorAll('img');
@@ -469,7 +559,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                   width: '100%',
                   boxSizing: 'border-box',
                   backgroundColor: '#FBFBF7',
-                  minHeight: '400px',
+                  minHeight: '680px', // 70% longer than before (400px * 1.7)
                   padding: '2px'
                 }}
               >
@@ -479,8 +569,9 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                     image={image}
                     index={index}
                     moveImage={moveImage}
-                    size={getImageSize(index, validImages.length)}
+                    size={imageSizes[index] || getInitialImageSize(index, validImages.length)}
                     totalCount={validImages.length}
+                    onSizeChange={handleSizeChange}
                   />
                 ))}
               </Box>
@@ -490,6 +581,4 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
       </Box>
     </DndProvider>
   );
-};
-
-export default MoodboardTemplate;
+}
