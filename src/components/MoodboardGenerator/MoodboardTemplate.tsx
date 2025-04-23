@@ -65,7 +65,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
     
     try {
       // Wait for any pending renders to complete
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 500)); // Increased timeout for better rendering
       
       const canvas = await html2canvas(templateRef.current, {
         scale: 2, // Higher scale for better quality
@@ -86,7 +86,20 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
           if (logoImg) {
             (logoImg as HTMLImageElement).style.visibility = 'visible';
             (logoImg as HTMLImageElement).style.opacity = '1';
+            // Force the logo to be visible
+            (logoImg as HTMLImageElement).setAttribute('crossOrigin', 'anonymous');
           }
+          
+          // Pre-load all images to ensure they're rendered in the PDF
+          const images = clonedDoc.querySelectorAll('img');
+          images.forEach(img => {
+            img.setAttribute('crossOrigin', 'anonymous');
+            // Force image to be fully loaded
+            if (!img.complete) {
+              img.style.opacity = '1';
+              img.style.visibility = 'visible';
+            }
+          });
         }
       });
       
@@ -442,10 +455,10 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                     <Box
                       sx={{
                         position: 'absolute',
-                        top: '10px',
+                        top: '5px', // Moved higher (was 10px)
                         left: '10px',
                         backgroundColor: 'rgba(232, 180, 180, 0.8)',
-                        padding: '2px 8px',
+                        padding: '4px 8px', // Increased vertical padding (was 2px 8px)
                         maxWidth: '90%',
                         borderBottomRightRadius: '4px',
                         zIndex: 5
@@ -461,7 +474,9 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          display: 'block'
+                          display: 'block',
+                          lineHeight: 1, // Tighter line height to center text better
+                          paddingTop: '1px' // Small top padding to center text vertically
                         }}
                       >
                         {image.category}
