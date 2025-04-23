@@ -174,6 +174,26 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
     }
   };
   
+  // Add CSS for the masonry images
+  useEffect(() => {
+    // Add custom styles for masonry images
+    const style = document.createElement('style');
+    style.textContent = `
+      .moodboard-image {
+        object-fit: cover !important;
+        width: 100% !important;
+        height: 100% !important;
+        border: 1px solid #FFFFFF !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Cleanup function
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+  
   return (
     <Box sx={{ width: '100%', position: 'relative' }}>
       <Button
@@ -319,30 +339,17 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
             <MasonryPhotoAlbum
               photos={photos}
               spacing={4}
-              layout="masonry"
+              imgClassName="moodboard-image"
               columns={(containerWidth) => {
                 // Responsive columns based on container width
                 if (containerWidth < 500) return 2;
                 if (containerWidth < 800) return 3;
                 return 4;
               }}
-              // Apply custom styling to all photos
-              imgClassName="moodboard-image"
-              containerWidth={templateRef.current?.clientWidth || 800}
             />
           )}
         </Box>
       </Paper>
-      
-      {/* Add global styles for the masonry images */}
-      <style jsx global>{`
-        .moodboard-image {
-          object-fit: cover;
-          width: 100%;
-          height: 100%;
-          border: 1px solid #FFFFFF;
-        }
-      `}</style>
     </Box>
   );
 }
