@@ -222,87 +222,6 @@ export default function VisionBoard() {
           >
             Wedding Vision Board
           </h1>
-          <div>
-            <button
-              onClick={() => {
-                setNewImage({ category: categories[0] });
-                setShowForm(true);
-              }}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium"
-              style={{
-                backgroundColor: '#E8B4B4',
-                color: '#054697',
-                fontFamily: 'Poppins, sans-serif',
-                fontWeight: 400,
-                textTransform: 'uppercase',
-                border: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Add Image
-            </button>
-            <button
-              onClick={() => document.getElementById('import-board')?.click()}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium"
-              style={{
-                backgroundColor: '#E8B4B4',
-                color: '#054697',
-                fontFamily: 'Poppins, sans-serif',
-                fontWeight: 400,
-                textTransform: 'uppercase',
-                border: 'none',
-                cursor: 'pointer',
-                marginLeft: '2px'
-              }}
-            >
-              <ExternalLink className="w-5 h-5 mr-2" />
-              Import Board
-            </button>
-            <input
-              type="file"
-              id="import-board"
-              accept=".json"
-              style={{ display: 'none' }}
-              onChange={handleImport}
-            />
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <div className="flex flex-wrap gap-3 mb-4">
-            <button
-              onClick={() => setSelectedCategory('all')}
-              className="px-3 py-1 text-sm font-medium"
-              style={{
-                backgroundColor: selectedCategory === 'all' ? '#E8B4B4' : 'rgba(5, 70, 151, 0.1)',
-                color: '#054697',
-                fontFamily: 'Poppins, sans-serif',
-                fontWeight: 400,
-                border: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              All
-            </button>
-            {categories.map((category, index) => (
-              <button
-                key={index}
-                onClick={() => setSelectedCategory(category === selectedCategory ? 'all' : category)}
-                className="px-3 py-1 text-sm font-medium"
-                style={{
-                  backgroundColor: category === selectedCategory ? '#E8B4B4' : 'rgba(5, 70, 151, 0.1)',
-                  color: '#054697',
-                  fontFamily: 'Poppins, sans-serif',
-                  fontWeight: 400,
-                  border: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
         </div>
 
         <div className="mb-4">
@@ -424,6 +343,88 @@ export default function VisionBoard() {
           <>
             {activeTab === 'classic' && (
               <>
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => {
+                      setNewImage({ category: categories[0] });
+                      setShowForm(true);
+                    }}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium"
+                    style={{
+                      backgroundColor: '#E8B4B4',
+                      color: '#054697',
+                      fontFamily: 'Poppins, sans-serif',
+                      fontWeight: 400,
+                      textTransform: 'uppercase',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
+                    Add Image
+                  </button>
+                  <button
+                    onClick={() => document.getElementById('import-board')?.click()}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium ml-2"
+                    style={{
+                      backgroundColor: '#E8B4B4',
+                      color: '#054697',
+                      fontFamily: 'Poppins, sans-serif',
+                      fontWeight: 400,
+                      textTransform: 'uppercase',
+                      border: 'none',
+                      cursor: 'pointer',
+                      marginLeft: '8px'
+                    }}
+                  >
+                    <ExternalLink className="w-5 h-5 mr-2" />
+                    Import Board
+                  </button>
+                  <input
+                    type="file"
+                    id="import-board"
+                    accept=".json"
+                    style={{ display: 'none' }}
+                    onChange={handleImport}
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <div className="flex flex-wrap gap-3 mb-4">
+                    <button
+                      onClick={() => setSelectedCategory('all')}
+                      className="px-3 py-1 text-sm font-medium"
+                      style={{
+                        backgroundColor: selectedCategory === 'all' ? '#E8B4B4' : 'rgba(5, 70, 151, 0.1)',
+                        color: '#054697',
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 400,
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      All
+                    </button>
+                    {categories.map((category, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedCategory(category === selectedCategory ? 'all' : category)}
+                        className="px-3 py-1 text-sm font-medium"
+                        style={{
+                          backgroundColor: category === selectedCategory ? '#E8B4B4' : 'rgba(5, 70, 151, 0.1)',
+                          color: '#054697',
+                          fontFamily: 'Poppins, sans-serif',
+                          fontWeight: 400,
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {showMoodboardTemplate ? (
                   <MoodboardTemplate 
                     images={filteredImages.map(img => ({ 
@@ -598,25 +599,27 @@ export default function VisionBoard() {
             >
               Start adding inspiration images to your mood board
             </p>
-            <button
-              onClick={() => {
-                setNewImage({ category: categories[0] });
-                setShowForm(true);
-              }}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium"
-              style={{
-                backgroundColor: '#E8B4B4',
-                color: '#054697',
-                fontFamily: 'Poppins, sans-serif',
-                fontWeight: 400,
-                textTransform: 'uppercase',
-                border: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Add First Image
-            </button>
+            {activeTab === 'classic' && (
+              <button
+                onClick={() => {
+                  setNewImage({ category: categories[0] });
+                  setShowForm(true);
+                }}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium"
+                style={{
+                  backgroundColor: '#E8B4B4',
+                  color: '#054697',
+                  fontFamily: 'Poppins, sans-serif',
+                  fontWeight: 400,
+                  textTransform: 'uppercase',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Add First Image
+              </button>
+            )}
           </div>
         )}
       </div>
