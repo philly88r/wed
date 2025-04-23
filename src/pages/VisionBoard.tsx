@@ -90,71 +90,143 @@ export default function VisionBoard() {
 
   useEffect(() => {
     const fetchMoodboard = async () => {
-      // First, get or create a moodboard for the user
-      let { data: moodboards, error: boardError } = await supabase
-        .from('moodboards')
-        .select('*')
-        .limit(1);
-      
-      if (boardError) {
-        console.error('Error fetching moodboard:', boardError);
-        return;
-      }
-      
-      let moodboardId;
-      
-      if (moodboards && moodboards.length > 0) {
-        // Use existing moodboard
-        setMoodboard(moodboards[0]);
-        moodboardId = moodboards[0].id;
-        
-        // Set colors if available
-        if (moodboards[0].colors) {
-          setSelectedColors(moodboards[0].colors);
-          setClassicColors(moodboards[0].colors);
-        } else {
-          // Default colors following brand guidelines
-          const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
-          setSelectedColors(defaultColors);
-          setClassicColors(defaultColors);
-        }
-      } else {
-        // Create a new moodboard
-        const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
-        const { data: newBoard, error: createError } = await supabase
+      try {
+        // First, get or create a moodboard for the user
+        let { data: moodboards, error: boardError } = await supabase
           .from('moodboards')
-          .insert([{ 
+          .select('*')
+          .limit(1);
+        
+        if (boardError) {
+          console.error('Error fetching moodboard:', boardError);
+          
+          // Create default moodboard if there's an error (likely permissions)
+          const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
+          setMoodboard({
+            id: 'local-moodboard',
             title: 'My Wedding Moodboard',
             description: 'Inspiration for my wedding',
             colors: defaultColors
-          }])
-          .select();
-        
-        if (createError) {
-          console.error('Error creating moodboard:', createError);
+          });
+          setSelectedColors(defaultColors);
+          setClassicColors(defaultColors);
+          
+          // Load from localStorage as fallback
+          const savedImages = localStorage.getItem('wedding-mood-board');
+          if (savedImages) {
+            setImages(JSON.parse(savedImages));
+          }
+          
           return;
         }
         
-        setMoodboard(newBoard[0]);
-        moodboardId = newBoard[0].id;
+        let moodboardId;
+        
+        if (moodboards && moodboards.length > 0) {
+          // Use existing moodboard
+          setMoodboard(moodboards[0]);
+          moodboardId = moodboards[0].id;
+          
+          // Set colors if available
+          if (moodboards[0].colors) {
+            setSelectedColors(moodboards[0].colors);
+            setClassicColors(moodboards[0].colors);
+          } else {
+            // Default colors following brand guidelines
+            const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
+            setSelectedColors(defaultColors);
+            setClassicColors(defaultColors);
+          }
+        } else {
+          // Create a new moodboard
+          const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
+          const { data: newBoard, error: createError } = await supabase
+            .from('moodboards')
+            .insert([{ 
+              title: 'My Wedding Moodboard',
+              description: 'Inspiration for my wedding',
+              colors: defaultColors
+            }])
+            .select();
+          
+          if (createError) {
+            console.error('Error creating moodboard:', createError);
+            
+            // Create local moodboard if there's an error
+            setMoodboard({
+              id: 'local-moodboard',
+              title: 'My Wedding Moodboard',
+              description: 'Inspiration for my wedding',
+              colors: defaultColors
+            });
+            setSelectedColors(defaultColors);
+            setClassicColors(defaultColors);
+            
+            // Load from localStorage as fallback
+            const savedImages = localStorage.getItem('wedding-mood-board');
+            if (savedImages) {
+              setImages(JSON.parse(savedImages));
+            }
+            
+            return;
+          }
+          
+          setMoodboard(newBoard[0]);
+          moodboardId = newBoard[0].id;
+          setSelectedColors(defaultColors);
+          setClassicColors(defaultColors);
+        }
+        
+        // Now fetch the images for this moodboard
+        const { data: imageData, error: imageError } = await supabase
+          .from('moodboard_images')
+          .select('*')
+          .eq('moodboard_id', moodboardId)
+          .order('position', { ascending: true });
+        
+        if (imageError) {
+          console.error('Error fetching images:', imageError);
+          
+          // Load from localStorage as fallback
+          const savedImages = localStorage.getItem('wedding-mood-board');
+          if (savedImages) {
+            setImages(JSON.parse(savedImages));
+          }
+          
+          return;
+        }
+        
+        if (imageData && imageData.length > 0) {
+          setImages(imageData);
+          
+          // Also save to localStorage as backup
+          localStorage.setItem('wedding-mood-board', JSON.stringify(imageData));
+        } else {
+          // Load from localStorage if no images in database
+          const savedImages = localStorage.getItem('wedding-mood-board');
+          if (savedImages) {
+            setImages(JSON.parse(savedImages));
+          }
+        }
+      } catch (error) {
+        console.error('Unexpected error:', error);
+        
+        // Fallback to localStorage
+        const savedImages = localStorage.getItem('wedding-mood-board');
+        if (savedImages) {
+          setImages(JSON.parse(savedImages));
+        }
+        
+        // Create default moodboard
+        const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
+        setMoodboard({
+          id: 'local-moodboard',
+          title: 'My Wedding Moodboard',
+          description: 'Inspiration for my wedding',
+          colors: defaultColors
+        });
         setSelectedColors(defaultColors);
         setClassicColors(defaultColors);
-      }
-      
-      // Now fetch the images for this moodboard
-      const { data: imageData, error: imageError } = await supabase
-        .from('moodboard_images')
-        .select('*')
-        .eq('moodboard_id', moodboardId)
-        .order('position', { ascending: true });
-      
-      if (imageError) {
-        console.error('Error fetching images:', imageError);
-        return;
-      }
-      
-      if (imageData) {
-        setImages(imageData);
       }
     };
     
