@@ -24,11 +24,12 @@ const ItemTypes = {
 };
 
 // Draggable image component
-const DraggableImage = ({ image, index, moveImage, size }: { 
+const DraggableImage = ({ image, index, moveImage, size, totalCount }: { 
   image: MoodboardImage; 
   index: number; 
   moveImage: (dragIndex: number, hoverIndex: number) => void;
   size: 'small' | 'medium' | 'large';
+  totalCount: number;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   
@@ -66,32 +67,39 @@ const DraggableImage = ({ image, index, moveImage, size }: {
   // Apply the drag and drop refs
   drag(drop(ref));
   
-  // Calculate grid span based on size
-  const getGridSpan = () => {
+  // Get grid span based on size and position
+  const gridSpan = (() => {
     switch (size) {
       case 'large':
+        // For fewer images, large takes more space
+        if (totalCount <= 5) {
+          return {
+            gridColumn: 'span 6',
+            gridRow: 'span 2',
+            minHeight: '300px'
+          };
+        }
+        // For more images, large takes less space
         return {
-          gridColumn: 'span 2',
+          gridColumn: 'span 4',
           gridRow: 'span 2',
-          minHeight: '300px'
+          minHeight: '280px'
         };
       case 'medium':
         return {
-          gridColumn: 'span 2',
+          gridColumn: 'span 4',
           gridRow: 'span 1',
           minHeight: '200px'
         };
       case 'small':
       default:
         return {
-          gridColumn: 'span 1',
+          gridColumn: 'span 2',
           gridRow: 'span 1',
           minHeight: '150px'
         };
     }
-  };
-  
-  const gridSpan = getGridSpan();
+  })();
   
   return (
     <Box
@@ -186,30 +194,14 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
   const validImages = moodboardImages.filter(img => img.url);
   
   // Function to calculate grid layout based on image count
-  const getGridLayout = (count: number) => {
-    // For 1-2 images, use 4 columns (to allow for spanning)
-    if (count <= 2) {
-      return {
-        columns: 4,
-        gap: 2
-      };
-    }
-    
-    // For 3-5 images, use 6 columns (to allow for spanning)
-    if (count <= 5) {
-      return {
-        columns: 6,
-        gap: 2
-      };
-    }
-    
-    // For 6+ images, use 8 columns (to allow for spanning)
+  const getGridLayout = () => {
+    // For all image counts, use a 12-column grid for maximum flexibility
     return {
-      columns: 8,
+      columns: 12,
       gap: 2
     };
   };
-
+  
   // Function to determine image size based on position and total count
   const getImageSize = (index: number, totalCount: number): 'small' | 'medium' | 'large' => {
     // For 1-2 images
@@ -217,24 +209,27 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
       return index === 0 ? 'large' : 'medium';
     }
     
-    // For 3-5 images
+    // For 3-5 images - first is large, distribute others
     if (totalCount <= 5) {
       if (index === 0) return 'large';
       if (index === 1) return 'medium';
       return 'small';
     }
     
-    // For 6-9 images
+    // For 6-9 images - create a more natural distribution
     if (totalCount <= 9) {
+      // First image is large
       if (index === 0) return 'large';
-      if (index === 1 || index === 4) return 'medium';
+      // Some medium images distributed throughout
+      if (index === 2 || index === 5) return 'medium';
+      // Rest are small
       return 'small';
     }
     
-    // For 10+ images
-    if (index === 0) return 'large';
-    if (index % 5 === 0 || index % 7 === 0) return 'medium';
-    return 'small';
+    // For 10+ images - create a natural gallery feel
+    if (index === 0) return 'large'; // First image is large
+    if (index === 3 || index === 7 || index === 11) return 'medium'; // Some medium images
+    return 'small'; // Rest are small
   };
 
   // Function to download the template as PDF
@@ -329,7 +324,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
   };
   
   // Calculate layout
-  const layout = getGridLayout(validImages.length);
+  const layout = getGridLayout();
   
   return (
     <DndProvider backend={HTML5Backend}>
@@ -485,6 +480,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                     index={index}
                     moveImage={moveImage}
                     size={getImageSize(index, validImages.length)}
+                    totalCount={validImages.length}
                   />
                 ))}
               </Box>
