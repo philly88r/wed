@@ -272,10 +272,11 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
         elevation={0}
         sx={{
           width: '100%',
-          aspectRatio: '1.414/1', // A4 aspect ratio (landscape)
+          aspectRatio: validImages.length > 0 ? '1.414/1' : 'auto', // A4 aspect ratio (landscape) if images exist
           backgroundColor: '#FAFAFA',
           overflow: 'hidden',
-          position: 'relative'
+          position: 'relative',
+          minHeight: validImages.length > 0 ? 'auto' : '300px' // Minimum height if no images
         }}
       >
         {/* Red accent bar on left side */}
@@ -376,42 +377,46 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
             </Box>
           )}
           
-          {/* Dynamic grid layout for images */}
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: gridLayout.columns,
-              gridTemplateRows: gridLayout.rows,
-              gridTemplateAreas: gridLayout.areas.join(' '),
-              gap: 1,
-              width: '100%',
-              height: '100%',
-              pt: '40px', // Space for the logo and color palette
-              boxSizing: 'border-box'
-            }}
-          >
-            {validImages.length === 0 ? (
-              <Box
-                sx={{
-                  gridArea: 'empty',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: '#EEEEEE'
+          {validImages.length === 0 ? (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                width: '100%',
+                pt: '40px', // Space for the logo and color palette
+                boxSizing: 'border-box'
+              }}
+            >
+              <Typography 
+                variant="body1" 
+                sx={{ 
+                  color: '#054697',
+                  opacity: 0.6,
+                  fontFamily: 'Poppins, sans-serif',
+                  fontWeight: 300
                 }}
               >
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    color: '#AAAAAA',
-                    fontStyle: 'italic'
-                  }}
-                >
-                  No images selected
-                </Typography>
-              </Box>
-            ) : (
-              validImages.slice(0, 12).map((image, index) => (
+                Add images to create your moodboard
+              </Typography>
+            </Box>
+          ) : (
+            /* Dynamic grid layout for images */
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: gridLayout.columns,
+                gridTemplateRows: gridLayout.rows,
+                gridTemplateAreas: gridLayout.areas.join(' '),
+                gap: 1,
+                width: '100%',
+                height: '100%',
+                pt: '40px', // Space for the logo and color palette
+                boxSizing: 'border-box'
+              }}
+            >
+              {validImages.map((image, index) => (
                 <Box
                   key={image.id}
                   sx={{
@@ -460,9 +465,9 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                     </Box>
                   )}
                 </Box>
-              ))
-            )}
-          </Box>
+              ))}
+            </Box>
+          )}
         </Box>
       </Paper>
     </Box>
