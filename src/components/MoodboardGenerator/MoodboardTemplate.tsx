@@ -56,13 +56,174 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
   // Filter out empty images
   const validImages = images.filter(img => img.url);
   
+  // Function to determine the grid layout based on number of images
+  const getGridLayout = () => {
+    const count = validImages.length;
+    console.log('Number of images in template:', count);
+    
+    if (count === 0) {
+      return {
+        columns: '1fr',
+        rows: 'auto',
+        areas: ['"empty"'],
+        gap: '4px'
+      };
+    }
+    
+    if (count === 1) {
+      return {
+        columns: '1fr',
+        rows: 'auto',
+        areas: ['"img1"'],
+        gap: '4px'
+      };
+    }
+    
+    if (count === 2) {
+      return {
+        columns: '1fr 1fr',
+        rows: 'auto',
+        areas: ['"img1 img2"'],
+        gap: '4px'
+      };
+    }
+    
+    if (count === 3) {
+      return {
+        columns: '2fr 1fr',
+        rows: 'auto auto',
+        areas: [
+          '"img1 img2"',
+          '"img1 img3"'
+        ],
+        gap: '4px'
+      };
+    }
+    
+    if (count === 4) {
+      return {
+        columns: '2fr 1fr',
+        rows: 'auto auto',
+        areas: [
+          '"img1 img2"',
+          '"img3 img4"'
+        ],
+        gap: '4px'
+      };
+    }
+    
+    if (count === 5) {
+      return {
+        columns: '2fr 1fr 1fr',
+        rows: 'auto auto',
+        areas: [
+          '"img1 img2 img3"',
+          '"img1 img4 img5"'
+        ],
+        gap: '4px'
+      };
+    }
+    
+    if (count === 6) {
+      return {
+        columns: '1fr 1fr 1fr',
+        rows: 'auto auto',
+        areas: [
+          '"img1 img2 img3"',
+          '"img4 img5 img6"'
+        ],
+        gap: '4px'
+      };
+    }
+    
+    if (count === 7) {
+      return {
+        columns: '2fr 1fr 1fr 1fr',
+        rows: 'auto auto',
+        areas: [
+          '"img1 img2 img3 img4"',
+          '"img1 img5 img6 img7"'
+        ],
+        gap: '4px'
+      };
+    }
+    
+    if (count === 8) {
+      return {
+        columns: '1fr 1fr 1fr 1fr',
+        rows: 'auto auto',
+        areas: [
+          '"img1 img2 img3 img4"',
+          '"img5 img6 img7 img8"'
+        ],
+        gap: '4px'
+      };
+    }
+    
+    if (count === 9) {
+      return {
+        columns: '2fr 1fr 1fr',
+        rows: 'auto auto auto',
+        areas: [
+          '"img1 img2 img3"',
+          '"img1 img4 img5"',
+          '"img6 img7 img8 img9"'
+        ],
+        gap: '4px'
+      };
+    }
+    
+    if (count === 10) {
+      return {
+        columns: '2fr 1fr 1fr 1fr',
+        rows: 'auto auto auto',
+        areas: [
+          '"img1 img2 img3 img4"',
+          '"img1 img5 img6 img7"',
+          '"img8 img9 img10 img10"'
+        ],
+        gap: '4px'
+      };
+    }
+    
+    // For more than 10 images
+    return {
+      columns: '2fr 1fr 1fr 1fr',
+      rows: 'auto auto auto',
+      areas: [
+        '"img1 img2 img3 img4"',
+        '"img1 img5 img6 img7"',
+        '"img8 img9 img10 img11"'
+      ],
+      gap: '4px'
+    };
+  };
+  
   // Function to download the template as PDF
   const downloadAsPDF = async () => {
     if (!templateRef.current) return;
     
     try {
       // Wait for any pending renders to complete
-      await new Promise(resolve => setTimeout(resolve, 500)); // Increased timeout for better rendering
+      await new Promise(resolve => setTimeout(resolve, 800)); // Increased timeout for better rendering
+      
+      // Clone the template element to avoid modifying the original
+      const templateClone = templateRef.current.cloneNode(true) as HTMLElement;
+      
+      // Apply styles to ensure PDF matches the screen view
+      templateClone.style.width = '100%';
+      templateClone.style.height = 'auto';
+      templateClone.style.backgroundColor = '#FBFBF7';
+      
+      // Ensure all images in the clone are loaded
+      const images = templateClone.querySelectorAll('img');
+      await Promise.all(Array.from(images).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      }));
       
       const canvas = await html2canvas(templateRef.current, {
         scale: 2, // Higher scale for better quality
@@ -97,20 +258,23 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
               img.style.visibility = 'visible';
             }
           });
+          
+          // Ensure grid layout is preserved
+          const gridContainer = clonedDoc.querySelector('.moodboard-grid');
+          if (gridContainer) {
+            (gridContainer as HTMLElement).style.display = 'grid';
+          }
         }
       });
       
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
       
-      // Get the dimensions of the canvas
+      // Create PDF with dimensions matching the canvas aspect ratio
       const canvasWidth = canvas.width;
       const canvasHeight = canvas.height;
-      
-      // Calculate the PDF dimensions to match the aspect ratio of the content
       const pdfWidth = 210; // A4 width in mm (portrait)
       const pdfHeight = (canvasHeight / canvasWidth) * pdfWidth;
       
-      // Create PDF with dynamic dimensions based on content
       const pdf = new jsPDF({
         orientation: pdfHeight > pdfWidth ? 'portrait' : 'landscape',
         unit: 'mm',
@@ -124,149 +288,6 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.');
     }
-  };
-  
-  // Function to determine the grid layout based on number of images
-  const getGridLayout = () => {
-    const count = validImages.length;
-    console.log('Number of images in template:', count);
-    
-    if (count === 0) {
-      return {
-        columns: '1fr',
-        rows: 'auto',
-        areas: ['"empty"'],
-        gap: '8px'
-      };
-    }
-    
-    if (count === 1) {
-      return {
-        columns: '1fr',
-        rows: 'auto',
-        areas: ['"img1"'],
-        gap: '8px'
-      };
-    }
-    
-    if (count === 2) {
-      return {
-        columns: '1fr 1fr',
-        rows: 'auto',
-        areas: ['"img1 img2"'],
-        gap: '8px'
-      };
-    }
-    
-    if (count === 3) {
-      return {
-        columns: '1fr 1fr',
-        rows: 'auto auto',
-        areas: [
-          '"img1 img2"',
-          '"img3 img3"'
-        ],
-        gap: '8px'
-      };
-    }
-    
-    if (count === 4) {
-      return {
-        columns: '1fr 1fr',
-        rows: 'auto auto',
-        areas: [
-          '"img1 img2"',
-          '"img3 img4"'
-        ],
-        gap: '8px'
-      };
-    }
-    
-    if (count === 5) {
-      return {
-        columns: '1fr 1fr 1fr',
-        rows: 'auto auto',
-        areas: [
-          '"img1 img2 img3"',
-          '"img4 img5 img5"'
-        ],
-        gap: '8px'
-      };
-    }
-    
-    if (count === 6) {
-      return {
-        columns: '1fr 1fr 1fr',
-        rows: 'auto auto',
-        areas: [
-          '"img1 img2 img3"',
-          '"img4 img5 img6"'
-        ],
-        gap: '8px'
-      };
-    }
-    
-    if (count === 7) {
-      return {
-        columns: '1fr 1fr 1fr 1fr',
-        rows: 'auto auto',
-        areas: [
-          '"img1 img2 img3 img4"',
-          '"img5 img6 img7 img7"'
-        ],
-        gap: '8px'
-      };
-    }
-    
-    if (count === 8) {
-      return {
-        columns: '1fr 1fr 1fr 1fr',
-        rows: 'auto auto',
-        areas: [
-          '"img1 img2 img3 img4"',
-          '"img5 img6 img7 img8"'
-        ],
-        gap: '8px'
-      };
-    }
-    
-    if (count === 9) {
-      return {
-        columns: '1fr 1fr 1fr',
-        rows: 'auto auto auto',
-        areas: [
-          '"img1 img2 img3"',
-          '"img4 img5 img6"',
-          '"img7 img8 img9"'
-        ],
-        gap: '8px'
-      };
-    }
-    
-    if (count === 10) {
-      return {
-        columns: '1fr 1fr 1fr 1fr',
-        rows: 'auto auto auto',
-        areas: [
-          '"img1 img2 img3 img4"',
-          '"img5 img6 img7 img8"',
-          '"img9 img10 img10 img10"'
-        ],
-        gap: '8px'
-      };
-    }
-    
-    // For more than 10 images
-    return {
-      columns: '1fr 1fr 1fr 1fr',
-      rows: 'auto auto auto',
-      areas: [
-        '"img1 img2 img3 img4"',
-        '"img5 img6 img7 img8"',
-        '"img9 img10 img11 img12"'
-      ],
-      gap: '8px'
-    };
   };
   
   const gridLayout = getGridLayout();
@@ -444,12 +465,13 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
           ) : (
             /* Dynamic grid layout for images */
             <Box
+              className="moodboard-grid"
               sx={{
                 display: 'grid',
                 gridTemplateColumns: gridLayout.columns,
                 gridTemplateRows: gridLayout.rows,
                 gridTemplateAreas: gridLayout.areas.join(' '),
-                gap: '8px',
+                gap: '0px',
                 width: '100%',
                 boxSizing: 'border-box',
                 backgroundColor: '#FBFBF7', // Ensure grid container has cream background
@@ -457,8 +479,10 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
               }}
             >
               {validImages.map((image, index) => {
-                // Debug log to check which images are being rendered
-                console.log(`Rendering image ${index + 1}:`, image.url);
+                // Determine if this image should be larger based on its position
+                const isLargeImage = index === 0 || 
+                  (validImages.length >= 3 && index === 0) || 
+                  (validImages.length >= 9 && index === 8);
                 
                 return (
                   <Box
@@ -472,8 +496,12 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                       alignItems: 'center',
                       justifyContent: 'center',
                       border: '1px solid #B8BDD7', // Nude color for borders per Altare guidelines
-                      aspectRatio: '16/9', // Set a default aspect ratio for image containers
-                      minHeight: '200px' // Minimum height for each image
+                      // Different aspect ratios for variety
+                      aspectRatio: isLargeImage ? '1/1' : 
+                        index % 3 === 0 ? '16/9' : 
+                        index % 3 === 1 ? '4/3' : 
+                        '3/4',
+                      minHeight: isLargeImage ? '300px' : '200px' // Minimum height for each image
                     }}
                   >
                     {/* Image container with natural fitting */}
