@@ -66,7 +66,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
         columns: '1fr',
         rows: 'auto',
         areas: ['"empty"'],
-        gap: '4px'
+        gap: '0px'
       };
     }
     
@@ -75,7 +75,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
         columns: '1fr',
         rows: 'auto',
         areas: ['"img1"'],
-        gap: '4px'
+        gap: '0px'
       };
     }
     
@@ -84,118 +84,118 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
         columns: '1fr 1fr',
         rows: 'auto',
         areas: ['"img1 img2"'],
-        gap: '4px'
+        gap: '0px'
       };
     }
     
     if (count === 3) {
       return {
         columns: '2fr 1fr',
-        rows: 'auto auto',
+        rows: '1fr 1fr',
         areas: [
           '"img1 img2"',
           '"img1 img3"'
         ],
-        gap: '4px'
+        gap: '0px'
       };
     }
     
     if (count === 4) {
       return {
         columns: '2fr 1fr',
-        rows: 'auto auto',
+        rows: '1fr 1fr',
         areas: [
           '"img1 img2"',
           '"img3 img4"'
         ],
-        gap: '4px'
+        gap: '0px'
       };
     }
     
     if (count === 5) {
       return {
         columns: '2fr 1fr 1fr',
-        rows: 'auto auto',
+        rows: '1fr 1fr',
         areas: [
           '"img1 img2 img3"',
           '"img1 img4 img5"'
         ],
-        gap: '4px'
+        gap: '0px'
       };
     }
     
     if (count === 6) {
       return {
         columns: '1fr 1fr 1fr',
-        rows: 'auto auto',
+        rows: '1fr 1fr',
         areas: [
           '"img1 img2 img3"',
           '"img4 img5 img6"'
         ],
-        gap: '4px'
+        gap: '0px'
       };
     }
     
     if (count === 7) {
       return {
         columns: '2fr 1fr 1fr 1fr',
-        rows: 'auto auto',
+        rows: '1fr 1fr',
         areas: [
           '"img1 img2 img3 img4"',
           '"img1 img5 img6 img7"'
         ],
-        gap: '4px'
+        gap: '0px'
       };
     }
     
     if (count === 8) {
       return {
         columns: '1fr 1fr 1fr 1fr',
-        rows: 'auto auto',
+        rows: '1fr 1fr',
         areas: [
           '"img1 img2 img3 img4"',
           '"img5 img6 img7 img8"'
         ],
-        gap: '4px'
+        gap: '0px'
       };
     }
     
     if (count === 9) {
       return {
         columns: '2fr 1fr 1fr',
-        rows: 'auto auto auto',
+        rows: '1fr 1fr 1fr',
         areas: [
           '"img1 img2 img3"',
           '"img1 img4 img5"',
           '"img6 img7 img8 img9"'
         ],
-        gap: '4px'
+        gap: '0px'
       };
     }
     
     if (count === 10) {
       return {
         columns: '2fr 1fr 1fr 1fr',
-        rows: 'auto auto auto',
+        rows: '1fr 1fr 1fr',
         areas: [
           '"img1 img2 img3 img4"',
           '"img1 img5 img6 img7"',
           '"img8 img9 img10 img10"'
         ],
-        gap: '4px'
+        gap: '0px'
       };
     }
     
     // For more than 10 images
     return {
       columns: '2fr 1fr 1fr 1fr',
-      rows: 'auto auto auto',
+      rows: '1fr 1fr 1fr',
       areas: [
         '"img1 img2 img3 img4"',
         '"img1 img5 img6 img7"',
         '"img8 img9 img10 img11"'
       ],
-      gap: '4px'
+      gap: '0px'
     };
   };
   
@@ -205,18 +205,13 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
     
     try {
       // Wait for any pending renders to complete
-      await new Promise(resolve => setTimeout(resolve, 800)); // Increased timeout for better rendering
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Increased timeout for better rendering
       
-      // Clone the template element to avoid modifying the original
-      const templateClone = templateRef.current.cloneNode(true) as HTMLElement;
+      // Apply specific styles to ensure PDF matches the screen view exactly
+      const templateElement = templateRef.current;
       
-      // Apply styles to ensure PDF matches the screen view
-      templateClone.style.width = '100%';
-      templateClone.style.height = 'auto';
-      templateClone.style.backgroundColor = '#FBFBF7';
-      
-      // Ensure all images in the clone are loaded
-      const images = templateClone.querySelectorAll('img');
+      // Ensure all images are loaded
+      const images = templateElement.querySelectorAll('img');
       await Promise.all(Array.from(images).map(img => {
         if (img.complete) return Promise.resolve();
         return new Promise(resolve => {
@@ -225,13 +220,21 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
         });
       }));
       
-      const canvas = await html2canvas(templateRef.current, {
+      const canvas = await html2canvas(templateElement, {
         scale: 2, // Higher scale for better quality
         useCORS: true, // Allow cross-origin images
         allowTaint: true,
         backgroundColor: '#FBFBF7',
         logging: true, // Enable logging for debugging
         onclone: (clonedDoc) => {
+          // Get the cloned template
+          const clonedTemplate = clonedDoc.querySelector('[data-testid="moodboard-template"]');
+          if (clonedTemplate) {
+            // Force the cloned template to maintain its layout
+            (clonedTemplate as HTMLElement).style.width = '100%';
+            (clonedTemplate as HTMLElement).style.height = 'auto';
+          }
+          
           // Fix for SVG images in PDF
           const svgElements = clonedDoc.querySelectorAll('svg');
           svgElements.forEach(svg => {
@@ -244,7 +247,6 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
           if (logoImg) {
             (logoImg as HTMLImageElement).style.visibility = 'visible';
             (logoImg as HTMLImageElement).style.opacity = '1';
-            // Force the logo to be visible
             (logoImg as HTMLImageElement).setAttribute('crossOrigin', 'anonymous');
           }
           
@@ -252,17 +254,23 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
           const images = clonedDoc.querySelectorAll('img');
           images.forEach(img => {
             img.setAttribute('crossOrigin', 'anonymous');
-            // Force image to be fully loaded
-            if (!img.complete) {
-              img.style.opacity = '1';
-              img.style.visibility = 'visible';
-            }
+            img.style.opacity = '1';
+            img.style.visibility = 'visible';
           });
           
-          // Ensure grid layout is preserved
+          // Ensure grid layout is preserved with no gaps
           const gridContainer = clonedDoc.querySelector('.moodboard-grid');
           if (gridContainer) {
             (gridContainer as HTMLElement).style.display = 'grid';
+            (gridContainer as HTMLElement).style.gap = '0px';
+            
+            // Force all grid items to fill their space completely
+            const gridItems = gridContainer.querySelectorAll('> div');
+            gridItems.forEach(item => {
+              (item as HTMLElement).style.margin = '0';
+              (item as HTMLElement).style.padding = '0';
+              (item as HTMLElement).style.overflow = 'hidden';
+            });
           }
         }
       });
@@ -475,7 +483,8 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                 width: '100%',
                 boxSizing: 'border-box',
                 backgroundColor: '#FBFBF7', // Ensure grid container has cream background
-                minHeight: '400px' // Ensure minimum height for grid
+                minHeight: '400px', // Ensure minimum height for grid
+                overflow: 'hidden' // Prevent any overflow
               }}
             >
               {validImages.map((image, index) => {
@@ -483,6 +492,22 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                 const isLargeImage = index === 0 || 
                   (validImages.length >= 3 && index === 0) || 
                   (validImages.length >= 9 && index === 8);
+                
+                // Calculate aspect ratio based on position in the grid
+                let aspectRatio;
+                if (isLargeImage) {
+                  aspectRatio = '1/1';
+                } else if (index === 1 && validImages.length >= 3) {
+                  aspectRatio = '1/1';
+                } else if (index === 2 && validImages.length >= 5) {
+                  aspectRatio = '1/1';
+                } else if (index % 3 === 0) {
+                  aspectRatio = '16/9';
+                } else if (index % 3 === 1) {
+                  aspectRatio = '4/3';
+                } else {
+                  aspectRatio = '3/4';
+                }
                 
                 return (
                   <Box
@@ -496,12 +521,10 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                       alignItems: 'center',
                       justifyContent: 'center',
                       border: '1px solid #B8BDD7', // Nude color for borders per Altare guidelines
-                      // Different aspect ratios for variety
-                      aspectRatio: isLargeImage ? '1/1' : 
-                        index % 3 === 0 ? '16/9' : 
-                        index % 3 === 1 ? '4/3' : 
-                        '3/4',
-                      minHeight: isLargeImage ? '300px' : '200px' // Minimum height for each image
+                      aspectRatio: aspectRatio,
+                      minHeight: isLargeImage ? '300px' : '200px', // Minimum height for each image
+                      margin: 0,
+                      padding: 0
                     }}
                   >
                     {/* Image container with natural fitting */}
@@ -512,7 +535,8 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                         width: '100%',
                         height: '100%',
                         objectFit: 'cover',
-                        objectPosition: 'center'
+                        objectPosition: 'center',
+                        display: 'block' // Ensure no extra space
                       }}
                       crossOrigin="anonymous"
                     />
