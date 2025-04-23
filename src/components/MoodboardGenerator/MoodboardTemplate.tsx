@@ -1,10 +1,8 @@
 import { useRef, useEffect, useState } from 'react';
-import { Box, Typography, Paper, Button, CircularProgress } from '@mui/material';
+import { Box, Typography, Paper, Button, CircularProgress, Grid } from '@mui/material';
 import { Download as DownloadIcon } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import PhotoAlbum from "react-photo-album";
-import type { Photo as PhotoType } from "react-photo-album";
 
 interface MoodboardImage {
   id: string;
@@ -58,22 +56,6 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
   
   // Filter out empty images
   const validImages = moodboardImages.filter(img => img.url);
-  
-  // Format images for react-photo-album
-  const photos: PhotoType[] = validImages.map((image, index) => {
-    // Create a random but consistent aspect ratio for each image
-    // We'll use the image id to generate a consistent aspect ratio
-    const hash = image.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const aspectRatio = 0.8 + (hash % 10) / 10; // Between 0.8 and 1.8
-    
-    return {
-      src: image.url,
-      key: image.id,
-      width: 1000,
-      height: Math.round(1000 / aspectRatio),
-      alt: image.title || `Moodboard image ${index + 1}`,
-    };
-  });
   
   // Function to download the template as PDF
   const downloadAsPDF = async () => {
@@ -174,28 +156,18 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
     }
   };
   
-  // Add CSS for the masonry images
-  useEffect(() => {
-    // Add custom styles for masonry images
-    const style = document.createElement('style');
-    style.textContent = `
-      .react-photo-album--photo {
-        border: 1px solid #FFFFFF !important;
-        transition: all 0.3s ease !important;
-      }
-      .react-photo-album--photo img {
-        object-fit: cover !important;
-        width: 100% !important;
-        height: 100% !important;
-      }
-    `;
-    document.head.appendChild(style);
+  // Calculate image sizes based on position
+  const getImageSize = (index: number, totalImages: number) => {
+    if (totalImages === 1) return 12; // Full width for a single image
+    if (totalImages === 2) return 6;  // Half width for two images
     
-    // Cleanup function
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
+    // For 3 or more images, create a varied layout
+    if (index === 0) return 6; // First image is larger
+    if (index === 1) return 6; // Second image is larger
+    if (index % 5 === 0) return 6; // Every 5th image is larger
+    
+    return 4; // Standard size for most images
+  };
   
   return (
     <Box sx={{ width: '100%', position: 'relative' }}>
@@ -314,7 +286,7 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
           )}
         </Box>
         
-        {/* Photo Album */}
+        {/* Image Grid */}
         <Box sx={{ 
           padding: '8px',
           flex: 1,
@@ -339,18 +311,42 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
               </Typography>
             </Box>
           ) : (
-            <PhotoAlbum
-              layout="masonry"
-              photos={photos}
-              spacing={4}
-              padding={0}
-              columns={(containerWidth) => {
-                // Responsive columns based on container width
-                if (containerWidth < 500) return 2;
-                if (containerWidth < 800) return 3;
-                return 4;
-              }}
-            />
+            <Grid container spacing={1}>
+              {validImages.map((image, index) => (
+                <Grid item xs={getImageSize(index, validImages.length)} key={image.id}>
+                  <Box
+                    sx={{
+                      width: '100%',
+                      paddingTop: '100%', // 1:1 Aspect ratio
+                      position: 'relative',
+                      overflow: 'hidden',
+                      border: '1px solid #FFFFFF',
+                    }}
+                  >
+                    <img
+                      src={image.url}
+                      alt={image.title || `Moodboard image ${index + 1}`}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: 'center',
+                        display: 'block'
+                      }}
+                      crossOrigin="anonymous"
+                      loading="eager"
+                      onError={(e) => {
+                        console.error(`Failed to load image: ${image.url}`);
+                        (e.target as HTMLImageElement).src = '/placeholder-image.jpg';
+                      }}
+                    />
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
           )}
         </Box>
       </Paper>
