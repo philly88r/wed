@@ -322,7 +322,6 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
               left: '10px',
               width: '60px',
               height: '30px',
-              backgroundColor: '#E8B4B4',
               zIndex: 10,
               display: 'flex',
               alignItems: 'center',
@@ -348,7 +347,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
               <Typography 
                 variant="caption" 
                 sx={{ 
-                  color: '#FFFFFF',
+                  color: '#054697',
                   fontStyle: 'italic'
                 }}
               >
@@ -439,27 +438,17 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                     position: 'relative'
                   }}
                 >
-                  <img
-                    src={image.url}
-                    alt={image.title || `Moodboard image ${index + 1}`}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                    crossOrigin="anonymous"
-                  />
-                  
                   {image.category && (
                     <Box
                       sx={{
                         position: 'absolute',
-                        top: 0,
-                        left: 0,
+                        top: '10px',
+                        left: '10px',
                         backgroundColor: 'rgba(232, 180, 180, 0.8)',
                         padding: '2px 8px',
                         maxWidth: '90%',
-                        borderBottomRightRadius: '4px'
+                        borderBottomRightRadius: '4px',
+                        zIndex: 5
                       }}
                     >
                       <Typography
@@ -479,6 +468,16 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                       </Typography>
                     </Box>
                   )}
+                  <img
+                    src={image.url}
+                    alt={image.title || `Moodboard image ${index + 1}`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                    crossOrigin="anonymous"
+                  />
                 </Box>
               ))}
             </Box>
