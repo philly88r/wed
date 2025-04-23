@@ -156,28 +156,10 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
     }
   };
   
-  // Calculate image sizes based on position and total images
-  const getImageSize = (index: number, totalImages: number) => {
-    if (totalImages === 1) return 12; // Full width for a single image
-    if (totalImages === 2) return 6;  // Half width for two images
-    if (totalImages === 3) return 4;  // Three equal columns
-    
-    // For 4 or more images, create a varied layout
-    if (index === 0 && totalImages >= 6) return 8; // First image is larger for 6+ images
-    if (index === 1 && totalImages >= 6) return 4; // Second image pairs with first
-    if (index === 2 && totalImages >= 9) return 6; // Third image is medium for 9+ images
-    if (index === 3 && totalImages >= 9) return 6; // Fourth image pairs with third
-    
-    // Standard sizes for remaining images
-    return 4; // Default to 3 per row
-  };
-  
-  // Calculate aspect ratio for images
-  const getAspectRatio = (index: number, totalImages: number) => {
-    // Create varied aspect ratios for visual interest
-    if (index % 3 === 0) return '100%'; // 1:1 square
-    if (index % 3 === 1) return '75%';  // 4:3 landscape
-    return '133%';  // 3:4 portrait
+  // Get grid size based on total number of images
+  const getGridSize = (totalImages: number) => {
+    // For 10 images, use a consistent 4-column grid
+    return 3; // 4 images per row (12/3 = 4 columns)
   };
   
   return (
@@ -232,10 +214,10 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '10px 20px',
+            padding: '5px 10px',
             backgroundColor: '#FBFBF7',
             borderBottom: '1px solid #FFFFFF',
-            height: '60px', // Reduced height
+            height: '40px', // Even smaller height
           }}
         >
           {/* Logo on left */}
@@ -244,7 +226,7 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
               display: 'flex',
               justifyContent: 'flex-start',
               alignItems: 'center',
-              height: '50px'
+              height: '35px'
             }}
           >
             {logoLoaded ? (
@@ -262,8 +244,8 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
             ) : (
               <Box
                 sx={{
-                  height: '50px',
-                  width: '50px',
+                  height: '35px',
+                  width: '35px',
                   backgroundColor: '#FBFBF7'
                 }}
               />
@@ -276,15 +258,15 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
               sx={{
                 display: 'flex',
                 justifyContent: 'flex-end',
-                gap: '8px',
+                gap: '5px',
               }}
             >
               {colors.map((color, index) => (
                 <Box
                   key={index}
                   sx={{
-                    width: '24px',
-                    height: '24px',
+                    width: '18px',
+                    height: '18px',
                     backgroundColor: color,
                     borderRadius: '50%',
                     border: '1px solid #FFFFFF'
@@ -297,7 +279,7 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
         
         {/* Image Grid - optimized for PDF */}
         <Box sx={{ 
-          padding: '4px',
+          padding: '2px',
           flex: 1,
           overflow: 'hidden'
         }}>
@@ -322,11 +304,11 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
           ) : (
             <Grid container spacing={1}>
               {validImages.map((image, index) => (
-                <Grid item xs={getImageSize(index, validImages.length)} key={image.id}>
+                <Grid item xs={getGridSize(validImages.length)} key={image.id}>
                   <Box
                     sx={{
                       width: '100%',
-                      paddingTop: getAspectRatio(index, validImages.length), // Dynamic aspect ratio
+                      paddingTop: '100%', // 1:1 Aspect ratio
                       position: 'relative',
                       overflow: 'hidden',
                       border: '1px solid #FFFFFF',
