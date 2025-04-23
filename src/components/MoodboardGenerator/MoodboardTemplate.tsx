@@ -29,14 +29,12 @@ const DraggableImage = ({
   index, 
   moveImage, 
   size, 
-  totalCount,
   onSizeChange
 }: { 
   image: MoodboardImage; 
   index: number; 
   moveImage: (dragIndex: number, hoverIndex: number) => void;
   size: 'small' | 'medium' | 'large';
-  totalCount: number;
   onSizeChange: (index: number, newSize: 'small' | 'medium' | 'large') => void;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -360,6 +358,8 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
         allowTaint: true,
         backgroundColor: '#FBFBF7',
         logging: true,
+        height: templateElement.scrollHeight, // Capture full height
+        windowHeight: templateElement.scrollHeight, // Ensure full height is captured
         onclone: (clonedDoc) => {
           const clonedTemplate = clonedDoc.querySelector('[data-testid="moodboard-template"]');
           if (clonedTemplate) {
@@ -453,7 +453,9 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
             borderRadius: 0,
             overflow: 'hidden',
             boxShadow: 'none',
-            border: '1px solid #B8BDD7'
+            border: '1px solid #B8BDD7',
+            display: 'flex',
+            flexDirection: 'column'
           }}
         >
           {/* Header with logo and color palette */}
@@ -529,7 +531,12 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
           </Box>
           
           {/* Image grid */}
-          <Box sx={{ padding: '10px' }}>
+          <Box sx={{ 
+            padding: '10px',
+            flexGrow: 1, // Allow this section to grow and fill available space
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
             {validImages.length === 0 ? (
               <Box
                 sx={{
@@ -559,8 +566,9 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
                   width: '100%',
                   boxSizing: 'border-box',
                   backgroundColor: '#FBFBF7',
-                  minHeight: '680px', // 70% longer than before (400px * 1.7)
-                  padding: '2px'
+                  height: 'auto', // Allow it to grow based on content
+                  padding: '2px',
+                  paddingBottom: '20px' // Small gap at bottom for footer
                 }}
               >
                 {validImages.map((image, index) => (
@@ -570,7 +578,6 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
                     index={index}
                     moveImage={moveImage}
                     size={imageSizes[index] || getInitialImageSize(index, validImages.length)}
-                    totalCount={validImages.length}
                     onSizeChange={handleSizeChange}
                   />
                 ))}
