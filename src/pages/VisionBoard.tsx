@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Image as ImageIcon, X, ExternalLink, Download } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { createCustomLink } from '../utils/customLinksHelper';
-import MoodboardGenerator from '../components/MoodboardGenerator';
+import MoodboardGenerator from '../components/MoodboardGenerator/MoodboardGenerator';
+import MoodboardTemplate from '../components/MoodboardGenerator/MoodboardTemplate';
 import { 
   Tabs, 
   Tab, 
@@ -81,6 +82,8 @@ export default function VisionBoard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [tabValue, setTabValue] = useState(0);
   const [falApiKey, setFalApiKey] = useState<string>('');
+  const [showMoodboardTemplate, setShowMoodboardTemplate] = useState(false);
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
 
   // Create a custom link for the current path to fix the 406 error
   useEffect(() => {
@@ -143,6 +146,15 @@ export default function VisionBoard() {
       setFalApiKey(import.meta.env.VITE_FAL_KEY as string);
     }
   }, []);
+
+  useEffect(() => {
+    // Extract colors from images for the moodboard template
+    // This would ideally use color extraction from images
+    // For now, we'll use a default palette if none is selected
+    if (selectedColors.length === 0) {
+      setSelectedColors(['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7']);
+    }
+  }, [selectedColors]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -400,126 +412,177 @@ export default function VisionBoard() {
       </Box>
 
       <TabPanel value={tabValue} index={0}>
-        <Grid container spacing={3}>
-          {filteredImages.map(image => (
-            <Grid item xs={12} sm={6} md={4} key={image.id}>
-              <Card 
-                elevation={0}
+        {showMoodboardTemplate ? (
+          <Box sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+              <Button 
+                variant="outlined" 
+                onClick={() => setShowMoodboardTemplate(false)}
                 sx={{ 
-                  height: '100%', 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  transition: 'transform 0.2s',
+                  color: theme.palette.primary.main,
+                  borderColor: theme.palette.accent?.rose || '#FFE8E4',
+                  borderRadius: 0,
                   '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)'
+                    backgroundColor: `${theme.palette.accent?.rose || '#FFE8E4'}20`,
+                    borderColor: theme.palette.accent?.rose || '#FFE8E4'
                   },
-                  borderRadius: 0, // Square corners per brand guidelines
-                  border: `1px solid ${theme.palette.divider}`
+                  textTransform: 'uppercase'
                 }}
               >
-                <Box sx={{ position: 'relative' }}>
-                  <CardMedia
-                    component="img"
-                    image={image.url}
-                    alt={image.title}
+                Back to Grid View
+              </Button>
+            </Box>
+            <MoodboardTemplate 
+              images={filteredImages.map(img => ({ 
+                id: img.id, 
+                url: img.url, 
+                title: img.title,
+                category: img.category
+              }))} 
+              colors={selectedColors}
+            />
+          </Box>
+        ) : (
+          <>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+              <Button 
+                variant="contained" 
+                onClick={() => setShowMoodboardTemplate(true)}
+                sx={{ 
+                  backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
+                  color: theme.palette.primary.main,
+                  borderRadius: 0,
+                  '&:hover': {
+                    backgroundColor: theme.palette.accent?.roseDark || '#FFD5CC'
+                  },
+                  textTransform: 'uppercase'
+                }}
+              >
+                View as Template
+              </Button>
+            </Box>
+            <Grid container spacing={3}>
+              {filteredImages.map(image => (
+                <Grid item xs={12} sm={6} md={4} key={image.id}>
+                  <Card 
+                    elevation={0}
                     sx={{ 
-                      height: 0,
-                      paddingTop: '56.25%', // 16:9 aspect ratio
-                      position: 'relative'
-                    }}
-                  />
-                  <IconButton
-                    onClick={() => deleteImage(image.id)}
-                    size="small"
-                    sx={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
-                      color: theme.palette.primary.main,
-                      opacity: 0,
-                      transition: 'opacity 0.2s',
-                      borderRadius: 0, // Square corners per brand guidelines
+                      height: '100%', 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      transition: 'transform 0.2s',
                       '&:hover': {
-                        backgroundColor: theme.palette.accent?.roseDark || '#FFD5CC',
-                        opacity: 1
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)'
                       },
-                      '.MuiCard-root:hover &': {
-                        opacity: 1
-                      }
+                      borderRadius: 0, // Square corners per brand guidelines
+                      border: `1px solid ${theme.palette.divider}`
                     }}
                   >
-                    <X size={16} />
-                  </IconButton>
-                </Box>
-                <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                    <Typography 
-                      variant="h6" 
-                      gutterBottom 
-                      sx={{ 
-                        color: theme.palette.primary.main,
-                        fontWeight: 'medium',
-                        mb: 0
-                      }}
-                    >
-                      {image.title}
-                    </Typography>
-                    <Chip 
-                      label={image.category} 
-                      size="small"
-                      sx={{ 
-                        borderRadius: 0, // Square corners per brand guidelines
-                        backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
-                        color: theme.palette.primary.main,
-                        textTransform: 'uppercase',
-                        fontSize: '0.7rem',
-                        fontWeight: 'medium',
-                        ml: 1
-                      }}
-                    />
-                  </Box>
-                  {image.description && (
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        color: theme.palette.primary.main,
-                        opacity: 0.8,
-                        mb: 2 
-                      }}
-                    >
-                      {image.description}
-                    </Typography>
-                  )}
-                  {image.source && (
-                    <Button
-                      href={image.source}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      startIcon={<ExternalLink size={16} />}
-                      size="small"
-                      sx={{ 
-                        mt: 'auto',
-                        color: theme.palette.primary.main,
-                        textTransform: 'none',
-                        padding: 0,
-                        '&:hover': {
-                          backgroundColor: 'transparent',
-                          textDecoration: 'underline'
-                        },
-                        justifyContent: 'flex-start',
-                        minWidth: 'auto'
-                      }}
-                    >
-                      Source
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
+                    <Box sx={{ position: 'relative' }}>
+                      <CardMedia
+                        component="img"
+                        image={image.url}
+                        alt={image.title}
+                        sx={{ 
+                          height: 0,
+                          paddingTop: '56.25%', // 16:9 aspect ratio
+                          position: 'relative'
+                        }}
+                      />
+                      <IconButton
+                        onClick={() => deleteImage(image.id)}
+                        size="small"
+                        sx={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
+                          color: theme.palette.primary.main,
+                          opacity: 0,
+                          transition: 'opacity 0.2s',
+                          borderRadius: 0, // Square corners per brand guidelines
+                          '&:hover': {
+                            backgroundColor: theme.palette.accent?.roseDark || '#FFD5CC',
+                            opacity: 1
+                          },
+                          '.MuiCard-root:hover &': {
+                            opacity: 1
+                          }
+                        }}
+                      >
+                        <X size={16} />
+                      </IconButton>
+                    </Box>
+                    <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                        <Typography 
+                          variant="h6" 
+                          gutterBottom 
+                          sx={{ 
+                            color: theme.palette.primary.main,
+                            fontWeight: 'medium',
+                            mb: 0
+                          }}
+                        >
+                          {image.title}
+                        </Typography>
+                        <Chip 
+                          label={image.category} 
+                          size="small"
+                          sx={{ 
+                            borderRadius: 0, // Square corners per brand guidelines
+                            backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
+                            color: theme.palette.primary.main,
+                            textTransform: 'uppercase',
+                            fontSize: '0.7rem',
+                            fontWeight: 'medium',
+                            ml: 1
+                          }}
+                        />
+                      </Box>
+                      {image.description && (
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            color: theme.palette.primary.main,
+                            opacity: 0.8,
+                            mb: 2 
+                          }}
+                        >
+                          {image.description}
+                        </Typography>
+                      )}
+                      {image.source && (
+                        <Button
+                          href={image.source}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          startIcon={<ExternalLink size={16} />}
+                          size="small"
+                          sx={{ 
+                            mt: 'auto',
+                            color: theme.palette.primary.main,
+                            textTransform: 'none',
+                            padding: 0,
+                            '&:hover': {
+                              backgroundColor: 'transparent',
+                              textDecoration: 'underline'
+                            },
+                            justifyContent: 'flex-start',
+                            minWidth: 'auto'
+                          }}
+                        >
+                          Source
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
             </Grid>
-          ))}
-        </Grid>
+          </>
+        )}
       </TabPanel>
 
       <TabPanel value={tabValue} index={1}>
@@ -555,7 +618,10 @@ export default function VisionBoard() {
           >
             Describe your dream wedding and our AI will generate a vision board for you.
           </Typography>
-          <MoodboardGenerator falApiKey={falApiKey} />
+          <MoodboardGenerator 
+            falApiKey={falApiKey} 
+            onColorsSelected={(colors) => setSelectedColors(colors)}
+          />
         </Paper>
       </TabPanel>
 

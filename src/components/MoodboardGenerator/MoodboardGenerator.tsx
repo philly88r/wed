@@ -52,9 +52,13 @@ const weddingCategories = [
 
 interface MoodboardGeneratorProps {
   falApiKey?: string;
+  onColorsSelected?: (colors: string[]) => void;
 }
 
-const MoodboardGenerator: React.FC<MoodboardGeneratorProps> = ({ falApiKey }) => {
+const MoodboardGenerator: React.FC<MoodboardGeneratorProps> = ({ 
+  falApiKey,
+  onColorsSelected 
+}) => {
   // Configure fal.ai client
   useEffect(() => {
     configureFalClient(falApiKey);
@@ -89,12 +93,22 @@ const MoodboardGenerator: React.FC<MoodboardGeneratorProps> = ({ falApiKey }) =>
   // Handle color selection
   const handleAddColor = () => {
     if (selectedColors.length < 5 && !selectedColors.includes(currentColor)) {
-      setSelectedColors([...selectedColors, currentColor]);
+      const newColors = [...selectedColors, currentColor];
+      setSelectedColors(newColors);
+      // Notify parent component about color changes
+      if (onColorsSelected) {
+        onColorsSelected(newColors);
+      }
     }
   };
 
   const handleRemoveColor = (colorToRemove: string) => {
-    setSelectedColors(selectedColors.filter(color => color !== colorToRemove));
+    const newColors = selectedColors.filter(color => color !== colorToRemove);
+    setSelectedColors(newColors);
+    // Notify parent component about color changes
+    if (onColorsSelected) {
+      onColorsSelected(newColors);
+    }
   };
 
   // Handle step navigation
