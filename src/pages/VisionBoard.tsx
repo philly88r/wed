@@ -21,17 +21,18 @@ import {
   useTheme
 } from '@mui/material';
 import { HexColorPicker } from 'react-colorful';
+import { v4 as uuidv4 } from 'uuid';
 
 interface InspirationImage {
   id: string;
-  moodboard_id?: string;
+  moodboard_id: string;
   title: string;
-  description?: string;
+  description: string;
   url: string;
-  storage_path?: string;
+  storage_path: string | null;
   category: string;
-  source?: string;
-  position?: number;
+  source: string;
+  position: number;
 }
 
 interface Moodboard {
@@ -39,6 +40,7 @@ interface Moodboard {
   title: string;
   description?: string;
   colors: string[];
+  isLocal?: boolean;
 }
 
 // Categories for the moodboard
@@ -91,32 +93,25 @@ export default function VisionBoard() {
   useEffect(() => {
     const fetchMoodboard = async () => {
       try {
+        // Check if user is authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
+        
+        if (!user) {
+          console.error('User not authenticated');
+          // Redirect to login or handle unauthenticated state
+          return;
+        }
+        
         // First, get or create a moodboard for the user
         let { data: moodboards, error: boardError } = await supabase
           .from('moodboards')
           .select('*')
+          .eq('user_id', user.id)
           .limit(1);
         
         if (boardError) {
           console.error('Error fetching moodboard:', boardError);
-          
-          // Create default moodboard if there's an error (likely permissions)
-          const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
-          setMoodboard({
-            id: 'local-moodboard',
-            title: 'My Wedding Moodboard',
-            description: 'Inspiration for my wedding',
-            colors: defaultColors
-          });
-          setSelectedColors(defaultColors);
-          setClassicColors(defaultColors);
-          
-          // Load from localStorage as fallback
-          const savedImages = localStorage.getItem('wedding-mood-board');
-          if (savedImages) {
-            setImages(JSON.parse(savedImages));
-          }
-          
           return;
         }
         
@@ -136,6 +131,16 @@ export default function VisionBoard() {
             const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
             setSelectedColors(defaultColors);
             setClassicColors(defaultColors);
+            
+            // Update moodboard with default colors
+            const { error: updateError } = await supabase
+              .from('moodboards')
+              .update({ colors: defaultColors })
+              .eq('id', moodboardId);
+              
+            if (updateError) {
+              console.error('Error updating moodboard colors:', updateError);
+            }
           }
         } else {
           // Create a new moodboard
@@ -143,6 +148,7 @@ export default function VisionBoard() {
           const { data: newBoard, error: createError } = await supabase
             .from('moodboards')
             .insert([{ 
+              user_id: user.id,
               title: 'My Wedding Moodboard',
               description: 'Inspiration for my wedding',
               colors: defaultColors
@@ -151,23 +157,6 @@ export default function VisionBoard() {
           
           if (createError) {
             console.error('Error creating moodboard:', createError);
-            
-            // Create local moodboard if there's an error
-            setMoodboard({
-              id: 'local-moodboard',
-              title: 'My Wedding Moodboard',
-              description: 'Inspiration for my wedding',
-              colors: defaultColors
-            });
-            setSelectedColors(defaultColors);
-            setClassicColors(defaultColors);
-            
-            // Load from localStorage as fallback
-            const savedImages = localStorage.getItem('wedding-mood-board');
-            if (savedImages) {
-              setImages(JSON.parse(savedImages));
-            }
-            
             return;
           }
           
@@ -186,47 +175,14 @@ export default function VisionBoard() {
         
         if (imageError) {
           console.error('Error fetching images:', imageError);
-          
-          // Load from localStorage as fallback
-          const savedImages = localStorage.getItem('wedding-mood-board');
-          if (savedImages) {
-            setImages(JSON.parse(savedImages));
-          }
-          
           return;
         }
         
         if (imageData && imageData.length > 0) {
           setImages(imageData);
-          
-          // Also save to localStorage as backup
-          localStorage.setItem('wedding-mood-board', JSON.stringify(imageData));
-        } else {
-          // Load from localStorage if no images in database
-          const savedImages = localStorage.getItem('wedding-mood-board');
-          if (savedImages) {
-            setImages(JSON.parse(savedImages));
-          }
         }
       } catch (error) {
         console.error('Unexpected error:', error);
-        
-        // Fallback to localStorage
-        const savedImages = localStorage.getItem('wedding-mood-board');
-        if (savedImages) {
-          setImages(JSON.parse(savedImages));
-        }
-        
-        // Create default moodboard
-        const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
-        setMoodboard({
-          id: 'local-moodboard',
-          title: 'My Wedding Moodboard',
-          description: 'Inspiration for my wedding',
-          colors: defaultColors
-        });
-        setSelectedColors(defaultColors);
-        setClassicColors(defaultColors);
       }
     };
     
@@ -237,6 +193,9 @@ export default function VisionBoard() {
     // Save colors to moodboard when they change
     const saveMoodboardColors = async () => {
       if (!moodboard) return;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
       
       const { error } = await supabase
         .from('moodboards')
@@ -279,72 +238,89 @@ export default function VisionBoard() {
       return;
     }
     
+    // Check if user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.error('User not authenticated');
+      return;
+    }
+    
     if (newImage.url && newImage.title) {
       // If the image is a data URL (uploaded file), save it to storage
       let storagePath = '';
       let imageUrl = newImage.url;
       
       if (newImage.url.startsWith('data:')) {
-        // Convert data URL to file
-        const res = await fetch(newImage.url);
-        const blob = await res.blob();
-        const file = new File([blob], `${Date.now()}.jpg`, { type: 'image/jpeg' });
-        
-        // Upload to storage
-        const filePath = `${moodboard.id}/${Date.now()}-${file.name}`;
-        const { data: storageData, error: storageError } = await supabase.storage
-          .from('moodboard-images')
-          .upload(filePath, file);
-        
-        if (storageError) {
-          console.error('Error uploading image:', storageError);
-          return;
+        try {
+          // Convert data URL to file
+          const res = await fetch(newImage.url);
+          const blob = await res.blob();
+          const file = new File([blob], `${Date.now()}.jpg`, { type: 'image/jpeg' });
+          
+          // Upload to storage
+          const filePath = `${moodboard.id}/${Date.now()}-${file.name}`;
+          const { data: storageData, error: storageError } = await supabase.storage
+            .from('moodboard-images')
+            .upload(filePath, file);
+          
+          if (storageError) {
+            console.error('Error uploading image:', storageError);
+            // Continue with the data URL as the image URL
+          } else {
+            // Get public URL
+            const { data: publicUrlData } = supabase.storage
+              .from('moodboard-images')
+              .getPublicUrl(filePath);
+            
+            storagePath = filePath;
+            imageUrl = publicUrlData.publicUrl;
+          }
+        } catch (error) {
+          console.error('Error processing image:', error);
+          // Continue with the data URL as the image URL
         }
-        
-        // Get public URL
-        const { data: publicUrlData } = supabase.storage
-          .from('moodboard-images')
-          .getPublicUrl(filePath);
-        
-        storagePath = filePath;
-        imageUrl = publicUrlData.publicUrl;
       }
       
       // Get the current highest position
-      const { data: positionData, error: positionError } = await supabase
-        .from('moodboard_images')
-        .select('position')
-        .eq('moodboard_id', moodboard.id)
-        .order('position', { ascending: false })
-        .limit(1);
-      
-      const nextPosition = positionData && positionData.length > 0 
-        ? (positionData[0].position + 1) 
-        : 0;
-      
-      // Insert the new image
-      const { data: insertData, error: insertError } = await supabase
-        .from('moodboard_images')
-        .insert([{
-          moodboard_id: moodboard.id,
-          title: newImage.title,
-          description: newImage.description || '',
-          url: imageUrl,
-          storage_path: storagePath || null,
-          category: newImage.category || categories[0],
-          source: newImage.source || '',
-          position: nextPosition
-        }])
-        .select();
-      
-      if (insertError) {
-        console.error('Error inserting image:', insertError);
+      try {
+        const { data: positionData, error: positionError } = await supabase
+          .from('moodboard_images')
+          .select('position')
+          .eq('moodboard_id', moodboard.id)
+          .order('position', { ascending: false })
+          .limit(1);
+        
+        const nextPosition = positionData && positionData.length > 0 
+          ? (positionData[0].position + 1) 
+          : 0;
+        
+        // Insert the new image
+        const { data: insertData, error: insertError } = await supabase
+          .from('moodboard_images')
+          .insert([{
+            moodboard_id: moodboard.id,
+            title: newImage.title,
+            description: newImage.description || '',
+            url: imageUrl,
+            storage_path: storagePath || null,
+            category: newImage.category || categories[0],
+            source: newImage.source || '',
+            position: nextPosition
+          }])
+          .select();
+        
+        if (insertError) {
+          console.error('Error inserting image:', insertError);
+          return;
+        }
+        
+        // Update the local state
+        if (insertData && insertData.length > 0) {
+          setImages(prev => [...prev, insertData[0]]);
+        }
+      } catch (error) {
+        console.error('Error saving image:', error);
         return;
-      }
-      
-      // Update the local state
-      if (insertData && insertData.length > 0) {
-        setImages(prev => [...prev, insertData[0]]);
       }
       
       setNewImage({ category: categories[0] });
@@ -360,41 +336,52 @@ export default function VisionBoard() {
       return;
     }
     
-    // Get the image to delete (to get the storage path)
-    const { data: imageData, error: fetchError } = await supabase
-      .from('moodboard_images')
-      .select('storage_path')
-      .eq('id', id)
-      .single();
-    
-    if (fetchError) {
-      console.error('Error fetching image:', fetchError);
-    } else {
-      // If the image is stored in storage, delete it
-      if (imageData.storage_path) {
-        const { error: storageError } = await supabase.storage
-          .from('moodboard-images')
-          .remove([imageData.storage_path]);
-        
-        if (storageError) {
-          console.error('Error deleting image from storage:', storageError);
-        }
-      }
-    }
-    
-    // Delete the image record
-    const { error: deleteError } = await supabase
-      .from('moodboard_images')
-      .delete()
-      .eq('id', id);
-    
-    if (deleteError) {
-      console.error('Error deleting image:', deleteError);
+    // Check if user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.error('User not authenticated');
       return;
     }
     
-    // Update the local state
-    setImages(prev => prev.filter(image => image.id !== id));
+    try {
+      // Get the image to delete (to get the storage path)
+      const { data: imageData, error: fetchError } = await supabase
+        .from('moodboard_images')
+        .select('storage_path')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) {
+        console.error('Error fetching image:', fetchError);
+      } else {
+        // If the image is stored in storage, delete it
+        if (imageData.storage_path) {
+          const { error: storageError } = await supabase.storage
+            .from('moodboard-images')
+            .remove([imageData.storage_path]);
+          
+          if (storageError) {
+            console.error('Error deleting image from storage:', storageError);
+          }
+        }
+      }
+      
+      // Delete the image record
+      const { error: deleteError } = await supabase
+        .from('moodboard_images')
+        .delete()
+        .eq('id', id);
+      
+      if (deleteError) {
+        console.error('Error deleting image:', deleteError);
+        return;
+      }
+      
+      // Update the local state
+      setImages(prev => prev.filter(image => image.id !== id));
+    } catch (error) {
+      console.error('Error during image deletion:', error);
+    }
   };
 
   const filteredImages = images.filter(
@@ -402,13 +389,21 @@ export default function VisionBoard() {
   );
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !moodboard) return;
+    if (!e.target.files || e.target.files.length === 0) return;
     
+    const file = e.target.files[0];
     const reader = new FileReader();
-    reader.onloadend = async () => {
+    
+    reader.onload = async () => {
       try {
         const importedData = JSON.parse(reader.result as string);
+        
+        // Check if user is authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user || !moodboard) {
+          console.error('User not authenticated or no moodboard found');
+          return;
+        }
         
         // Clear existing images
         const { error: deleteError } = await supabase
@@ -423,7 +418,7 @@ export default function VisionBoard() {
         }
         
         // Import new images
-        for (let i = 0; i < importedData.length; i++) {
+        for (let i = 0; i <importedData.length; i++) {
           const img = importedData[i];
           await supabase
             .from('moodboard_images')
@@ -453,9 +448,11 @@ export default function VisionBoard() {
         
         alert('Mood board imported successfully!');
       } catch (error) {
+        console.error('Error importing mood board:', error);
         alert('Error importing mood board. Please check the file format.');
       }
     };
+    
     reader.readAsText(file);
   };
 
