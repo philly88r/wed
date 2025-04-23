@@ -29,6 +29,7 @@
     "@supabase/supabase-js": "^2.49.4",
     "@types/pg-promise": "^5.4.3",
     "@types/react-beautiful-dnd": "^13.1.7",
+    "@types/uuid": "^10.0.0",
     "canvas-confetti": "^1.9.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
@@ -48,10 +49,13 @@
     "react-beautiful-dnd": "^13.1.1",
     "react-chrono": "^2.3.1",
     "react-colorful": "^5.6.1",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.2.0",
     "react-draggable": "^4.4.6",
     "react-router-dom": "^6.18.0",
-    "tailwind-merge": "^2.0.0"
+    "tailwind-merge": "^2.0.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.6.3",

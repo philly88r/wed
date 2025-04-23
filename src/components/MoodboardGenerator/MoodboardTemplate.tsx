@@ -3,6 +3,8 @@ import { Box, Typography, Paper, Button, CircularProgress, alpha } from '@mui/ma
 import { Download as DownloadIcon } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
 interface MoodboardImage {
   id: string;
@@ -16,6 +18,91 @@ interface MoodboardTemplateProps {
   colors?: string[];
 }
 
+// Define drag item type
+const ItemTypes = {
+  IMAGE: 'image'
+};
+
+// Draggable image component
+const DraggableImage = ({ image, index, moveImage }: { 
+  image: MoodboardImage; 
+  index: number; 
+  moveImage: (dragIndex: number, hoverIndex: number) => void;
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  
+  const [{ isDragging }, drag] = useDrag({
+    type: ItemTypes.IMAGE,
+    item: { index },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+  
+  const [, drop] = useDrop({
+    accept: ItemTypes.IMAGE,
+    hover: (item: { index: number }, monitor) => {
+      if (!ref.current) {
+        return;
+      }
+      
+      const dragIndex = item.index;
+      const hoverIndex = index;
+      
+      // Don't replace items with themselves
+      if (dragIndex === hoverIndex) {
+        return;
+      }
+      
+      // Move the image
+      moveImage(dragIndex, hoverIndex);
+      
+      // Update the item's index for future drags
+      item.index = hoverIndex;
+    },
+  });
+  
+  // Apply the drag and drop refs
+  drag(drop(ref));
+  
+  return (
+    <Box
+      ref={ref}
+      sx={{
+        opacity: isDragging ? 0.5 : 1,
+        cursor: 'move',
+        backgroundColor: '#FBFBF7',
+        overflow: 'hidden',
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: '1px solid #B8BDD7',
+        height: '100%',
+        transition: 'transform 0.2s ease'
+      }}
+    >
+      <img
+        src={image.url}
+        alt={image.title || `Moodboard image ${index + 1}`}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: 'center',
+          display: 'block'
+        }}
+        crossOrigin="anonymous"
+        loading="eager"
+        onError={(e) => {
+          console.error(`Failed to load image: ${image.url}`);
+          (e.target as HTMLImageElement).src = '/placeholder-image.jpg';
+        }}
+      />
+    </Box>
+  );
+};
+
 const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({ 
   images, 
   colors = []
@@ -24,28 +111,40 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [logoUrl, setLogoUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [moodboardImages, setMoodboardImages] = useState<MoodboardImage[]>([]);
+  
+  // Initialize moodboard images
+  useEffect(() => {
+    setMoodboardImages(images.filter(img => img.url));
+  }, [images]);
+  
+  // Function to move an image (for drag and drop)
+  const moveImage = (dragIndex: number, hoverIndex: number) => {
+    const draggedImage = moodboardImages[dragIndex];
+    const newImages = [...moodboardImages];
+    newImages.splice(dragIndex, 1);
+    newImages.splice(hoverIndex, 0, draggedImage);
+    setMoodboardImages(newImages);
+  };
   
   // Load the logo as a data URL to ensure it appears in the PDF
   useEffect(() => {
     const loadLogo = async () => {
       try {
-        // Use the new Peri submark logo
-        const absoluteLogoUrl = new URL('/altare-submark-peri.png', window.location.origin).href;
-        
-        // Fetch the logo and convert to data URL
-        const response = await fetch(absoluteLogoUrl);
+        const logoPath = '/altare-submark-peri.png';
+        const response = await fetch(logoPath);
         const blob = await response.blob();
-        const reader = new FileReader();
+        const dataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
         
-        reader.onload = () => {
-          setLogoUrl(reader.result as string);
-          setLogoLoaded(true);
-        };
-        
-        reader.readAsDataURL(blob);
+        setLogoUrl(dataUrl);
+        setLogoLoaded(true);
       } catch (error) {
-        console.error('Error loading logo:', error);
-        // Fallback to direct URL if data URL fails
+        console.error('Failed to load logo:', error);
+        // Fallback to direct path if data URL loading fails
         setLogoUrl('/altare-submark-peri.png');
         setLogoLoaded(true);
       }
@@ -55,78 +154,31 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
   }, []);
   
   // Filter out empty images
-  const validImages = images.filter(img => img.url);
+  const validImages = moodboardImages.filter(img => img.url);
   
-  // Function to determine the grid layout based on number of images
-  const getGridLayout = () => {
-    const count = validImages.length;
-    console.log('Number of images in template:', count);
-    
-    // Simple layouts that work well for both display and PDF
-    if (count <= 1) {
+  // Function to calculate grid layout based on image count
+  const getGridLayout = (count: number) => {
+    // For 1-2 images, use 2 columns
+    if (count <= 2) {
       return {
-        gridTemplateColumns: '1fr',
-        gridAutoRows: 'minmax(300px, auto)',
-        gridGap: '2px'
+        columns: 2,
+        gap: 2
       };
     }
     
-    if (count <= 3) {
+    // For 3-5 images, use 3 columns
+    if (count <= 5) {
       return {
-        gridTemplateColumns: 'repeat(2, 1fr)',
-        gridAutoRows: 'minmax(250px, auto)',
-        gridGap: '2px'
+        columns: 3,
+        gap: 2
       };
     }
     
-    if (count <= 6) {
-      return {
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gridAutoRows: 'minmax(200px, auto)',
-        gridGap: '2px'
-      };
-    }
-    
-    if (count <= 9) {
-      return {
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gridAutoRows: 'minmax(180px, auto)',
-        gridGap: '2px'
-      };
-    }
-    
-    // For more than 9 images
+    // For 6+ images, use 4 columns
     return {
-      gridTemplateColumns: 'repeat(4, 1fr)',
-      gridAutoRows: 'minmax(160px, auto)',
-      gridGap: '2px'
+      columns: 4,
+      gap: 2
     };
-  };
-  
-  // Function to determine if an image should be larger (span multiple cells)
-  const getImageSpan = (index: number, totalImages: number): { rowSpan: number, colSpan: number } => {
-    // Default is 1x1
-    const defaultSpan = { rowSpan: 1, colSpan: 1 };
-    
-    // For 1-3 images
-    if (totalImages <= 3) {
-      if (index === 0) return { rowSpan: 2, colSpan: 1 }; // First image is taller
-    }
-    
-    // For 4-6 images
-    if (totalImages <= 6) {
-      if (index === 0) return { rowSpan: 2, colSpan: 2 }; // First image is large
-    }
-    
-    // For 7-9 images
-    if (totalImages <= 9) {
-      if (index === 0) return { rowSpan: 2, colSpan: 2 }; // First image is large
-    }
-    
-    // For 10+ images
-    if (index === 0) return { rowSpan: 2, colSpan: 2 }; // First image is large
-    
-    return defaultSpan;
   };
 
   // Function to download the template as PDF
@@ -220,150 +272,114 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
     }
   };
   
-  const layout = getGridLayout();
-  const count = validImages.length;
+  // Calculate layout
+  const layout = getGridLayout(validImages.length);
   
   return (
-    <Box sx={{ width: '100%', position: 'relative' }}>
-      <Button
-        variant="contained"
-        onClick={downloadAsPDF}
-        startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
-        disabled={isLoading}
-        sx={{
-          position: 'absolute',
-          top: '-50px',
-          right: '0',
-          backgroundColor: '#054697',
-          color: 'white',
-          '&:hover': {
-            backgroundColor: alpha('#054697', 0.8)
-          },
-          borderRadius: 0,
-          fontFamily: 'Poppins',
-          fontWeight: 500,
-          fontSize: '14px',
-          textTransform: 'uppercase'
-        }}
-      >
-        {isLoading ? 'Generating PDF...' : 'Download PDF'}
-      </Button>
-      
-      <Paper
-        ref={templateRef}
-        elevation={0}
-        sx={{
-          width: '100%',
-          backgroundColor: '#FBFBF7', // Cream background color
-          overflow: 'hidden',
-          position: 'relative',
-          minHeight: validImages.length > 0 ? 'auto' : '300px',
-          border: '1px solid #B8BDD7' // Subtle border for definition
-        }}
-      >
-        {/* Red accent bar on left side */}
-        <Box 
+    <DndProvider backend={HTML5Backend}>
+      <Box sx={{ width: '100%', position: 'relative' }}>
+        <Button
+          variant="contained"
+          onClick={downloadAsPDF}
+          startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
+          disabled={isLoading}
           sx={{
             position: 'absolute',
-            left: 0,
-            top: 0,
-            width: '8px',
-            height: '100%',
-            backgroundColor: '#FF5C39',
-            zIndex: 10
-          }}
-        />
-        
-        {/* Main content container */}
-        <Box 
-          sx={{ 
-            height: '100%', 
-            display: 'flex', 
-            flexDirection: 'column',
-            ml: '8px', // Account for the red bar
-            p: 1,
-            position: 'relative',
-            boxSizing: 'border-box',
-            backgroundColor: '#FBFBF7' // Ensure inner container also has the cream background
+            top: '-50px',
+            right: '0',
+            backgroundColor: '#054697',
+            color: 'white',
+            '&:hover': {
+              backgroundColor: alpha('#054697', 0.8)
+            },
+            borderRadius: 0,
+            fontFamily: 'Poppins',
+            fontWeight: 500,
+            fontSize: '14px',
+            textTransform: 'uppercase'
           }}
         >
-          {/* Dedicated header area */}
+          {isLoading ? 'Generating PDF...' : 'Download PDF'}
+        </Button>
+        
+        <Paper
+          ref={templateRef}
+          data-testid="moodboard-template"
+          elevation={0}
+          sx={{
+            width: '100%',
+            backgroundColor: '#FBFBF7', // Cream color background per request
+            borderRadius: 0,
+            overflow: 'hidden',
+            boxShadow: 'none',
+            border: '1px solid #B8BDD7'
+          }}
+        >
+          {/* Header with logo and color palette */}
           <Box
             sx={{
-              width: '100%',
-              height: '80px', // Taller header area
-              position: 'relative',
-              marginBottom: '10px',
-              borderBottom: '1px solid rgba(184, 189, 215, 0.3)', // Subtle separator
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: '#FBFBF7' // Ensure header has the cream background
+              justifyContent: 'center',
+              padding: '20px 20px 10px',
+              backgroundColor: '#FBFBF7',
+              borderBottom: '1px solid #B8BDD7'
             }}
           >
-            {/* Logo box in header - made bigger */}
+            {/* Logo */}
             <Box
               sx={{
-                width: '150px', // Wider logo container
-                height: '70px', // Taller logo container
                 display: 'flex',
-                alignItems: 'center',
                 justifyContent: 'center',
-                marginLeft: '10px'
+                alignItems: 'center',
+                marginBottom: 2,
+                height: '80px'
               }}
             >
-              {logoLoaded && (
-                <img 
+              {logoLoaded ? (
+                <img
                   id="altare-logo-img"
                   src={logoUrl}
-                  alt="Altare Logo" 
+                  alt="Altare Logo"
                   style={{
-                    maxWidth: '130px', // Larger logo
-                    maxHeight: '65px',
-                    objectFit: 'contain',
-                    zIndex: 11
+                    height: '100%',
+                    width: 'auto',
+                    objectFit: 'contain'
                   }}
                   crossOrigin="anonymous"
                 />
-              )}
-              {!logoLoaded && (
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    color: '#054697',
-                    fontStyle: 'italic'
+              ) : (
+                <Box
+                  sx={{
+                    height: '80px',
+                    width: '80px',
+                    backgroundColor: '#FBFBF7'
                   }}
-                >
-                  Loading...
-                </Typography>
+                />
               )}
             </Box>
-
-            {/* Color palette in header */}
-            {colors.length > 0 && (
+            
+            {/* Color palette */}
+            {colors && colors.length > 0 && (
               <Box
                 sx={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                  padding: '4px',
-                  borderRadius: '2px',
                   display: 'flex',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: '2px',
-                  zIndex: 10,
-                  border: '1px solid rgba(5, 70, 151, 0.1)',
-                  marginRight: '10px'
+                  justifyContent: 'center',
+                  gap: '10px',
+                  marginTop: 1,
+                  marginBottom: 1
                 }}
               >
                 {colors.map((color, index) => (
                   <Box
                     key={index}
                     sx={{
-                      width: '15px',
-                      height: '15px',
+                      width: '30px',
+                      height: '30px',
                       backgroundColor: color,
-                      border: '1px solid rgba(0,0,0,0.1)',
-                      borderRadius: '2px'
+                      borderRadius: '50%',
+                      border: '1px solid #B8BDD7'
                     }}
                   />
                 ))}
@@ -371,116 +387,54 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
             )}
           </Box>
           
-          {validImages.length === 0 ? (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-                width: '100%',
-                boxSizing: 'border-box',
-                backgroundColor: '#FBFBF7' // Ensure empty state has cream background
-              }}
-            >
-              <Typography 
-                variant="body1" 
-                sx={{ 
+          {/* Image grid */}
+          <Box sx={{ padding: '10px' }}>
+            {validImages.length === 0 ? (
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  height: '300px',
+                  backgroundColor: '#FBFBF7',
+                  border: '1px dashed #B8BDD7',
                   color: '#054697',
-                  opacity: 0.6,
-                  fontFamily: 'Poppins, sans-serif',
-                  fontWeight: 300
+                  opacity: 0.8,
+                  fontFamily: 'Poppins, sans-serif'
                 }}
               >
-                Add images to create your moodboard
-              </Typography>
-            </Box>
-          ) : (
-            /* Dynamic grid layout for images */
-            <Box
-              className="moodboard-grid"
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: layout.gridTemplateColumns,
-                gridAutoRows: layout.gridAutoRows,
-                gap: layout.gridGap,
-                width: '100%',
-                boxSizing: 'border-box',
-                backgroundColor: '#FBFBF7', // Ensure grid container has cream background
-                minHeight: '400px', // Ensure minimum height for grid
-                padding: '2px'
-              }}
-            >
-              {validImages.map((image, index) => {
-                const span = getImageSpan(index, count);
-                
-                return (
-                  <Box
+                <Typography variant="body1">
+                  No images to display. Add images to create your moodboard.
+                </Typography>
+              </Box>
+            ) : (
+              /* CSS Grid layout for images */
+              <Box
+                className="moodboard-grid"
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${layout.columns}, 1fr)`,
+                  gap: `${layout.gap}px`,
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  backgroundColor: '#FBFBF7',
+                  minHeight: '400px'
+                }}
+              >
+                {validImages.map((image, index) => (
+                  <DraggableImage
                     key={image.id}
-                    sx={{
-                      backgroundColor: '#FBFBF7',
-                      overflow: 'hidden',
-                      position: 'relative',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '1px solid #B8BDD7',
-                      gridRow: `span ${span.rowSpan}`,
-                      gridColumn: `span ${span.colSpan}`,
-                      minHeight: '100%'
-                    }}
-                  >
-                    <img
-                      src={image.url}
-                      alt={image.title || `Moodboard image ${index + 1}`}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        objectPosition: 'center',
-                        display: 'block'
-                      }}
-                      crossOrigin="anonymous"
-                      loading="eager"
-                      onError={(e) => {
-                        console.error(`Failed to load image: ${image.url}`);
-                        (e.target as HTMLImageElement).src = '/placeholder-image.jpg';
-                      }}
-                    />
-                  </Box>
-                );
-              })}
-            </Box>
-          )}
-        </Box>
-        
-        {/* Download button */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 2 }}>
-          <Button
-            variant="contained"
-            onClick={downloadAsPDF}
-            startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
-            disabled={isLoading}
-            sx={{
-              backgroundColor: '#054697',
-              color: 'white',
-              '&:hover': {
-                backgroundColor: alpha('#054697', 0.8)
-              },
-              px: 4,
-              py: 1.5,
-              borderRadius: 0,
-              fontFamily: 'Poppins',
-              fontWeight: 500,
-              fontSize: '16px',
-              textTransform: 'uppercase'
-            }}
-          >
-            {isLoading ? 'Generating PDF...' : 'Download PDF'}
-          </Button>
-        </Box>
-      </Paper>
-    </Box>
+                    image={image}
+                    index={index}
+                    moveImage={moveImage}
+                  />
+                ))}
+              </Box>
+            )}
+          </Box>
+        </Paper>
+      </Box>
+    </DndProvider>
   );
 };
 
