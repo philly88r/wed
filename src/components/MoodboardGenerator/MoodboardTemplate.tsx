@@ -14,13 +14,11 @@ interface MoodboardTemplateProps {
     category?: string;
   }[];
   colors: string[];
-  title?: string;
 }
 
 const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({ 
   images, 
-  colors = [],
-  title = "Altare"
+  colors = []
 }) => {
   const templateRef = useRef<HTMLDivElement>(null);
   
@@ -455,21 +453,22 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
               width: '100%',
               textAlign: 'center',
               py: 1.5,
-              backgroundColor: '#054697',
-              mb: 0.5
+              backgroundColor: '#E8B4B4',
+              mb: 0.5,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center'
             }}
           >
-            <Typography
-              variant="h4"
-              sx={{
-                color: '#FFFFFF',
-                fontFamily: 'Giaza, serif',
-                letterSpacing: '0.1em',
-                fontWeight: 500
+            <img 
+              src="/Altare Primary-Blanc.svg" 
+              alt="Altare Logo" 
+              style={{
+                height: '40px',
+                maxWidth: '180px',
+                objectFit: 'contain'
               }}
-            >
-              {title}
-            </Typography>
+            />
           </Box>
           
           {/* Color palette in bottom right */}
