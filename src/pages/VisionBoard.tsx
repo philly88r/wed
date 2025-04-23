@@ -24,7 +24,7 @@ import { HexColorPicker } from 'react-colorful';
 
 interface InspirationImage {
   id: string;
-  vision_board_id?: string;
+  moodboard_id?: string;
   title: string;
   description?: string;
   url: string;
@@ -34,7 +34,7 @@ interface InspirationImage {
   position?: number;
 }
 
-interface VisionBoard {
+interface Moodboard {
   id: string;
   title: string;
   description?: string;
@@ -56,7 +56,7 @@ const categories = [
 export default function VisionBoard() {
   const theme = useTheme();
   const [images, setImages] = useState<InspirationImage[]>([]);
-  const [visionBoard, setVisionBoard] = useState<VisionBoard | null>(null);
+  const [moodboard, setMoodboard] = useState<Moodboard | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [newImage, setNewImage] = useState<Partial<InspirationImage>>({
@@ -89,29 +89,29 @@ export default function VisionBoard() {
   }, []);
 
   useEffect(() => {
-    const fetchVisionBoard = async () => {
-      // First, get or create a vision board for the user
-      let { data: visionBoards, error: boardError } = await supabase
-        .from('vision_boards')
+    const fetchMoodboard = async () => {
+      // First, get or create a moodboard for the user
+      let { data: moodboards, error: boardError } = await supabase
+        .from('moodboards')
         .select('*')
         .limit(1);
       
       if (boardError) {
-        console.error('Error fetching vision board:', boardError);
+        console.error('Error fetching moodboard:', boardError);
         return;
       }
       
-      let visionBoardId;
+      let moodboardId;
       
-      if (visionBoards && visionBoards.length > 0) {
-        // Use existing vision board
-        setVisionBoard(visionBoards[0]);
-        visionBoardId = visionBoards[0].id;
+      if (moodboards && moodboards.length > 0) {
+        // Use existing moodboard
+        setMoodboard(moodboards[0]);
+        moodboardId = moodboards[0].id;
         
         // Set colors if available
-        if (visionBoards[0].colors) {
-          setSelectedColors(visionBoards[0].colors);
-          setClassicColors(visionBoards[0].colors);
+        if (moodboards[0].colors) {
+          setSelectedColors(moodboards[0].colors);
+          setClassicColors(moodboards[0].colors);
         } else {
           // Default colors following brand guidelines
           const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
@@ -119,33 +119,33 @@ export default function VisionBoard() {
           setClassicColors(defaultColors);
         }
       } else {
-        // Create a new vision board
+        // Create a new moodboard
         const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
         const { data: newBoard, error: createError } = await supabase
-          .from('vision_boards')
+          .from('moodboards')
           .insert([{ 
-            title: 'My Wedding Vision Board',
+            title: 'My Wedding Moodboard',
             description: 'Inspiration for my wedding',
             colors: defaultColors
           }])
           .select();
         
         if (createError) {
-          console.error('Error creating vision board:', createError);
+          console.error('Error creating moodboard:', createError);
           return;
         }
         
-        setVisionBoard(newBoard[0]);
-        visionBoardId = newBoard[0].id;
+        setMoodboard(newBoard[0]);
+        moodboardId = newBoard[0].id;
         setSelectedColors(defaultColors);
         setClassicColors(defaultColors);
       }
       
-      // Now fetch the images for this vision board
+      // Now fetch the images for this moodboard
       const { data: imageData, error: imageError } = await supabase
-        .from('vision_board_images')
+        .from('moodboard_images')
         .select('*')
-        .eq('vision_board_id', visionBoardId)
+        .eq('moodboard_id', moodboardId)
         .order('position', { ascending: true });
       
       if (imageError) {
@@ -158,28 +158,28 @@ export default function VisionBoard() {
       }
     };
     
-    fetchVisionBoard();
+    fetchMoodboard();
   }, []);
 
   useEffect(() => {
-    // Save colors to vision board when they change
-    const saveVisionBoardColors = async () => {
-      if (!visionBoard) return;
+    // Save colors to moodboard when they change
+    const saveMoodboardColors = async () => {
+      if (!moodboard) return;
       
       const { error } = await supabase
-        .from('vision_boards')
+        .from('moodboards')
         .update({ colors: selectedColors })
-        .eq('id', visionBoard.id);
+        .eq('id', moodboard.id);
       
       if (error) {
-        console.error('Error updating vision board colors:', error);
+        console.error('Error updating moodboard colors:', error);
       }
     };
     
-    if (selectedColors.length > 0 && visionBoard) {
-      saveVisionBoardColors();
+    if (selectedColors.length > 0 && moodboard) {
+      saveMoodboardColors();
     }
-  }, [selectedColors, visionBoard]);
+  }, [selectedColors, moodboard]);
 
   useEffect(() => {
     // Get FAL API key from environment variables
@@ -202,8 +202,8 @@ export default function VisionBoard() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!visionBoard) {
-      console.error('No vision board found');
+    if (!moodboard) {
+      console.error('No moodboard found');
       return;
     }
     
@@ -219,9 +219,9 @@ export default function VisionBoard() {
         const file = new File([blob], `${Date.now()}.jpg`, { type: 'image/jpeg' });
         
         // Upload to storage
-        const filePath = `${visionBoard.id}/${Date.now()}-${file.name}`;
+        const filePath = `${moodboard.id}/${Date.now()}-${file.name}`;
         const { data: storageData, error: storageError } = await supabase.storage
-          .from('vision-board-images')
+          .from('moodboard-images')
           .upload(filePath, file);
         
         if (storageError) {
@@ -231,7 +231,7 @@ export default function VisionBoard() {
         
         // Get public URL
         const { data: publicUrlData } = supabase.storage
-          .from('vision-board-images')
+          .from('moodboard-images')
           .getPublicUrl(filePath);
         
         storagePath = filePath;
@@ -240,9 +240,9 @@ export default function VisionBoard() {
       
       // Get the current highest position
       const { data: positionData, error: positionError } = await supabase
-        .from('vision_board_images')
+        .from('moodboard_images')
         .select('position')
-        .eq('vision_board_id', visionBoard.id)
+        .eq('moodboard_id', moodboard.id)
         .order('position', { ascending: false })
         .limit(1);
       
@@ -252,9 +252,9 @@ export default function VisionBoard() {
       
       // Insert the new image
       const { data: insertData, error: insertError } = await supabase
-        .from('vision_board_images')
+        .from('moodboard_images')
         .insert([{
-          vision_board_id: visionBoard.id,
+          moodboard_id: moodboard.id,
           title: newImage.title,
           description: newImage.description || '',
           url: imageUrl,
@@ -290,7 +290,7 @@ export default function VisionBoard() {
     
     // Get the image to delete (to get the storage path)
     const { data: imageData, error: fetchError } = await supabase
-      .from('vision_board_images')
+      .from('moodboard_images')
       .select('storage_path')
       .eq('id', id)
       .single();
@@ -301,7 +301,7 @@ export default function VisionBoard() {
       // If the image is stored in storage, delete it
       if (imageData.storage_path) {
         const { error: storageError } = await supabase.storage
-          .from('vision-board-images')
+          .from('moodboard-images')
           .remove([imageData.storage_path]);
         
         if (storageError) {
@@ -312,7 +312,7 @@ export default function VisionBoard() {
     
     // Delete the image record
     const { error: deleteError } = await supabase
-      .from('vision_board_images')
+      .from('moodboard_images')
       .delete()
       .eq('id', id);
     
@@ -331,7 +331,7 @@ export default function VisionBoard() {
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !visionBoard) return;
+    if (!file || !moodboard) return;
     
     const reader = new FileReader();
     reader.onloadend = async () => {
@@ -340,9 +340,9 @@ export default function VisionBoard() {
         
         // Clear existing images
         const { error: deleteError } = await supabase
-          .from('vision_board_images')
+          .from('moodboard_images')
           .delete()
-          .eq('vision_board_id', visionBoard.id);
+          .eq('moodboard_id', moodboard.id);
         
         if (deleteError) {
           console.error('Error deleting existing images:', deleteError);
@@ -354,9 +354,9 @@ export default function VisionBoard() {
         for (let i = 0; i < importedData.length; i++) {
           const img = importedData[i];
           await supabase
-            .from('vision_board_images')
+            .from('moodboard_images')
             .insert([{
-              vision_board_id: visionBoard.id,
+              moodboard_id: moodboard.id,
               title: img.title,
               description: img.description || '',
               url: img.url,
@@ -368,9 +368,9 @@ export default function VisionBoard() {
         
         // Refresh images
         const { data: refreshedData, error: refreshError } = await supabase
-          .from('vision_board_images')
+          .from('moodboard_images')
           .select('*')
-          .eq('vision_board_id', visionBoard.id)
+          .eq('moodboard_id', moodboard.id)
           .order('position', { ascending: true });
         
         if (refreshError) {
@@ -405,18 +405,18 @@ export default function VisionBoard() {
     }
   };
 
-  // Export the vision board data to a JSON file
-  const handleExportVisionBoard = () => {
-    if (!visionBoard || images.length === 0) {
-      alert('No vision board data to export');
+  // Export the moodboard data to a JSON file
+  const handleExportMoodboard = () => {
+    if (!moodboard || images.length === 0) {
+      alert('No moodboard data to export');
       return;
     }
 
     // Create a simplified version of the data for export
     const exportData = {
-      title: visionBoard.title,
-      description: visionBoard.description,
-      colors: visionBoard.colors,
+      title: moodboard.title,
+      description: moodboard.description,
+      colors: moodboard.colors,
       images: images.map(img => ({
         title: img.title,
         description: img.description,
@@ -430,7 +430,7 @@ export default function VisionBoard() {
     const dataStr = JSON.stringify(exportData, null, 2);
     const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
     
-    const exportFileName = `${visionBoard.title.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`;
+    const exportFileName = `${moodboard.title.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`;
     
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
@@ -457,7 +457,7 @@ export default function VisionBoard() {
               letterSpacing: '-0.05em'
             }}
           >
-            Wedding Vision Board
+            Wedding Moodboard
           </h1>
         </div>
 
@@ -471,7 +471,7 @@ export default function VisionBoard() {
                 letterSpacing: '-0.05em'
               }}
             >
-              Vision Board Options
+              Moodboard Options
             </h2>
             <div>
               {!showAITemplate && activeTab === 'classic' && (
@@ -625,7 +625,7 @@ export default function VisionBoard() {
                     onChange={handleImport}
                   />
                   <button
-                    onClick={handleExportVisionBoard}
+                    onClick={handleExportMoodboard}
                     className="inline-flex items-center px-4 py-2 text-sm font-medium ml-2"
                     style={{
                       backgroundColor: '#E8B4B4',
@@ -944,7 +944,7 @@ export default function VisionBoard() {
                     letterSpacing: '-0.05em'
                   }}
                 >
-                  AI Vision Board Generator
+                  AI Mood Board Generator
                 </h2>
                 <p 
                   className="text-sm"
@@ -955,7 +955,7 @@ export default function VisionBoard() {
                     fontWeight: 300
                   }}
                 >
-                  Describe your dream wedding and our AI will generate a vision board for you.
+                  Describe your dream wedding and our AI will generate a mood board for you.
                 </p>
                 <MoodboardGenerator 
                   falApiKey={falApiKey} 
@@ -1044,7 +1044,7 @@ export default function VisionBoard() {
             alignItems: 'center'
           }}>
             <Typography variant="h5" component="h2">
-              Add to Vision Board
+              Add to Moodboard
             </Typography>
             <IconButton 
               onClick={() => setShowForm(false)}
