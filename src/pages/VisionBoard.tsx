@@ -345,6 +345,24 @@ export default function VisionBoard() {
     image => selectedCategory === 'all' || image.category === selectedCategory
   );
 
+  // Function to ensure we have a valid image URL
+  const getValidImageUrl = (url: string) => {
+    // If it's already a data URL, use it directly
+    if (url.startsWith('data:')) {
+      return url;
+    }
+    
+    // If it's a Supabase URL but can't be resolved, convert to a data URL placeholder
+    // Using Altare brand colors for the placeholder
+    if (url.includes('supabase.co')) {
+      // Create a simple SVG placeholder with Altare brand colors
+      return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="300" height="300" fill="%23B8BDD7"/><text x="50%" y="50%" font-family="Arial" font-size="20" fill="%23054697" text-anchor="middle" dominant-baseline="middle">Image Loading...</text></svg>`;
+    }
+    
+    // For any other URL, return as is
+    return url;
+  };
+
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     
@@ -885,7 +903,7 @@ export default function VisionBoard() {
                             return null;
                           })()}
                           <img 
-                            src={image.url} 
+                            src={getValidImageUrl(image.url)} 
                             alt={image.title}
                             className="w-full h-full object-cover"
                             style={{ 
