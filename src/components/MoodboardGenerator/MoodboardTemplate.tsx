@@ -448,7 +448,11 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                     gridArea: `img${index + 1}`,
                     backgroundColor: '#EEEEEE',
                     overflow: 'hidden',
-                    position: 'relative'
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px solid #B8BDD7' // Nude color for borders per Altare guidelines
                   }}
                 >
                   {image.category && (
@@ -457,7 +461,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                         position: 'absolute',
                         top: '5px', // Moved higher (was 10px)
                         left: '10px',
-                        backgroundColor: 'rgba(232, 180, 180, 0.8)',
+                        backgroundColor: 'rgba(232, 180, 180, 0.8)', // Soft Pink per Altare guidelines
                         padding: '4px 8px', // Increased vertical padding (was 2px 8px)
                         maxWidth: '90%',
                         borderBottomRightRadius: '4px',
@@ -467,7 +471,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                       <Typography
                         variant="caption"
                         sx={{
-                          color: '#054697',
+                          color: '#054697', // Primary Blue per Altare guidelines
                           fontFamily: 'Poppins, sans-serif',
                           fontWeight: 400,
                           fontSize: '0.7rem',
@@ -483,16 +487,31 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                       </Typography>
                     </Box>
                   )}
-                  <img
-                    src={image.url}
-                    alt={image.title || `Moodboard image ${index + 1}`}
-                    style={{
+                  <Box
+                    sx={{
                       width: '100%',
                       height: '100%',
-                      objectFit: 'cover'
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden'
                     }}
-                    crossOrigin="anonymous"
-                  />
+                  >
+                    <img
+                      src={image.url}
+                      alt={image.title || `Moodboard image ${index + 1}`}
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '100%',
+                        objectFit: 'contain', // Changed from 'cover' to 'contain' to prevent stretching
+                        objectPosition: 'center', // Centers the image in the container
+                        display: 'block', // Removes any extra space below the image
+                        width: 'auto',
+                        height: 'auto'
+                      }}
+                      crossOrigin="anonymous"
+                    />
+                  </Box>
                 </Box>
               ))}
             </Box>
