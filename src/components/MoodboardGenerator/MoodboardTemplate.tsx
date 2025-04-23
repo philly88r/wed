@@ -28,68 +28,24 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
   useEffect(() => {
     const loadLogo = async () => {
       try {
-        // Use a PNG version of the logo instead of SVG for better PDF compatibility
-        // First try to use a pre-converted PNG if available
-        const pngLogoUrl = '/Altare-Primary-Blanc.png'; // PNG version of the logo
+        // Use the JPEG logo instead of SVG
+        const absoluteLogoUrl = new URL('/altare-logo.jpg', window.location.origin).href;
         
-        try {
-          // Try to fetch the PNG version first
-          const response = await fetch(pngLogoUrl);
-          if (response.ok) {
-            const blob = await response.blob();
-            const reader = new FileReader();
-            
-            reader.onload = () => {
-              setLogoUrl(reader.result as string);
-              setLogoLoaded(true);
-            };
-            
-            reader.readAsDataURL(blob);
-            return; // Exit if PNG version loaded successfully
-          }
-        } catch (pngError) {
-          console.log('PNG logo not found, falling back to SVG conversion');
-        }
+        // Fetch the logo and convert to data URL
+        const response = await fetch(absoluteLogoUrl);
+        const blob = await response.blob();
+        const reader = new FileReader();
         
-        // If PNG not available, convert SVG to data URL
-        const svgLogoUrl = '/Altare Primary-Blanc.svg';
-        const svgResponse = await fetch(svgLogoUrl);
-        const svgBlob = await svgResponse.blob();
-        
-        // Convert SVG to PNG using canvas
-        const img = new Image();
-        const svgUrl = URL.createObjectURL(svgBlob);
-        
-        img.onload = () => {
-          // Create canvas to convert SVG to PNG
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width || 200;
-          canvas.height = img.height || 100;
-          const ctx = canvas.getContext('2d');
-          
-          if (ctx) {
-            // Draw white background to ensure logo is visible on any background
-            ctx.fillStyle = 'transparent';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw the SVG image
-            ctx.drawImage(img, 0, 0);
-            
-            // Convert to data URL
-            const pngDataUrl = canvas.toDataURL('image/png');
-            setLogoUrl(pngDataUrl);
-            setLogoLoaded(true);
-            
-            // Clean up
-            URL.revokeObjectURL(svgUrl);
-          }
+        reader.onload = () => {
+          setLogoUrl(reader.result as string);
+          setLogoLoaded(true);
         };
         
-        img.src = svgUrl;
+        reader.readAsDataURL(blob);
       } catch (error) {
         console.error('Error loading logo:', error);
-        // Fallback to a simple text-based logo
-        setLogoUrl('');
+        // Fallback to direct URL if data URL fails
+        setLogoUrl('/altare-logo.jpg');
         setLogoLoaded(true);
       }
     };
@@ -109,26 +65,9 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
     
     try {
       // Wait for any pending renders to complete
-      await new Promise(resolve => setTimeout(resolve, 800)); // Increased timeout for better rendering
+      await new Promise(resolve => setTimeout(resolve, 500)); // Increased timeout for better rendering
       
-      // Create a clone of the template for PDF generation
-      const templateClone = templateRef.current.cloneNode(true) as HTMLElement;
-      document.body.appendChild(templateClone);
-      templateClone.style.position = 'absolute';
-      templateClone.style.left = '-9999px';
-      templateClone.style.top = '-9999px';
-      
-      // Ensure all images in the clone are loaded
-      const allImages = templateClone.querySelectorAll('img');
-      await Promise.all(Array.from(allImages).map(img => {
-        if (img.complete) return Promise.resolve();
-        return new Promise(resolve => {
-          img.onload = resolve;
-          img.onerror = resolve; // Continue even if an image fails
-        });
-      }));
-      
-      const canvas = await html2canvas(templateClone, {
+      const canvas = await html2canvas(templateRef.current, {
         scale: 2, // Higher scale for better quality
         useCORS: true, // Allow cross-origin images
         allowTaint: true,
@@ -163,9 +102,6 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
           });
         }
       });
-      
-      // Remove the clone from the DOM
-      document.body.removeChild(templateClone);
       
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
       const pdf = new jsPDF({
@@ -397,43 +333,38 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
               position: 'absolute',
               top: '10px',
               left: '10px',
-              width: '80px', // Increased size for better visibility
-              height: '40px', // Increased size for better visibility
+              width: '60px',
+              height: '30px',
               zIndex: 10,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: '2px',
-              backgroundColor: 'rgba(5, 70, 151, 0.8)', // Primary Blue background for logo
-              padding: '4px'
+              borderRadius: '2px'
             }}
           >
-            {logoLoaded && logoUrl ? (
+            {logoLoaded && (
               <img 
                 id="altare-logo-img"
                 src={logoUrl}
                 alt="Altare Logo" 
                 style={{
-                  maxWidth: '70px',
-                  maxHeight: '30px',
+                  maxWidth: '50px',
+                  maxHeight: '20px',
                   objectFit: 'contain',
-                  zIndex: 11,
-                  filter: 'brightness(1.2)' // Make logo slightly brighter for better visibility
+                  zIndex: 11
                 }}
                 crossOrigin="anonymous"
               />
-            ) : (
+            )}
+            {!logoLoaded && (
               <Typography 
                 variant="caption" 
                 sx={{ 
-                  color: '#FFFFFF', // White text on blue background
-                  fontFamily: 'Poppins, sans-serif',
-                  fontWeight: 500,
-                  fontSize: '0.8rem',
-                  letterSpacing: '0.05em'
+                  color: '#054697',
+                  fontStyle: 'italic'
                 }}
               >
-                ALTARE
+                Loading...
               </Typography>
             )}
           </Box>
@@ -524,38 +455,6 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                     border: '1px solid #B8BDD7' // Nude color for borders per Altare guidelines
                   }}
                 >
-                  {image.category && (
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        top: '5px', // Moved higher (was 10px)
-                        left: '10px',
-                        backgroundColor: 'rgba(232, 180, 180, 0.8)', // Soft Pink per Altare guidelines
-                        padding: '4px 8px', // Increased vertical padding (was 2px 8px)
-                        maxWidth: '90%',
-                        borderBottomRightRadius: '4px',
-                        zIndex: 5
-                      }}
-                    >
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: '#054697', // Primary Blue per Altare guidelines
-                          fontFamily: 'Poppins, sans-serif',
-                          fontWeight: 400,
-                          fontSize: '0.7rem',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: 'block',
-                          lineHeight: 1, // Tighter line height to center text better
-                          paddingTop: '1px' // Small top padding to center text vertically
-                        }}
-                      >
-                        {image.category}
-                      </Typography>
-                    </Box>
-                  )}
                   <Box
                     sx={{
                       width: '100%',
