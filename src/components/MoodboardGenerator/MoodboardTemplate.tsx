@@ -140,29 +140,44 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
           position: 'relative'
         }}
       >
-        {/* Grid container for the 9 areas */}
-        <Box
+        {/* Red accent bar on left side */}
+        <Box 
           sx={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gridTemplateRows: 'repeat(3, 1fr)',
-            gap: 0.5,
-            width: '100%',
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: '8px',
             height: '100%',
-            padding: 0.5,
-            boxSizing: 'border-box'
+            backgroundColor: '#FF5C39',
+            zIndex: 10
+          }}
+        />
+        
+        {/* Main content container */}
+        <Box 
+          sx={{ 
+            height: '100%', 
+            display: 'flex', 
+            flexDirection: 'column',
+            ml: '8px', // Account for the red bar
+            p: 0,
+            position: 'relative'
           }}
         >
-          {/* Area 1: Logo in top left with blush background */}
+          {/* Small logo box in top left */}
           <Box
             sx={{
-              gridColumn: '1 / 2',
-              gridRow: '1 / 2',
+              position: 'absolute',
+              top: '10px',
+              left: '10px',
+              width: '80px',
+              height: '40px',
               backgroundColor: '#E8B4B4',
+              zIndex: 10,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              overflow: 'hidden'
+              borderRadius: '2px'
             }}
           >
             {logoLoaded ? (
@@ -170,45 +185,326 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                 src={logoUrl}
                 alt="Altare Logo" 
                 style={{
-                  maxWidth: '80%',
-                  maxHeight: '80%',
+                  maxWidth: '70px',
+                  maxHeight: '30px',
                   objectFit: 'contain'
                 }}
                 crossOrigin="anonymous"
               />
             ) : (
               <Typography 
-                variant="body2" 
+                variant="caption" 
                 sx={{ 
                   color: '#FFFFFF',
                   fontStyle: 'italic'
                 }}
               >
-                Loading logo...
+                Loading...
               </Typography>
             )}
           </Box>
           
-          {/* Areas 2-8: Images (7 total) */}
-          {displayImages.map((image, index) => (
+          {/* Top section with images */}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gridTemplateRows: 'repeat(2, 1fr)',
+              gap: 1,
+              flex: 1,
+              p: 1,
+              pb: 0.5
+            }}
+          >
+            {/* Large image on left */}
             <Box
-              key={image.id}
               sx={{
-                gridColumn: index === 0 ? '2 / 3' : index === 1 ? '3 / 4' : 
-                           index === 2 ? '1 / 2' : index === 3 ? '2 / 3' : 
-                           index === 4 ? '3 / 4' : index === 5 ? '1 / 2' : '2 / 3',
-                gridRow: index === 0 ? '1 / 2' : index === 1 ? '1 / 2' : 
-                         index === 2 ? '2 / 3' : index === 3 ? '2 / 3' : 
-                         index === 4 ? '2 / 3' : index === 5 ? '3 / 4' : '3 / 4',
-                overflow: 'hidden',
-                position: 'relative',
-                backgroundColor: '#EEEEEE'
+                gridColumn: '1 / 3',
+                gridRow: '1 / 3',
+                backgroundColor: '#EEEEEE',
+                overflow: 'hidden'
               }}
             >
-              {image.url ? (
+              {displayImages[0].url ? (
                 <img
-                  src={image.url}
-                  alt={image.title || 'Moodboard image'}
+                  src={displayImages[0].url}
+                  alt={displayImages[0].title || 'Moodboard image 1'}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                  crossOrigin="anonymous"
+                />
+              ) : (
+                <Box 
+                  sx={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#EEEEEE'
+                  }}
+                >
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#AAAAAA',
+                      fontStyle: 'italic'
+                    }}
+                  >
+                    Image placeholder
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+            
+            {/* Top right images */}
+            <Box
+              sx={{
+                gridColumn: '3 / 4',
+                gridRow: '1 / 2',
+                backgroundColor: '#EEEEEE',
+                overflow: 'hidden'
+              }}
+            >
+              {displayImages[1].url ? (
+                <img
+                  src={displayImages[1].url}
+                  alt={displayImages[1].title || 'Moodboard image 2'}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                  crossOrigin="anonymous"
+                />
+              ) : (
+                <Box 
+                  sx={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#EEEEEE'
+                  }}
+                >
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#AAAAAA',
+                      fontStyle: 'italic'
+                    }}
+                  >
+                    Image placeholder
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+            
+            {/* Top far right image */}
+            <Box
+              sx={{
+                gridColumn: '4 / 5',
+                gridRow: '1 / 2',
+                backgroundColor: '#EEEEEE',
+                overflow: 'hidden'
+              }}
+            >
+              {displayImages[2].url ? (
+                <img
+                  src={displayImages[2].url}
+                  alt={displayImages[2].title || 'Moodboard image 3'}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                  crossOrigin="anonymous"
+                />
+              ) : (
+                <Box 
+                  sx={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#EEEEEE'
+                  }}
+                >
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#AAAAAA',
+                      fontStyle: 'italic'
+                    }}
+                  >
+                    Image placeholder
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+            
+            {/* Middle right images */}
+            <Box
+              sx={{
+                gridColumn: '3 / 4',
+                gridRow: '2 / 3',
+                backgroundColor: '#EEEEEE',
+                overflow: 'hidden'
+              }}
+            >
+              {displayImages[3].url ? (
+                <img
+                  src={displayImages[3].url}
+                  alt={displayImages[3].title || 'Moodboard image 4'}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                  crossOrigin="anonymous"
+                />
+              ) : (
+                <Box 
+                  sx={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#EEEEEE'
+                  }}
+                >
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#AAAAAA',
+                      fontStyle: 'italic'
+                    }}
+                  >
+                    Image placeholder
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+            
+            {/* Middle far right image */}
+            <Box
+              sx={{
+                gridColumn: '4 / 5',
+                gridRow: '2 / 3',
+                backgroundColor: '#EEEEEE',
+                overflow: 'hidden'
+              }}
+            >
+              {displayImages[4].url ? (
+                <img
+                  src={displayImages[4].url}
+                  alt={displayImages[4].title || 'Moodboard image 5'}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                  crossOrigin="anonymous"
+                />
+              ) : (
+                <Box 
+                  sx={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#EEEEEE'
+                  }}
+                >
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#AAAAAA',
+                      fontStyle: 'italic'
+                    }}
+                  >
+                    Image placeholder
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Box>
+          
+          {/* Bottom section with images */}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gridTemplateRows: '1fr',
+              gap: 1,
+              p: 1,
+              pt: 0.5,
+              pb: 0.5
+            }}
+          >
+            {/* Bottom left images */}
+            <Box
+              sx={{
+                gridColumn: '1 / 3',
+                backgroundColor: '#EEEEEE',
+                overflow: 'hidden'
+              }}
+            >
+              {displayImages[5].url ? (
+                <img
+                  src={displayImages[5].url}
+                  alt={displayImages[5].title || 'Moodboard image 6'}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                  crossOrigin="anonymous"
+                />
+              ) : (
+                <Box 
+                  sx={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#EEEEEE'
+                  }}
+                >
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#AAAAAA',
+                      fontStyle: 'italic'
+                    }}
+                  >
+                    Image placeholder
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+            
+            {/* Bottom right image */}
+            <Box
+              sx={{
+                gridColumn: '3 / 5',
+                backgroundColor: '#EEEEEE',
+                overflow: 'hidden',
+                position: 'relative'
+              }}
+            >
+              {displayImages[6].url ? (
+                <img
+                  src={displayImages[6].url}
+                  alt={displayImages[6].title || 'Moodboard image 7'}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -239,15 +535,21 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                 </Box>
               )}
               
-              {image.category && (
+              {/* Color palette in bottom right corner */}
+              {colors.length > 0 && (
                 <Box
                   sx={{
                     position: 'absolute',
                     bottom: 0,
-                    left: 0,
-                    backgroundColor: 'rgba(232, 180, 180, 0.8)',
-                    padding: '2px 8px',
-                    maxWidth: '90%'
+                    right: 0,
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    padding: '4px',
+                    borderTopLeftRadius: '4px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    maxWidth: '100px',
+                    border: '1px solid rgba(5, 70, 151, 0.1)'
                   }}
                 >
                   <Typography
@@ -256,82 +558,38 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                       color: '#054697',
                       fontFamily: 'Poppins, sans-serif',
                       fontWeight: 400,
-                      fontSize: '0.7rem',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
+                      fontSize: '0.6rem',
+                      marginBottom: '2px',
+                      textTransform: 'uppercase'
                     }}
                   >
-                    {image.category}
+                    Colors
                   </Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                      gap: '2px',
+                      width: '100%'
+                    }}
+                  >
+                    {colors.map((color, index) => (
+                      <Box
+                        key={index}
+                        sx={{
+                          width: '16px',
+                          height: '16px',
+                          backgroundColor: color,
+                          border: '1px solid rgba(0,0,0,0.1)',
+                          borderRadius: '2px'
+                        }}
+                      />
+                    ))}
+                  </Box>
                 </Box>
               )}
             </Box>
-          ))}
-          
-          {/* Area 9: Color palette in bottom right */}
-          <Box
-            sx={{
-              gridColumn: '3 / 4',
-              gridRow: '3 / 4',
-              backgroundColor: '#FFFFFF',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 1,
-              border: '1px solid rgba(5, 70, 151, 0.1)'
-            }}
-          >
-            {colors.length > 0 ? (
-              <>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: '#054697',
-                    fontFamily: 'Poppins, sans-serif',
-                    fontWeight: 400,
-                    fontSize: '0.7rem',
-                    marginBottom: 0.5,
-                    textTransform: 'uppercase'
-                  }}
-                >
-                  Color Palette
-                </Typography>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    justifyContent: 'center',
-                    gap: 0.5,
-                    width: '100%'
-                  }}
-                >
-                  {colors.map((color, index) => (
-                    <Box
-                      key={index}
-                      sx={{
-                        width: '20px',
-                        height: '20px',
-                        backgroundColor: color,
-                        border: '1px solid rgba(0,0,0,0.1)',
-                        borderRadius: '2px'
-                      }}
-                    />
-                  ))}
-                </Box>
-              </>
-            ) : (
-              <Typography
-                variant="caption"
-                sx={{
-                  color: '#AAAAAA',
-                  fontStyle: 'italic'
-                }}
-              >
-                No colors selected
-              </Typography>
-            )}
           </Box>
         </Box>
       </Paper>
