@@ -10,24 +10,42 @@ export const setupMoodboardDatabase = async (): Promise<void> => {
     
     // 1. Check if the storage bucket exists first
     try {
+      // First, check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        console.log('No authenticated user found, skipping bucket creation');
+        return;
+      }
+      
+      // Try to list buckets to see if our bucket exists
       const { data: buckets, error } = await supabase.storage.listBuckets();
       
       if (error) {
         console.error('Error listing buckets:', error);
+        // Continue anyway as the bucket might already exist
       } else {
         // If bucket already exists, don't try to create it again
         if (!buckets?.find(bucket => bucket.name === 'moodboard-images')) {
           console.log('Creating moodboard-images bucket...');
-          const { error: createError } = await supabase.storage.createBucket('moodboard-images', {
-            public: true,
-            fileSizeLimit: 10485760, // 10MB
-          });
-          
-          if (createError) {
-            console.error('Error creating bucket:', createError);
-            // Continue anyway, the bucket might already exist
-          } else {
-            console.log('Created moodboard-images storage bucket');
+          try {
+            const { error: createError } = await supabase.storage.createBucket('moodboard-images', {
+              public: true,
+              fileSizeLimit: 10485760, // 10MB
+            });
+            
+            if (createError) {
+              console.error('Error creating bucket:', createError);
+              // If RLS policy error, we'll just continue as the bucket might
+              // already exist or we don't have permission to create it
+              if (createError.message?.includes('row-level security policy')) {
+                console.log('RLS policy prevented bucket creation - this is expected if you are not an admin');
+              }
+            } else {
+              console.log('Created moodboard-images storage bucket');
+            }
+          } catch (createBucketError) {
+            console.error('Exception creating bucket:', createBucketError);
+            // Continue anyway, as the bucket might already exist
           }
         } else {
           console.log('Moodboard-images bucket already exists');
