@@ -301,7 +301,8 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
             ml: '8px', // Account for the red bar
             p: 1,
             position: 'relative',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            backgroundColor: '#FBFBF7' // Ensure inner container also has the cream background
           }}
         >
           {/* Dedicated header area */}
@@ -313,14 +314,16 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
               marginBottom: '10px',
               borderBottom: '1px solid rgba(184, 189, 215, 0.3)', // Subtle separator
               display: 'flex',
-              alignItems: 'center'
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: '#FBFBF7' // Ensure header has the cream background
             }}
           >
-            {/* Logo box in header */}
+            {/* Logo box in header - made bigger */}
             <Box
               sx={{
-                width: '120px', // Wider logo container
-                height: '60px', // Taller logo container
+                width: '150px', // Wider logo container
+                height: '70px', // Taller logo container
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -333,8 +336,8 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                   src={logoUrl}
                   alt="Altare Logo" 
                   style={{
-                    maxWidth: '100px', // Larger logo
-                    maxHeight: '50px',
+                    maxWidth: '130px', // Larger logo
+                    maxHeight: '65px',
                     objectFit: 'contain',
                     zIndex: 11
                   }}
@@ -353,40 +356,38 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                 </Typography>
               )}
             </Box>
+
+            {/* Color palette in header */}
+            {colors.length > 0 && (
+              <Box
+                sx={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                  padding: '4px',
+                  borderRadius: '2px',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: '2px',
+                  zIndex: 10,
+                  border: '1px solid rgba(5, 70, 151, 0.1)',
+                  marginRight: '10px'
+                }}
+              >
+                {colors.map((color, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      width: '15px',
+                      height: '15px',
+                      backgroundColor: color,
+                      border: '1px solid rgba(0,0,0,0.1)',
+                      borderRadius: '2px'
+                    }}
+                  />
+                ))}
+              </Box>
+            )}
           </Box>
-          
-          {/* Color palette in top right corner */}
-          {colors.length > 0 && (
-            <Box
-              sx={{
-                position: 'absolute',
-                top: '90px',
-                right: '10px',
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                padding: '4px',
-                borderRadius: '2px',
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: '2px',
-                zIndex: 10,
-                border: '1px solid rgba(5, 70, 151, 0.1)'
-              }}
-            >
-              {colors.map((color, index) => (
-                <Box
-                  key={index}
-                  sx={{
-                    width: '12px',
-                    height: '12px',
-                    backgroundColor: color,
-                    border: '1px solid rgba(0,0,0,0.1)',
-                    borderRadius: '2px'
-                  }}
-                />
-              ))}
-            </Box>
-          )}
           
           {validImages.length === 0 ? (
             <Box
@@ -396,8 +397,8 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                 justifyContent: 'center',
                 height: '100%',
                 width: '100%',
-                pt: '40px', // Space for the logo and color palette
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                backgroundColor: '#FBFBF7' // Ensure empty state has cream background
               }}
             >
               <Typography 
@@ -420,9 +421,10 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                 gridTemplateColumns: gridLayout.columns,
                 gridTemplateRows: gridLayout.rows,
                 gridTemplateAreas: gridLayout.areas.join(' '),
-                gap: gridLayout.gap || 1,
+                gap: '8px',
                 width: '100%',
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                backgroundColor: '#FBFBF7' // Ensure grid container has cream background
               }}
             >
               {validImages.map((image, index) => (
@@ -430,42 +432,27 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                   key={image.id}
                   sx={{
                     gridArea: `img${index + 1}`,
-                    backgroundColor: '#EEEEEE',
+                    backgroundColor: '#FBFBF7', // Match container background
                     overflow: 'hidden',
                     position: 'relative',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    border: '1px solid #B8BDD7', // Nude color for borders per Altare guidelines
-                    aspectRatio: '1/1', // Maintain square aspect ratio for image containers
-                    minHeight: '200px' // Minimum height for each image container
+                    border: '1px solid #B8BDD7' // Nude color for borders per Altare guidelines
                   }}
                 >
-                  {/* Improved image container with aspect ratio preservation */}
-                  <Box
-                    sx={{
+                  {/* Image container with natural fitting */}
+                  <img
+                    src={image.url}
+                    alt={image.title || `Moodboard image ${index + 1}`}
+                    style={{
                       width: '100%',
                       height: '100%',
-                      position: 'relative',
-                      overflow: 'hidden'
+                      objectFit: 'cover',
+                      objectPosition: 'center'
                     }}
-                  >
-                    <img
-                      src={image.url}
-                      alt={image.title || `Moodboard image ${index + 1}`}
-                      style={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        objectPosition: 'center'
-                      }}
-                      crossOrigin="anonymous"
-                    />
-                  </Box>
+                    crossOrigin="anonymous"
+                  />
                 </Box>
               ))}
             </Box>
