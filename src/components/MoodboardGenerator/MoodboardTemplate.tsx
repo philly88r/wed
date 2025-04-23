@@ -156,17 +156,28 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
     }
   };
   
-  // Calculate image sizes based on position
+  // Calculate image sizes based on position and total images
   const getImageSize = (index: number, totalImages: number) => {
     if (totalImages === 1) return 12; // Full width for a single image
     if (totalImages === 2) return 6;  // Half width for two images
+    if (totalImages === 3) return 4;  // Three equal columns
     
-    // For 3 or more images, create a varied layout
-    if (index === 0) return 6; // First image is larger
-    if (index === 1) return 6; // Second image is larger
-    if (index % 5 === 0) return 6; // Every 5th image is larger
+    // For 4 or more images, create a varied layout
+    if (index === 0 && totalImages >= 6) return 8; // First image is larger for 6+ images
+    if (index === 1 && totalImages >= 6) return 4; // Second image pairs with first
+    if (index === 2 && totalImages >= 9) return 6; // Third image is medium for 9+ images
+    if (index === 3 && totalImages >= 9) return 6; // Fourth image pairs with third
     
-    return 4; // Standard size for most images
+    // Standard sizes for remaining images
+    return 4; // Default to 3 per row
+  };
+  
+  // Calculate aspect ratio for images
+  const getAspectRatio = (index: number, totalImages: number) => {
+    // Create varied aspect ratios for visual interest
+    if (index % 3 === 0) return '100%'; // 1:1 square
+    if (index % 3 === 1) return '75%';  // 4:3 landscape
+    return '133%';  // 3:4 portrait
   };
   
   return (
@@ -214,26 +225,26 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
           flexDirection: 'column'
         }}
       >
-        {/* Header with logo and color palette */}
+        {/* Compact header with logo on left and colors on right */}
         <Box
           sx={{
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: 'row',
             alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px 20px 10px',
+            justifyContent: 'space-between',
+            padding: '10px 20px',
             backgroundColor: '#FBFBF7',
-            borderBottom: '1px solid #FFFFFF'
+            borderBottom: '1px solid #FFFFFF',
+            height: '60px', // Reduced height
           }}
         >
-          {/* Logo */}
+          {/* Logo on left */}
           <Box
             sx={{
               display: 'flex',
-              justifyContent: 'center',
+              justifyContent: 'flex-start',
               alignItems: 'center',
-              marginBottom: 2,
-              height: '80px'
+              height: '50px'
             }}
           >
             {logoLoaded ? (
@@ -251,31 +262,29 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
             ) : (
               <Box
                 sx={{
-                  height: '80px',
-                  width: '80px',
+                  height: '50px',
+                  width: '50px',
                   backgroundColor: '#FBFBF7'
                 }}
               />
             )}
           </Box>
           
-          {/* Color palette */}
+          {/* Color palette on right */}
           {colors && colors.length > 0 && (
             <Box
               sx={{
                 display: 'flex',
-                justifyContent: 'center',
-                gap: '10px',
-                marginTop: 1,
-                marginBottom: 1
+                justifyContent: 'flex-end',
+                gap: '8px',
               }}
             >
               {colors.map((color, index) => (
                 <Box
                   key={index}
                   sx={{
-                    width: '30px',
-                    height: '30px',
+                    width: '24px',
+                    height: '24px',
                     backgroundColor: color,
                     borderRadius: '50%',
                     border: '1px solid #FFFFFF'
@@ -286,9 +295,9 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
           )}
         </Box>
         
-        {/* Image Grid */}
+        {/* Image Grid - optimized for PDF */}
         <Box sx={{ 
-          padding: '8px',
+          padding: '4px',
           flex: 1,
           overflow: 'hidden'
         }}>
@@ -317,7 +326,7 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
                   <Box
                     sx={{
                       width: '100%',
-                      paddingTop: '100%', // 1:1 Aspect ratio
+                      paddingTop: getAspectRatio(index, validImages.length), // Dynamic aspect ratio
                       position: 'relative',
                       overflow: 'hidden',
                       border: '1px solid #FFFFFF',
