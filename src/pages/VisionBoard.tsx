@@ -20,6 +20,7 @@ import {
   IconButton,
   useTheme
 } from '@mui/material';
+import { HexColorPicker } from 'react-colorful';
 
 interface InspirationImage {
   id: string;
@@ -54,6 +55,8 @@ export default function VisionBoard() {
   const [falApiKey, setFalApiKey] = useState<string>('');
   const [showMoodboardTemplate, setShowMoodboardTemplate] = useState(false);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [classicColors, setClassicColors] = useState<string[]>([]);
+  const [currentClassicColor, setCurrentClassicColor] = useState<string>('#054697');
   const [generatedImages, setGeneratedImages] = useState<{category: string, imageUrl: string}[]>([]);
   const [showAITemplate, setShowAITemplate] = useState(false);
   const [activeTab, setActiveTab] = useState<'classic' | 'ai'>('classic');
@@ -389,6 +392,148 @@ export default function VisionBoard() {
                   />
                 </div>
 
+                {/* Color Palette Picker for Classic Board */}
+                <div className="mb-6 p-4 border" style={{ borderColor: 'rgba(5, 70, 151, 0.1)' }}>
+                  <h3 
+                    className="text-lg font-medium mb-3"
+                    style={{ 
+                      fontFamily: "'Giaza', serif", 
+                      color: '#054697',
+                      letterSpacing: '-0.05em'
+                    }}
+                  >
+                    Color Palette
+                  </h3>
+                  <p 
+                    className="text-sm mb-4"
+                    style={{ 
+                      color: '#054697', 
+                      opacity: 0.8,
+                      fontFamily: 'Poppins, sans-serif',
+                      fontWeight: 300
+                    }}
+                  >
+                    Select up to 5 colors for your moodboard
+                  </p>
+                  
+                  <div className="flex flex-wrap gap-3 mb-4">
+                    {classicColors.map((color, index) => (
+                      <div 
+                        key={index} 
+                        className="relative"
+                      >
+                        <div 
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            backgroundColor: color,
+                            border: '1px solid rgba(5, 70, 151, 0.1)',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => {
+                            setCurrentClassicColor(color);
+                            const newColors = [...classicColors];
+                            newColors.splice(index, 1);
+                            setClassicColors(newColors);
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            const newColors = [...classicColors];
+                            newColors.splice(index, 1);
+                            setClassicColors(newColors);
+                          }}
+                          className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-sm"
+                          style={{
+                            color: '#054697',
+                            border: '1px solid rgba(5, 70, 151, 0.1)'
+                          }}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    
+                    {classicColors.length < 5 && (
+                      <div 
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          backgroundColor: '#EEEEEE',
+                          border: '1px dashed rgba(5, 70, 151, 0.3)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => {
+                          if (classicColors.length < 5 && !classicColors.includes(currentClassicColor)) {
+                            setClassicColors([...classicColors, currentClassicColor]);
+                          }
+                        }}
+                      >
+                        <Plus className="w-5 h-5" style={{ color: 'rgba(5, 70, 151, 0.5)' }} />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-4">
+                    <div>
+                      <HexColorPicker 
+                        color={currentClassicColor} 
+                        onChange={setCurrentClassicColor} 
+                        style={{ width: '200px', height: '200px' }}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <div className="mb-3">
+                        <div 
+                          style={{
+                            width: '100%',
+                            height: '40px',
+                            backgroundColor: currentClassicColor,
+                            marginBottom: '8px',
+                            border: '1px solid rgba(5, 70, 151, 0.1)'
+                          }}
+                        />
+                        <input
+                          type="text"
+                          value={currentClassicColor}
+                          onChange={(e) => setCurrentClassicColor(e.target.value)}
+                          className="w-full p-2 text-sm"
+                          style={{
+                            border: '1px solid rgba(5, 70, 151, 0.1)',
+                            color: '#054697',
+                            fontFamily: 'Poppins, sans-serif'
+                          }}
+                        />
+                      </div>
+                      
+                      <button
+                        onClick={() => {
+                          if (classicColors.length < 5 && !classicColors.includes(currentClassicColor)) {
+                            setClassicColors([...classicColors, currentClassicColor]);
+                          }
+                        }}
+                        disabled={classicColors.length >= 5 || classicColors.includes(currentClassicColor)}
+                        className="px-4 py-2 text-sm font-medium"
+                        style={{
+                          backgroundColor: classicColors.length >= 5 || classicColors.includes(currentClassicColor) ? '#EEEEEE' : '#E8B4B4',
+                          color: '#054697',
+                          fontFamily: 'Poppins, sans-serif',
+                          fontWeight: 400,
+                          textTransform: 'uppercase',
+                          border: 'none',
+                          cursor: classicColors.length >= 5 || classicColors.includes(currentClassicColor) ? 'not-allowed' : 'pointer',
+                          opacity: classicColors.length >= 5 || classicColors.includes(currentClassicColor) ? 0.5 : 1
+                        }}
+                      >
+                        Add to Palette
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="mb-6">
                   <div className="flex flex-wrap gap-3 mb-4">
                     <button
@@ -433,7 +578,7 @@ export default function VisionBoard() {
                       title: img.title,
                       category: img.category
                     }))} 
-                    colors={[]}
+                    colors={classicColors}
                   />
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
