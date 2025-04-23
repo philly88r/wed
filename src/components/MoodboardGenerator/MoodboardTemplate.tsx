@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { Box, Typography, Paper, Grid } from '@mui/material';
+import { Box, Typography, Paper } from '@mui/material';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 interface MoodboardImage {
@@ -7,6 +7,9 @@ interface MoodboardImage {
   url: string;
   title?: string;
   category?: string;
+  width?: number;
+  height?: number;
+  aspectRatio?: number;
 }
 
 interface MoodboardTemplateProps {
@@ -20,9 +23,59 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
   const [logoUrl, setLogoUrl] = useState('');
   const [moodboardImages, setMoodboardImages] = useState<MoodboardImage[]>([]);
   
-  // Initialize moodboard images
+  // Initialize moodboard images with aspect ratios
   useEffect(() => {
-    setMoodboardImages(images.filter(img => img.url));
+    const processImages = async () => {
+      const processedImages = await Promise.all(
+        images.filter(img => img.url).map(async (image) => {
+          // If image already has aspect ratio, use it
+          if (image.aspectRatio) {
+            return image;
+          }
+          
+          // Otherwise, calculate aspect ratio from image dimensions or load the image
+          if (image.width && image.height) {
+            return {
+              ...image,
+              aspectRatio: image.width / image.height
+            };
+          }
+          
+          // Try to get dimensions from the actual image
+          try {
+            return new Promise<MoodboardImage>((resolve) => {
+              const img = new Image();
+              img.onload = () => {
+                resolve({
+                  ...image,
+                  width: img.width,
+                  height: img.height,
+                  aspectRatio: img.width / img.height
+                });
+              };
+              img.onerror = () => {
+                // Default to 3:2 aspect ratio if image can't be loaded
+                resolve({
+                  ...image,
+                  aspectRatio: 1.5
+                });
+              };
+              img.src = image.url;
+            });
+          } catch (error) {
+            console.error('Error loading image:', error);
+            return {
+              ...image,
+              aspectRatio: 1.5 // Default to 3:2 aspect ratio
+            };
+          }
+        })
+      );
+      
+      setMoodboardImages(processedImages);
+    };
+    
+    processImages();
   }, [images]);
   
   // Load the logo as a data URL
@@ -65,16 +118,57 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
     setMoodboardImages(items);
   };
   
-  // Get image size based on index and total images
-  const getImageSize = (index: number, totalImages: number) => {
-    // Base size calculation
-    if (totalImages <= 4) {
-      return { width: '45%', height: '300px' };
-    } else if (totalImages <= 8) {
-      return { width: '30%', height: '250px' };
+  // Calculate masonry layout dimensions
+  const getMasonryItemSize = (image: MoodboardImage, index: number, totalImages: number) => {
+    const aspectRatio = image.aspectRatio || 1.5; // Default to 3:2 if not available
+    
+    // Base width calculation
+    let width = '100%';
+    let height = 'auto';
+    
+    if (totalImages <= 3) {
+      // For 1-3 images, make them larger
+      if (index === 0 && totalImages > 1) {
+        width = '60%'; // First image is larger
+      } else {
+        width = totalImages === 1 ? '100%' : '40%';
+      }
+    } else if (totalImages <= 6) {
+      // For 4-6 images
+      if (index === 0) {
+        width = '50%'; // First image is medium
+      } else if (aspectRatio > 1.2) {
+        width = '40%'; // Wider images
+      } else if (aspectRatio < 0.8) {
+        width = '30%'; // Taller images
+      } else {
+        width = '33%'; // Square-ish images
+      }
     } else {
-      return { width: '22%', height: '200px' };
+      // For 7+ images
+      if (aspectRatio > 1.2) {
+        width = '32%'; // Wider images
+      } else if (aspectRatio < 0.8) {
+        width = '24%'; // Taller images
+      } else {
+        width = '28%'; // Square-ish images
+      }
     }
+    
+    // Calculate height based on width and aspect ratio
+    // We'll set a base height and let the image's natural aspect ratio determine the final height
+    const baseHeight = totalImages <= 3 ? 300 : totalImages <= 6 ? 220 : 180;
+    
+    // Adjust height based on aspect ratio
+    if (aspectRatio < 1) {
+      // Taller images
+      height = `${baseHeight * (1 / aspectRatio) * 0.8}px`;
+    } else {
+      // Wider or square images
+      height = `${baseHeight}px`;
+    }
+    
+    return { width, height };
   };
   
   return (
@@ -166,7 +260,7 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
           )}
         </Box>
         
-        {/* Flexible Drag and Drop Image Gallery */}
+        {/* Masonry Gallery with Drag and Drop */}
         <Box sx={{ 
           padding: '16px',
           flex: 1,
@@ -200,13 +294,13 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
                     sx={{
                       display: 'flex',
                       flexWrap: 'wrap',
-                      gap: '16px',
+                      gap: '8px',
                       justifyContent: 'flex-start',
                       alignItems: 'flex-start'
                     }}
                   >
                     {validImages.map((image, index) => {
-                      const { width, height } = getImageSize(index, validImages.length);
+                      const { width, height } = getMasonryItemSize(image, index, validImages.length);
                       return (
                         <Draggable key={image.id} draggableId={image.id} index={index}>
                           {(provided, snapshot) => (
