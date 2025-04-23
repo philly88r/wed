@@ -129,6 +129,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
   // Function to determine the grid layout based on number of images
   const getGridLayout = () => {
     const count = validImages.length;
+    console.log('Number of images in template:', count);
     
     if (count === 0) {
       return {
@@ -163,7 +164,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
         rows: 'auto auto',
         areas: [
           '"img1 img2"',
-          '"img1 img3"'
+          '"img3 img3"'
         ],
         gap: '8px'
       };
@@ -186,8 +187,8 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
         columns: '1fr 1fr 1fr',
         rows: 'auto auto',
         areas: [
-          '"img1 img1 img2"',
-          '"img3 img4 img5"'
+          '"img1 img2 img3"',
+          '"img4 img5 img5"'
         ],
         gap: '8px'
       };
@@ -210,8 +211,8 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
         columns: '1fr 1fr 1fr 1fr',
         rows: 'auto auto',
         areas: [
-          '"img1 img1 img2 img3"',
-          '"img4 img5 img6 img7"'
+          '"img1 img2 img3 img4"',
+          '"img5 img6 img7 img7"'
         ],
         gap: '8px'
       };
@@ -229,13 +230,40 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
       };
     }
     
-    // 12 or more images
+    if (count === 9) {
+      return {
+        columns: '1fr 1fr 1fr',
+        rows: 'auto auto auto',
+        areas: [
+          '"img1 img2 img3"',
+          '"img4 img5 img6"',
+          '"img7 img8 img9"'
+        ],
+        gap: '8px'
+      };
+    }
+    
+    if (count === 10) {
+      return {
+        columns: '1fr 1fr 1fr 1fr',
+        rows: 'auto auto auto',
+        areas: [
+          '"img1 img2 img3 img4"',
+          '"img5 img6 img7 img8"',
+          '"img9 img10 img10 img10"'
+        ],
+        gap: '8px'
+      };
+    }
+    
+    // For more than 10 images
     return {
       columns: '1fr 1fr 1fr 1fr',
-      rows: 'auto auto',
+      rows: 'auto auto auto',
       areas: [
         '"img1 img2 img3 img4"',
-        '"img5 img6 img7 img8"'
+        '"img5 img6 img7 img8"',
+        '"img9 img10 img11 img12"'
       ],
       gap: '8px'
     };
@@ -424,37 +452,45 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                 gap: '8px',
                 width: '100%',
                 boxSizing: 'border-box',
-                backgroundColor: '#FBFBF7' // Ensure grid container has cream background
+                backgroundColor: '#FBFBF7', // Ensure grid container has cream background
+                minHeight: '400px' // Ensure minimum height for grid
               }}
             >
-              {validImages.map((image, index) => (
-                <Box
-                  key={image.id}
-                  sx={{
-                    gridArea: `img${index + 1}`,
-                    backgroundColor: '#FBFBF7', // Match container background
-                    overflow: 'hidden',
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '1px solid #B8BDD7' // Nude color for borders per Altare guidelines
-                  }}
-                >
-                  {/* Image container with natural fitting */}
-                  <img
-                    src={image.url}
-                    alt={image.title || `Moodboard image ${index + 1}`}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      objectPosition: 'center'
+              {validImages.map((image, index) => {
+                // Debug log to check which images are being rendered
+                console.log(`Rendering image ${index + 1}:`, image.url);
+                
+                return (
+                  <Box
+                    key={image.id}
+                    sx={{
+                      gridArea: `img${index + 1}`,
+                      backgroundColor: '#FBFBF7', // Match container background
+                      overflow: 'hidden',
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid #B8BDD7', // Nude color for borders per Altare guidelines
+                      aspectRatio: '16/9', // Set a default aspect ratio for image containers
+                      minHeight: '200px' // Minimum height for each image
                     }}
-                    crossOrigin="anonymous"
-                  />
-                </Box>
-              ))}
+                  >
+                    {/* Image container with natural fitting */}
+                    <img
+                      src={image.url}
+                      alt={image.title || `Moodboard image ${index + 1}`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: 'center'
+                      }}
+                      crossOrigin="anonymous"
+                    />
+                  </Box>
+                );
+              })}
             </Box>
           )}
         </Box>

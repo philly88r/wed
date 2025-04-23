@@ -970,7 +970,7 @@ export default function VisionBoard() {
                   <MoodboardTemplate 
                     images={filteredImages.map(img => ({ 
                       id: img.id, 
-                      url: img.url, 
+                      url: getValidImageUrl(img.url), 
                       title: img.title,
                       category: img.category
                     }))} 
