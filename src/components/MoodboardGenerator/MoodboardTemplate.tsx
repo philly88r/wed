@@ -31,6 +31,9 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
   // Take only the first 7 images if there are more
   const displayImages = filledImages.slice(0, 7);
   
+  // Get primary color from selected colors or use default
+  const primaryColor = colors.length > 0 ? colors[0] : '#E8B4B4';
+  
   // Function to download the template as PDF
   const downloadAsPDF = async () => {
     if (!templateRef.current) return;
@@ -70,7 +73,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
           startIcon={<Download />}
           onClick={downloadAsPDF}
           sx={{
-            backgroundColor: '#E8B4B4',
+            backgroundColor: primaryColor,
             color: '#054697',
             borderRadius: 0,
             '&:hover': {
@@ -119,9 +122,32 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
             display: 'flex', 
             flexDirection: 'column',
             ml: '8px', // Account for the red bar
-            p: 0
+            p: 0,
+            position: 'relative'
           }}
         >
+          {/* Altare logo in top left corner */}
+          <Box
+            sx={{
+              position: 'absolute',
+              top: '10px',
+              left: '10px',
+              zIndex: 10,
+              padding: '5px',
+              borderRadius: '2px'
+            }}
+          >
+            <img 
+              src="/Altare Primary-Blanc.svg" 
+              alt="Altare Logo" 
+              style={{
+                height: '30px',
+                maxWidth: '120px',
+                objectFit: 'contain'
+              }}
+            />
+          </Box>
+          
           {/* Top section with images */}
           <Box
             sx={{
@@ -447,13 +473,13 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
             </Box>
           </Box>
           
-          {/* Altare logo in the center */}
+          {/* Altare logo in the center banner */}
           <Box
             sx={{
               width: '100%',
               textAlign: 'center',
               py: 1.5,
-              backgroundColor: '#E8B4B4',
+              backgroundColor: primaryColor,
               mb: 0.5,
               display: 'flex',
               justifyContent: 'center',
@@ -471,11 +497,11 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
             />
           </Box>
           
-          {/* Color palette in bottom right */}
+          {/* Color palette in bottom left */}
           <Box
             sx={{
               display: 'flex',
-              justifyContent: 'flex-end',
+              justifyContent: 'flex-start',
               gap: 1,
               p: 1,
               pt: 0.5
@@ -487,7 +513,8 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                 sx={{
                   width: 40,
                   height: 40,
-                  backgroundColor: color
+                  backgroundColor: color,
+                  border: '1px solid #ddd'
                 }}
               />
             ))}
