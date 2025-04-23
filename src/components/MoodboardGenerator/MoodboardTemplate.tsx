@@ -64,19 +64,29 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
     if (!templateRef.current) return;
     
     try {
+      // Wait for any pending renders to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const canvas = await html2canvas(templateRef.current, {
         scale: 2, // Higher scale for better quality
         useCORS: true, // Allow cross-origin images
         allowTaint: true,
         backgroundColor: '#FAFAFA',
         logging: true, // Enable logging for debugging
-        onclone: (document) => {
+        onclone: (clonedDoc) => {
           // Fix for SVG images in PDF
-          const svgElements = document.querySelectorAll('svg');
+          const svgElements = clonedDoc.querySelectorAll('svg');
           svgElements.forEach(svg => {
             svg.setAttribute('width', svg.getBoundingClientRect().width.toString());
             svg.setAttribute('height', svg.getBoundingClientRect().height.toString());
           });
+          
+          // Ensure logo is visible in the cloned document
+          const logoImg = clonedDoc.querySelector('#altare-logo-img');
+          if (logoImg) {
+            (logoImg as HTMLImageElement).style.visibility = 'visible';
+            (logoImg as HTMLImageElement).style.opacity = '1';
+          }
         }
       });
       
@@ -320,18 +330,21 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
               borderRadius: '2px'
             }}
           >
-            {logoLoaded ? (
+            {logoLoaded && (
               <img 
+                id="altare-logo-img"
                 src={logoUrl}
                 alt="Altare Logo" 
                 style={{
                   maxWidth: '50px',
                   maxHeight: '20px',
-                  objectFit: 'contain'
+                  objectFit: 'contain',
+                  zIndex: 11
                 }}
                 crossOrigin="anonymous"
               />
-            ) : (
+            )}
+            {!logoLoaded && (
               <Typography 
                 variant="caption" 
                 sx={{ 
@@ -441,11 +454,12 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                     <Box
                       sx={{
                         position: 'absolute',
-                        bottom: 0,
+                        top: 0,
                         left: 0,
                         backgroundColor: 'rgba(232, 180, 180, 0.8)',
                         padding: '2px 8px',
-                        maxWidth: '90%'
+                        maxWidth: '90%',
+                        borderBottomRightRadius: '4px'
                       }}
                     >
                       <Typography
@@ -457,7 +471,8 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                           fontSize: '0.7rem',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
-                          textOverflow: 'ellipsis'
+                          textOverflow: 'ellipsis',
+                          display: 'block'
                         }}
                       >
                         {image.category}
