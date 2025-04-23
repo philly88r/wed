@@ -24,11 +24,21 @@ import { HexColorPicker } from 'react-colorful';
 
 interface InspirationImage {
   id: string;
+  vision_board_id?: string;
   title: string;
   description?: string;
   url: string;
+  storage_path?: string;
   category: string;
   source?: string;
+  position?: number;
+}
+
+interface VisionBoard {
+  id: string;
+  title: string;
+  description?: string;
+  colors: string[];
 }
 
 // Categories for the moodboard
@@ -46,6 +56,7 @@ const categories = [
 export default function VisionBoard() {
   const theme = useTheme();
   const [images, setImages] = useState<InspirationImage[]>([]);
+  const [visionBoard, setVisionBoard] = useState<VisionBoard | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [newImage, setNewImage] = useState<Partial<InspirationImage>>({
@@ -78,43 +89,97 @@ export default function VisionBoard() {
   }, []);
 
   useEffect(() => {
-    // Try to load from mood-board key first, then fall back to vision-board for backward compatibility
-    const savedImages = localStorage.getItem('wedding-mood-board') || localStorage.getItem('wedding-vision-board');
-    if (savedImages) {
-      setImages(JSON.parse(savedImages));
-    }
-  }, []);
-
-  useEffect(() => {
-    // Save to the new mood-board key
-    localStorage.setItem('wedding-mood-board', JSON.stringify(images));
-  }, [images]);
-
-  useEffect(() => {
-    const fetchImages = async () => {
-      const { data, error } = await supabase
-        .from('images')
-        .select('*');
-      if (error) {
-        console.error(error);
+    const fetchVisionBoard = async () => {
+      // First, get or create a vision board for the user
+      let { data: visionBoards, error: boardError } = await supabase
+        .from('vision_boards')
+        .select('*')
+        .limit(1);
+      
+      if (boardError) {
+        console.error('Error fetching vision board:', boardError);
+        return;
+      }
+      
+      let visionBoardId;
+      
+      if (visionBoards && visionBoards.length > 0) {
+        // Use existing vision board
+        setVisionBoard(visionBoards[0]);
+        visionBoardId = visionBoards[0].id;
+        
+        // Set colors if available
+        if (visionBoards[0].colors) {
+          setSelectedColors(visionBoards[0].colors);
+          setClassicColors(visionBoards[0].colors);
+        } else {
+          // Default colors following brand guidelines
+          const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
+          setSelectedColors(defaultColors);
+          setClassicColors(defaultColors);
+        }
       } else {
-        setImages(data);
+        // Create a new vision board
+        const defaultColors = ['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7'];
+        const { data: newBoard, error: createError } = await supabase
+          .from('vision_boards')
+          .insert([{ 
+            title: 'My Wedding Vision Board',
+            description: 'Inspiration for my wedding',
+            colors: defaultColors
+          }])
+          .select();
+        
+        if (createError) {
+          console.error('Error creating vision board:', createError);
+          return;
+        }
+        
+        setVisionBoard(newBoard[0]);
+        visionBoardId = newBoard[0].id;
+        setSelectedColors(defaultColors);
+        setClassicColors(defaultColors);
+      }
+      
+      // Now fetch the images for this vision board
+      const { data: imageData, error: imageError } = await supabase
+        .from('vision_board_images')
+        .select('*')
+        .eq('vision_board_id', visionBoardId)
+        .order('position', { ascending: true });
+      
+      if (imageError) {
+        console.error('Error fetching images:', imageError);
+        return;
+      }
+      
+      if (imageData) {
+        setImages(imageData);
       }
     };
-    fetchImages();
+    
+    fetchVisionBoard();
   }, []);
 
   useEffect(() => {
-    const saveImages = async () => {
+    // Save colors to vision board when they change
+    const saveVisionBoardColors = async () => {
+      if (!visionBoard) return;
+      
       const { error } = await supabase
-        .from('images')
-        .upsert(images);
+        .from('vision_boards')
+        .update({ colors: selectedColors })
+        .eq('id', visionBoard.id);
+      
       if (error) {
-        console.error(error);
+        console.error('Error updating vision board colors:', error);
       }
     };
-    saveImages();
-  }, [images]);
+    
+    if (selectedColors.length > 0 && visionBoard) {
+      saveVisionBoardColors();
+    }
+  }, [selectedColors, visionBoard]);
 
   useEffect(() => {
     // Get FAL API key from environment variables
@@ -122,15 +187,6 @@ export default function VisionBoard() {
       setFalApiKey(import.meta.env.VITE_FAL_KEY as string);
     }
   }, []);
-
-  useEffect(() => {
-    // Extract colors from images for the moodboard template
-    // This would ideally use color extraction from images
-    // For now, we'll use a default palette if none is selected
-    if (selectedColors.length === 0) {
-      setSelectedColors(['#054697', '#FFE8E4', '#FF5C39', '#B8BDD7']);
-    }
-  }, [selectedColors]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -143,13 +199,82 @@ export default function VisionBoard() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!visionBoard) {
+      console.error('No vision board found');
+      return;
+    }
+    
     if (newImage.url && newImage.title) {
-      setImages(prev => [
-        ...prev,
-        { ...newImage, id: Date.now().toString() } as InspirationImage
-      ]);
+      // If the image is a data URL (uploaded file), save it to storage
+      let storagePath = '';
+      let imageUrl = newImage.url;
+      
+      if (newImage.url.startsWith('data:')) {
+        // Convert data URL to file
+        const res = await fetch(newImage.url);
+        const blob = await res.blob();
+        const file = new File([blob], `${Date.now()}.jpg`, { type: 'image/jpeg' });
+        
+        // Upload to storage
+        const filePath = `${visionBoard.id}/${Date.now()}-${file.name}`;
+        const { data: storageData, error: storageError } = await supabase.storage
+          .from('vision-board-images')
+          .upload(filePath, file);
+        
+        if (storageError) {
+          console.error('Error uploading image:', storageError);
+          return;
+        }
+        
+        // Get public URL
+        const { data: publicUrlData } = supabase.storage
+          .from('vision-board-images')
+          .getPublicUrl(filePath);
+        
+        storagePath = filePath;
+        imageUrl = publicUrlData.publicUrl;
+      }
+      
+      // Get the current highest position
+      const { data: positionData, error: positionError } = await supabase
+        .from('vision_board_images')
+        .select('position')
+        .eq('vision_board_id', visionBoard.id)
+        .order('position', { ascending: false })
+        .limit(1);
+      
+      const nextPosition = positionData && positionData.length > 0 
+        ? (positionData[0].position + 1) 
+        : 0;
+      
+      // Insert the new image
+      const { data: insertData, error: insertError } = await supabase
+        .from('vision_board_images')
+        .insert([{
+          vision_board_id: visionBoard.id,
+          title: newImage.title,
+          description: newImage.description || '',
+          url: imageUrl,
+          storage_path: storagePath || null,
+          category: newImage.category || categories[0],
+          source: newImage.source || '',
+          position: nextPosition
+        }])
+        .select();
+      
+      if (insertError) {
+        console.error('Error inserting image:', insertError);
+        return;
+      }
+      
+      // Update the local state
+      if (insertData && insertData.length > 0) {
+        setImages(prev => [...prev, insertData[0]]);
+      }
+      
       setNewImage({ category: categories[0] });
       setShowForm(false);
       if (fileInputRef.current) {
@@ -158,32 +283,108 @@ export default function VisionBoard() {
     }
   };
 
-  const deleteImage = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this image?')) {
-      setImages(prev => prev.filter(image => image.id !== id));
+  const deleteImage = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this image?')) {
+      return;
     }
+    
+    // Get the image to delete (to get the storage path)
+    const { data: imageData, error: fetchError } = await supabase
+      .from('vision_board_images')
+      .select('storage_path')
+      .eq('id', id)
+      .single();
+    
+    if (fetchError) {
+      console.error('Error fetching image:', fetchError);
+    } else {
+      // If the image is stored in storage, delete it
+      if (imageData.storage_path) {
+        const { error: storageError } = await supabase.storage
+          .from('vision-board-images')
+          .remove([imageData.storage_path]);
+        
+        if (storageError) {
+          console.error('Error deleting image from storage:', storageError);
+        }
+      }
+    }
+    
+    // Delete the image record
+    const { error: deleteError } = await supabase
+      .from('vision_board_images')
+      .delete()
+      .eq('id', id);
+    
+    if (deleteError) {
+      console.error('Error deleting image:', deleteError);
+      return;
+    }
+    
+    // Update the local state
+    setImages(prev => prev.filter(image => image.id !== id));
   };
 
   const filteredImages = images.filter(
     image => selectedCategory === 'all' || image.category === selectedCategory
   );
 
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        try {
-          const importedData = JSON.parse(reader.result as string);
-          setImages(importedData);
-          localStorage.setItem('wedding-mood-board', JSON.stringify(importedData));
-          alert('Mood board imported successfully!');
-        } catch (error) {
-          alert('Error importing mood board. Please check the file format.');
+    if (!file || !visionBoard) return;
+    
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const importedData = JSON.parse(reader.result as string);
+        
+        // Clear existing images
+        const { error: deleteError } = await supabase
+          .from('vision_board_images')
+          .delete()
+          .eq('vision_board_id', visionBoard.id);
+        
+        if (deleteError) {
+          console.error('Error deleting existing images:', deleteError);
+          alert('Error importing mood board.');
+          return;
         }
-      };
-      reader.readAsText(file);
-    }
+        
+        // Import new images
+        for (let i = 0; i < importedData.length; i++) {
+          const img = importedData[i];
+          await supabase
+            .from('vision_board_images')
+            .insert([{
+              vision_board_id: visionBoard.id,
+              title: img.title,
+              description: img.description || '',
+              url: img.url,
+              category: img.category,
+              source: img.source || '',
+              position: i
+            }]);
+        }
+        
+        // Refresh images
+        const { data: refreshedData, error: refreshError } = await supabase
+          .from('vision_board_images')
+          .select('*')
+          .eq('vision_board_id', visionBoard.id)
+          .order('position', { ascending: true });
+        
+        if (refreshError) {
+          console.error('Error refreshing images:', refreshError);
+        } else if (refreshedData) {
+          setImages(refreshedData);
+        }
+        
+        alert('Mood board imported successfully!');
+      } catch (error) {
+        alert('Error importing mood board. Please check the file format.');
+      }
+    };
+    reader.readAsText(file);
   };
 
   // Convert AI-generated images to the format expected by MoodboardTemplate
@@ -202,6 +403,39 @@ export default function VisionBoard() {
     if (images.length > 0) {
       setShowAITemplate(true);
     }
+  };
+
+  // Export the vision board data to a JSON file
+  const handleExportVisionBoard = () => {
+    if (!visionBoard || images.length === 0) {
+      alert('No vision board data to export');
+      return;
+    }
+
+    // Create a simplified version of the data for export
+    const exportData = {
+      title: visionBoard.title,
+      description: visionBoard.description,
+      colors: visionBoard.colors,
+      images: images.map(img => ({
+        title: img.title,
+        description: img.description,
+        url: img.url,
+        category: img.category,
+        source: img.source,
+      }))
+    };
+
+    // Create a downloadable JSON file
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
+    
+    const exportFileName = `${visionBoard.title.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileName);
+    linkElement.click();
   };
 
   return (
@@ -390,6 +624,23 @@ export default function VisionBoard() {
                     style={{ display: 'none' }}
                     onChange={handleImport}
                   />
+                  <button
+                    onClick={handleExportVisionBoard}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium ml-2"
+                    style={{
+                      backgroundColor: '#E8B4B4',
+                      color: '#054697',
+                      fontFamily: 'Poppins, sans-serif',
+                      fontWeight: 400,
+                      textTransform: 'uppercase',
+                      border: 'none',
+                      cursor: 'pointer',
+                      marginLeft: '8px'
+                    }}
+                  >
+                    <ExternalLink className="w-5 h-5 mr-2" />
+                    Export Board
+                  </button>
                 </div>
 
                 {/* Color Palette Picker for Classic Board */}
