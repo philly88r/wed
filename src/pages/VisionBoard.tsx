@@ -365,6 +365,16 @@ export default function VisionBoard() {
     image => selectedCategory === 'all' || image.category === selectedCategory
   );
 
+  const checkImageUrl = (url: string) => {
+    console.log('Image URL:', url);
+    // Create a test image to check if the URL is valid
+    const img = new Image();
+    img.onload = () => console.log('Image loaded successfully');
+    img.onerror = (e) => console.error('Error loading image:', e);
+    img.src = url;
+    return url;
+  };
+
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     
@@ -899,15 +909,28 @@ export default function VisionBoard() {
                             backgroundColor: '#054697'
                           }}
                         ></div>
-                        <div className="relative aspect-w-16 aspect-h-9 bg-gray-200">
-                          <img
-                            src={image.url}
+                        <div className="relative aspect-square overflow-hidden">
+                          <img 
+                            src={checkImageUrl(image.url)} 
                             alt={image.title}
-                            className="object-cover w-full h-full"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error('Image failed to load:', image.url);
+                              // Fallback to a placeholder image
+                              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300?text=Image+Not+Found';
+                            }}
                           />
                           <button
                             onClick={() => deleteImage(image.id)}
-                            className="absolute top-2 right-2 p-1 rounded-full bg-white text-gray-700 hover:bg-gray-100"
+                            className="absolute top-2 right-2 p-1 rounded-full flex items-center justify-center"
+                            style={{
+                              backgroundColor: '#FFFFFF',
+                              color: '#054697',
+                              width: '24px',
+                              height: '24px',
+                              border: '1px solid #FFE8E4',
+                              boxShadow: '0 2px 4px rgba(5, 70, 151, 0.1)'
+                            }}
                           >
                             <X className="w-4 h-4" />
                           </button>

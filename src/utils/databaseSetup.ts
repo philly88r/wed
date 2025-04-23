@@ -8,18 +8,35 @@ export const setupMoodboardDatabase = async (): Promise<void> => {
   try {
     console.log('Setting up moodboard database...');
     
-    // 1. Create storage bucket for moodboard images if it doesn't exist
-    const { data: buckets } = await supabase.storage.listBuckets();
-    if (!buckets?.find(bucket => bucket.name === 'moodboard-images')) {
-      await supabase.storage.createBucket('moodboard-images', {
-        public: true,
-        fileSizeLimit: 10485760, // 10MB
-      });
-      console.log('Created moodboard-images storage bucket');
+    // 1. Check if the storage bucket exists first
+    try {
+      const { data: buckets, error } = await supabase.storage.listBuckets();
+      
+      if (error) {
+        console.error('Error listing buckets:', error);
+      } else {
+        // If bucket already exists, don't try to create it again
+        if (!buckets?.find(bucket => bucket.name === 'moodboard-images')) {
+          console.log('Creating moodboard-images bucket...');
+          const { error: createError } = await supabase.storage.createBucket('moodboard-images', {
+            public: true,
+            fileSizeLimit: 10485760, // 10MB
+          });
+          
+          if (createError) {
+            console.error('Error creating bucket:', createError);
+            // Continue anyway, the bucket might already exist
+          } else {
+            console.log('Created moodboard-images storage bucket');
+          }
+        } else {
+          console.log('Moodboard-images bucket already exists');
+        }
+      }
+    } catch (bucketError) {
+      console.error('Error with storage buckets:', bucketError);
+      // Continue anyway, as the bucket might already exist
     }
-    
-    // We can't create tables directly through the JavaScript API
-    // Instead, we'll try to use the tables and create them if needed through the SQL editor
     
     console.log('Moodboard database setup complete');
   } catch (error) {
