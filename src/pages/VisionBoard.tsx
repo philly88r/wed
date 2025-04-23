@@ -352,9 +352,9 @@ export default function VisionBoard() {
       return url;
     }
     
-    // If it's a Supabase URL but can't be resolved, convert to a data URL placeholder
-    // Using Altare brand colors for the placeholder
-    if (url.includes('supabase.co')) {
+    // If it's a Supabase URL, replace it with a placeholder
+    // This is to avoid the ERR_NAME_NOT_RESOLVED errors
+    if (url.includes('supabase.co') || url.includes('yemkduykvfdjmldxfphq')) {
       // Create a simple SVG placeholder with Altare brand colors
       return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="300" height="300" fill="%23B8BDD7"/><text x="50%" y="50%" font-family="Arial" font-size="20" fill="%23054697" text-anchor="middle" dominant-baseline="middle">Image Loading...</text></svg>`;
     }
@@ -908,6 +908,14 @@ export default function VisionBoard() {
                             className="w-full h-full object-cover"
                             style={{ 
                               border: '1px solid #B8BDD7' // Using Altare brand color for border
+                            }}
+                            onError={(e) => {
+                              // If the image fails to load, replace with a placeholder
+                              const target = e.target as HTMLImageElement;
+                              if (!target.src.startsWith('data:')) {
+                                console.log('Image failed to load, replacing with placeholder:', target.src);
+                                target.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect width="300" height="300" fill="%23B8BDD7"/><text x="50%" y="50%" font-family="Arial" font-size="20" fill="%23054697" text-anchor="middle" dominant-baseline="middle">Image Failed to Load</text></svg>`;
+                              }
                             }}
                           />
                           <button

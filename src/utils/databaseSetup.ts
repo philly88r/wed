@@ -62,6 +62,7 @@ export const ensureUserHasMoodboard = async (): Promise<string | null> => {
     // First, try to create the moodboard table if it doesn't exist
     try {
       // Try to query the moodboards table to see if it exists
+      // Using select('*') instead of select('count(*)') to avoid 400 error
       const { error: tableCheckError } = await supabase
         .from('moodboards')
         .select('*')
