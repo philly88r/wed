@@ -365,16 +365,6 @@ export default function VisionBoard() {
     image => selectedCategory === 'all' || image.category === selectedCategory
   );
 
-  const checkImageUrl = (url: string) => {
-    console.log('Image URL:', url);
-    // Create a test image to check if the URL is valid
-    const img = new Image();
-    img.onload = () => console.log('Image loaded successfully');
-    img.onerror = (e) => console.error('Error loading image:', e);
-    img.src = url;
-    return url;
-  };
-
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     
@@ -911,14 +901,9 @@ export default function VisionBoard() {
                         ></div>
                         <div className="relative aspect-square overflow-hidden">
                           <img 
-                            src={checkImageUrl(image.url)} 
+                            src={image.url} 
                             alt={image.title}
                             className="w-full h-full object-cover"
-                            onError={(e) => {
-                              console.error('Image failed to load:', image.url);
-                              // Fallback to a placeholder image
-                              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300?text=Image+Not+Found';
-                            }}
                           />
                           <button
                             onClick={() => deleteImage(image.id)}
