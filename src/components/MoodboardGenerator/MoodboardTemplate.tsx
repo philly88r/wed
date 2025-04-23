@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Box, Typography, Paper, Button } from '@mui/material';
-import { Download } from 'lucide-react';
+import { Box, Typography, Paper, Button, CircularProgress, alpha } from '@mui/material';
+import { Download as DownloadIcon } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -23,6 +23,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
   const templateRef = useRef<HTMLDivElement>(null);
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [logoUrl, setLogoUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   
   // Load the logo as a data URL to ensure it appears in the PDF
   useEffect(() => {
@@ -61,267 +62,191 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
     const count = validImages.length;
     console.log('Number of images in template:', count);
     
-    if (count === 0) {
+    // Simple layouts that work well for both display and PDF
+    if (count <= 1) {
       return {
-        columns: '1fr',
-        rows: 'auto',
-        areas: ['"empty"'],
-        gap: '0px'
+        gridTemplateColumns: '1fr',
+        gridAutoRows: 'minmax(300px, auto)',
+        gridGap: '2px'
       };
     }
     
-    if (count === 1) {
+    if (count <= 3) {
       return {
-        columns: '1fr',
-        rows: 'auto',
-        areas: ['"img1"'],
-        gap: '0px'
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gridAutoRows: 'minmax(250px, auto)',
+        gridGap: '2px'
       };
     }
     
-    if (count === 2) {
+    if (count <= 6) {
       return {
-        columns: '1fr 1fr',
-        rows: 'auto',
-        areas: ['"img1 img2"'],
-        gap: '0px'
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridAutoRows: 'minmax(200px, auto)',
+        gridGap: '2px'
       };
     }
     
-    if (count === 3) {
+    if (count <= 9) {
       return {
-        columns: '2fr 1fr',
-        rows: '1fr 1fr',
-        areas: [
-          '"img1 img2"',
-          '"img1 img3"'
-        ],
-        gap: '0px'
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridAutoRows: 'minmax(180px, auto)',
+        gridGap: '2px'
       };
     }
     
-    if (count === 4) {
-      return {
-        columns: '2fr 1fr',
-        rows: '1fr 1fr',
-        areas: [
-          '"img1 img2"',
-          '"img3 img4"'
-        ],
-        gap: '0px'
-      };
-    }
-    
-    if (count === 5) {
-      return {
-        columns: '2fr 1fr 1fr',
-        rows: '1fr 1fr',
-        areas: [
-          '"img1 img2 img3"',
-          '"img1 img4 img5"'
-        ],
-        gap: '0px'
-      };
-    }
-    
-    if (count === 6) {
-      return {
-        columns: '1fr 1fr 1fr',
-        rows: '1fr 1fr',
-        areas: [
-          '"img1 img2 img3"',
-          '"img4 img5 img6"'
-        ],
-        gap: '0px'
-      };
-    }
-    
-    if (count === 7) {
-      return {
-        columns: '2fr 1fr 1fr 1fr',
-        rows: '1fr 1fr',
-        areas: [
-          '"img1 img2 img3 img4"',
-          '"img1 img5 img6 img7"'
-        ],
-        gap: '0px'
-      };
-    }
-    
-    if (count === 8) {
-      return {
-        columns: '1fr 1fr 1fr 1fr',
-        rows: '1fr 1fr',
-        areas: [
-          '"img1 img2 img3 img4"',
-          '"img5 img6 img7 img8"'
-        ],
-        gap: '0px'
-      };
-    }
-    
-    if (count === 9) {
-      return {
-        columns: '2fr 1fr 1fr',
-        rows: '1fr 1fr 1fr',
-        areas: [
-          '"img1 img2 img3"',
-          '"img1 img4 img5"',
-          '"img6 img7 img8 img9"'
-        ],
-        gap: '0px'
-      };
-    }
-    
-    if (count === 10) {
-      return {
-        columns: '2fr 1fr 1fr 1fr',
-        rows: '1fr 1fr 1fr',
-        areas: [
-          '"img1 img2 img3 img4"',
-          '"img1 img5 img6 img7"',
-          '"img8 img9 img10 img10"'
-        ],
-        gap: '0px'
-      };
-    }
-    
-    // For more than 10 images
+    // For more than 9 images
     return {
-      columns: '2fr 1fr 1fr 1fr',
-      rows: '1fr 1fr 1fr',
-      areas: [
-        '"img1 img2 img3 img4"',
-        '"img1 img5 img6 img7"',
-        '"img8 img9 img10 img11"'
-      ],
-      gap: '0px'
+      gridTemplateColumns: 'repeat(4, 1fr)',
+      gridAutoRows: 'minmax(160px, auto)',
+      gridGap: '2px'
     };
   };
   
+  // Function to determine if an image should be larger (span multiple cells)
+  const getImageSpan = (index: number, totalImages: number): { rowSpan: number, colSpan: number } => {
+    // Default is 1x1
+    const defaultSpan = { rowSpan: 1, colSpan: 1 };
+    
+    // For 1-3 images
+    if (totalImages <= 3) {
+      if (index === 0) return { rowSpan: 2, colSpan: 1 }; // First image is taller
+    }
+    
+    // For 4-6 images
+    if (totalImages <= 6) {
+      if (index === 0) return { rowSpan: 2, colSpan: 2 }; // First image is large
+    }
+    
+    // For 7-9 images
+    if (totalImages <= 9) {
+      if (index === 0) return { rowSpan: 2, colSpan: 2 }; // First image is large
+    }
+    
+    // For 10+ images
+    if (index === 0) return { rowSpan: 2, colSpan: 2 }; // First image is large
+    
+    return defaultSpan;
+  };
+
   // Function to download the template as PDF
   const downloadAsPDF = async () => {
-    if (!templateRef.current) return;
+    if (!templateRef.current) {
+      console.error('Template reference is null');
+      return;
+    }
     
     try {
-      // Wait for any pending renders to complete
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Increased timeout for better rendering
+      // Show loading indicator
+      setIsLoading(true);
       
-      // Apply specific styles to ensure PDF matches the screen view exactly
+      // Wait for any pending renders to complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Get the template element
       const templateElement = templateRef.current;
       
-      // Ensure all images are loaded
-      const images = templateElement.querySelectorAll('img');
-      await Promise.all(Array.from(images).map(img => {
-        if (img.complete) return Promise.resolve();
-        return new Promise(resolve => {
-          img.onload = resolve;
-          img.onerror = resolve;
-        });
-      }));
+      // Make sure all images are loaded before generating PDF
+      const images = Array.from(templateElement.querySelectorAll('img'));
+      await Promise.all(
+        images.map(img => 
+          new Promise(resolve => {
+            if (img.complete) {
+              resolve(null);
+            } else {
+              img.onload = () => resolve(null);
+              img.onerror = () => {
+                console.error('Image failed to load:', img.src);
+                resolve(null);
+              };
+            }
+          })
+        )
+      );
       
+      console.log('All images loaded, generating PDF...');
+      
+      // Create canvas with better settings
       const canvas = await html2canvas(templateElement, {
-        scale: 2, // Higher scale for better quality
-        useCORS: true, // Allow cross-origin images
+        scale: 2,
+        useCORS: true,
         allowTaint: true,
         backgroundColor: '#FBFBF7',
-        logging: true, // Enable logging for debugging
+        logging: true,
         onclone: (clonedDoc) => {
-          // Get the cloned template
           const clonedTemplate = clonedDoc.querySelector('[data-testid="moodboard-template"]');
           if (clonedTemplate) {
-            // Force the cloned template to maintain its layout
-            (clonedTemplate as HTMLElement).style.width = '100%';
-            (clonedTemplate as HTMLElement).style.height = 'auto';
+            (clonedTemplate as HTMLElement).style.backgroundColor = '#FBFBF7';
           }
           
-          // Fix for SVG images in PDF
-          const svgElements = clonedDoc.querySelectorAll('svg');
-          svgElements.forEach(svg => {
-            svg.setAttribute('width', svg.getBoundingClientRect().width.toString());
-            svg.setAttribute('height', svg.getBoundingClientRect().height.toString());
-          });
-          
-          // Ensure logo is visible in the cloned document
-          const logoImg = clonedDoc.querySelector('#altare-logo-img');
-          if (logoImg) {
-            (logoImg as HTMLImageElement).style.visibility = 'visible';
-            (logoImg as HTMLImageElement).style.opacity = '1';
-            (logoImg as HTMLImageElement).setAttribute('crossOrigin', 'anonymous');
-          }
-          
-          // Pre-load all images to ensure they're rendered in the PDF
+          // Ensure all images are visible
           const images = clonedDoc.querySelectorAll('img');
           images.forEach(img => {
             img.setAttribute('crossOrigin', 'anonymous');
-            img.style.opacity = '1';
-            img.style.visibility = 'visible';
+            img.style.display = 'block';
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
           });
-          
-          // Ensure grid layout is preserved with no gaps
-          const gridContainer = clonedDoc.querySelector('.moodboard-grid');
-          if (gridContainer) {
-            (gridContainer as HTMLElement).style.display = 'grid';
-            (gridContainer as HTMLElement).style.gap = '0px';
-            
-            // Force all grid items to fill their space completely
-            const gridItems = gridContainer.querySelectorAll('> div');
-            gridItems.forEach(item => {
-              (item as HTMLElement).style.margin = '0';
-              (item as HTMLElement).style.padding = '0';
-              (item as HTMLElement).style.overflow = 'hidden';
-            });
-          }
         }
       });
       
+      // Create PDF with proper dimensions
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
       
-      // Create PDF with dimensions matching the canvas aspect ratio
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
-      const pdfWidth = 210; // A4 width in mm (portrait)
-      const pdfHeight = (canvasHeight / canvasWidth) * pdfWidth;
-      
+      // Use fixed dimensions for more reliable output
       const pdf = new jsPDF({
-        orientation: pdfHeight > pdfWidth ? 'portrait' : 'landscape',
+        orientation: 'portrait',
         unit: 'mm',
-        format: [pdfWidth, pdfHeight]
+        format: 'a4'
       });
       
-      // Add the image to fill the entire PDF
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      // Calculate dimensions to maintain aspect ratio
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      // Add the image to the PDF
+      pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+      
+      // Save the PDF
       pdf.save('wedding-moodboard.pdf');
+      
+      console.log('PDF generated successfully');
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
   
-  const gridLayout = getGridLayout();
+  const layout = getGridLayout();
+  const count = validImages.length;
   
   return (
     <Box sx={{ width: '100%', position: 'relative' }}>
       <Button
         variant="contained"
-        startIcon={<Download />}
         onClick={downloadAsPDF}
+        startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
+        disabled={isLoading}
         sx={{
           position: 'absolute',
           top: '-50px',
-          right: 0,
-          backgroundColor: '#E8B4B4', // Soft Pink/Blush color per Altare brand guidelines
-          color: '#054697', // Primary Blue for text per Altare brand guidelines
+          right: '0',
+          backgroundColor: '#054697',
+          color: 'white',
           '&:hover': {
-            backgroundColor: '#FFD5CC', // Darker Soft Pink for hover state
-            opacity: 0.9
+            backgroundColor: alpha('#054697', 0.8)
           },
-          fontFamily: 'Poppins, sans-serif',
-          fontWeight: 400,
+          borderRadius: 0,
+          fontFamily: 'Poppins',
+          fontWeight: 500,
+          fontSize: '14px',
           textTransform: 'uppercase'
         }}
       >
-        Download PDF
+        {isLoading ? 'Generating PDF...' : 'Download PDF'}
       </Button>
       
       <Paper
@@ -476,58 +401,35 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
               className="moodboard-grid"
               sx={{
                 display: 'grid',
-                gridTemplateColumns: gridLayout.columns,
-                gridTemplateRows: gridLayout.rows,
-                gridTemplateAreas: gridLayout.areas.join(' '),
-                gap: '0px',
+                gridTemplateColumns: layout.gridTemplateColumns,
+                gridAutoRows: layout.gridAutoRows,
+                gap: layout.gridGap,
                 width: '100%',
                 boxSizing: 'border-box',
                 backgroundColor: '#FBFBF7', // Ensure grid container has cream background
                 minHeight: '400px', // Ensure minimum height for grid
-                overflow: 'hidden' // Prevent any overflow
+                padding: '2px'
               }}
             >
               {validImages.map((image, index) => {
-                // Determine if this image should be larger based on its position
-                const isLargeImage = index === 0 || 
-                  (validImages.length >= 3 && index === 0) || 
-                  (validImages.length >= 9 && index === 8);
-                
-                // Calculate aspect ratio based on position in the grid
-                let aspectRatio;
-                if (isLargeImage) {
-                  aspectRatio = '1/1';
-                } else if (index === 1 && validImages.length >= 3) {
-                  aspectRatio = '1/1';
-                } else if (index === 2 && validImages.length >= 5) {
-                  aspectRatio = '1/1';
-                } else if (index % 3 === 0) {
-                  aspectRatio = '16/9';
-                } else if (index % 3 === 1) {
-                  aspectRatio = '4/3';
-                } else {
-                  aspectRatio = '3/4';
-                }
+                const span = getImageSpan(index, count);
                 
                 return (
                   <Box
                     key={image.id}
                     sx={{
-                      gridArea: `img${index + 1}`,
-                      backgroundColor: '#FBFBF7', // Match container background
+                      backgroundColor: '#FBFBF7',
                       overflow: 'hidden',
                       position: 'relative',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      border: '1px solid #B8BDD7', // Nude color for borders per Altare guidelines
-                      aspectRatio: aspectRatio,
-                      minHeight: isLargeImage ? '300px' : '200px', // Minimum height for each image
-                      margin: 0,
-                      padding: 0
+                      border: '1px solid #B8BDD7',
+                      gridRow: `span ${span.rowSpan}`,
+                      gridColumn: `span ${span.colSpan}`,
+                      minHeight: '100%'
                     }}
                   >
-                    {/* Image container with natural fitting */}
                     <img
                       src={image.url}
                       alt={image.title || `Moodboard image ${index + 1}`}
@@ -536,15 +438,46 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                         height: '100%',
                         objectFit: 'cover',
                         objectPosition: 'center',
-                        display: 'block' // Ensure no extra space
+                        display: 'block'
                       }}
                       crossOrigin="anonymous"
+                      loading="eager"
+                      onError={(e) => {
+                        console.error(`Failed to load image: ${image.url}`);
+                        (e.target as HTMLImageElement).src = '/placeholder-image.jpg';
+                      }}
                     />
                   </Box>
                 );
               })}
             </Box>
           )}
+        </Box>
+        
+        {/* Download button */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, mb: 2 }}>
+          <Button
+            variant="contained"
+            onClick={downloadAsPDF}
+            startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <DownloadIcon />}
+            disabled={isLoading}
+            sx={{
+              backgroundColor: '#054697',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: alpha('#054697', 0.8)
+              },
+              px: 4,
+              py: 1.5,
+              borderRadius: 0,
+              fontFamily: 'Poppins',
+              fontWeight: 500,
+              fontSize: '16px',
+              textTransform: 'uppercase'
+            }}
+          >
+            {isLoading ? 'Generating PDF...' : 'Download PDF'}
+          </Button>
         </Box>
       </Paper>
     </Box>
