@@ -68,7 +68,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
         scale: 2, // Higher scale for better quality
         useCORS: true, // Allow cross-origin images
         allowTaint: true,
-        backgroundColor: '#FAFAFA',
+        backgroundColor: '#FBFBF7',
         logging: true, // Enable logging for debugging
         onclone: (clonedDoc) => {
           // Fix for SVG images in PDF
@@ -101,17 +101,24 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
       });
       
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      
+      // Get the dimensions of the canvas
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+      
+      // Calculate the PDF dimensions to match the aspect ratio of the content
+      const pdfWidth = 210; // A4 width in mm (portrait)
+      const pdfHeight = (canvasHeight / canvasWidth) * pdfWidth;
+      
+      // Create PDF with dynamic dimensions based on content
       const pdf = new jsPDF({
-        orientation: 'landscape',
+        orientation: pdfHeight > pdfWidth ? 'portrait' : 'landscape',
         unit: 'mm',
-        format: 'a4'
+        format: [pdfWidth, pdfHeight]
       });
       
-      // Calculate dimensions to fit the page perfectly
-      const imgWidth = 297; // A4 width in landscape (mm)
-      const imgHeight = 210; // A4 height in landscape (mm)
-      
-      pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+      // Add the image to fill the entire PDF
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
       pdf.save('wedding-moodboard.pdf');
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -126,138 +133,111 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
     if (count === 0) {
       return {
         columns: '1fr',
-        rows: '1fr',
-        areas: ['"empty"']
+        rows: 'auto',
+        areas: ['"empty"'],
+        gap: '8px'
       };
     }
     
     if (count === 1) {
       return {
         columns: '1fr',
-        rows: '1fr',
-        areas: ['"img1"']
+        rows: 'auto',
+        areas: ['"img1"'],
+        gap: '8px'
       };
     }
     
     if (count === 2) {
       return {
         columns: '1fr 1fr',
-        rows: '1fr',
-        areas: ['"img1 img2"']
+        rows: 'auto',
+        areas: ['"img1 img2"'],
+        gap: '8px'
       };
     }
     
     if (count === 3) {
       return {
         columns: '1fr 1fr',
-        rows: '1fr 1fr',
+        rows: 'auto auto',
         areas: [
           '"img1 img2"',
           '"img1 img3"'
-        ]
+        ],
+        gap: '8px'
       };
     }
     
     if (count === 4) {
       return {
         columns: '1fr 1fr',
-        rows: '1fr 1fr',
+        rows: 'auto auto',
         areas: [
           '"img1 img2"',
           '"img3 img4"'
-        ]
+        ],
+        gap: '8px'
       };
     }
     
     if (count === 5) {
       return {
         columns: '1fr 1fr 1fr',
-        rows: '1fr 1fr',
+        rows: 'auto auto',
         areas: [
           '"img1 img1 img2"',
           '"img3 img4 img5"'
-        ]
+        ],
+        gap: '8px'
       };
     }
     
     if (count === 6) {
       return {
         columns: '1fr 1fr 1fr',
-        rows: '1fr 1fr',
+        rows: 'auto auto',
         areas: [
           '"img1 img2 img3"',
           '"img4 img5 img6"'
-        ]
+        ],
+        gap: '8px'
       };
     }
     
     if (count === 7) {
       return {
         columns: '1fr 1fr 1fr 1fr',
-        rows: '1fr 1fr',
+        rows: 'auto auto',
         areas: [
           '"img1 img1 img2 img3"',
           '"img4 img5 img6 img7"'
-        ]
+        ],
+        gap: '8px'
       };
     }
     
     if (count === 8) {
       return {
         columns: '1fr 1fr 1fr 1fr',
-        rows: '1fr 1fr',
+        rows: 'auto auto',
         areas: [
           '"img1 img2 img3 img4"',
           '"img5 img6 img7 img8"'
-        ]
-      };
-    }
-    
-    if (count === 9) {
-      return {
-        columns: '1fr 1fr 1fr',
-        rows: '1fr 1fr 1fr',
-        areas: [
-          '"img1 img2 img3"',
-          '"img4 img5 img6"',
-          '"img7 img8 img9"'
-        ]
-      };
-    }
-    
-    if (count === 10) {
-      return {
-        columns: '1fr 1fr 1fr 1fr',
-        rows: '1fr 1fr 1fr',
-        areas: [
-          '"img1 img1 img2 img3"',
-          '"img4 img5 img6 img7"',
-          '"img8 img9 img10 img10"'
-        ]
-      };
-    }
-    
-    if (count === 11) {
-      return {
-        columns: '1fr 1fr 1fr 1fr',
-        rows: '1fr 1fr 1fr',
-        areas: [
-          '"img1 img2 img3 img4"',
-          '"img5 img6 img7 img8"',
-          '"img9 img10 img11 img11"'
-        ]
+        ],
+        gap: '8px'
       };
     }
     
     // 12 or more images
     return {
       columns: '1fr 1fr 1fr 1fr',
-      rows: '1fr 1fr 1fr',
+      rows: 'auto auto',
       areas: [
         '"img1 img2 img3 img4"',
-        '"img5 img6 img7 img8"',
-        '"img9 img10 img11 img12"'
-      ]
+        '"img5 img6 img7 img8"'
+      ],
+      gap: '8px'
     };
   };
   
@@ -292,11 +272,11 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
         elevation={0}
         sx={{
           width: '100%',
-          aspectRatio: validImages.length > 0 ? '1.414/1' : 'auto', // A4 aspect ratio (landscape) if images exist
-          backgroundColor: '#FBFBF7', // Updated background color as requested
+          backgroundColor: '#FBFBF7', // Cream background color
           overflow: 'hidden',
           position: 'relative',
-          minHeight: validImages.length > 0 ? 'auto' : '300px' // Minimum height if no images
+          minHeight: validImages.length > 0 ? 'auto' : '300px',
+          border: '1px solid #B8BDD7' // Subtle border for definition
         }}
       >
         {/* Red accent bar on left side */}
@@ -324,46 +304,55 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
             boxSizing: 'border-box'
           }}
         >
-          {/* Logo box in top left - made larger */}
+          {/* Dedicated header area */}
           <Box
             sx={{
-              position: 'absolute',
-              top: '10px',
-              left: '10px',
-              width: '100px', // Increased from 60px
-              height: '60px', // Increased from 30px
-              zIndex: 10,
+              width: '100%',
+              height: '80px', // Taller header area
+              position: 'relative',
+              marginBottom: '10px',
+              borderBottom: '1px solid rgba(184, 189, 215, 0.3)', // Subtle separator
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '2px'
+              alignItems: 'center'
             }}
           >
-            {logoLoaded && (
-              <img 
-                id="altare-logo-img"
-                src={logoUrl}
-                alt="Altare Logo" 
-                style={{
-                  maxWidth: '90px', // Increased from 50px
-                  maxHeight: '50px', // Increased from 20px
-                  objectFit: 'contain',
-                  zIndex: 11
-                }}
-                crossOrigin="anonymous"
-              />
-            )}
-            {!logoLoaded && (
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: '#054697',
-                  fontStyle: 'italic'
-                }}
-              >
-                Loading...
-              </Typography>
-            )}
+            {/* Logo box in header */}
+            <Box
+              sx={{
+                width: '120px', // Wider logo container
+                height: '60px', // Taller logo container
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginLeft: '10px'
+              }}
+            >
+              {logoLoaded && (
+                <img 
+                  id="altare-logo-img"
+                  src={logoUrl}
+                  alt="Altare Logo" 
+                  style={{
+                    maxWidth: '100px', // Larger logo
+                    maxHeight: '50px',
+                    objectFit: 'contain',
+                    zIndex: 11
+                  }}
+                  crossOrigin="anonymous"
+                />
+              )}
+              {!logoLoaded && (
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: '#054697',
+                    fontStyle: 'italic'
+                  }}
+                >
+                  Loading...
+                </Typography>
+              )}
+            </Box>
           </Box>
           
           {/* Color palette in top right corner */}
@@ -371,7 +360,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
             <Box
               sx={{
                 position: 'absolute',
-                top: '10px',
+                top: '90px',
                 right: '10px',
                 backgroundColor: 'rgba(255, 255, 255, 0.9)',
                 padding: '4px',
@@ -431,10 +420,8 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                 gridTemplateColumns: gridLayout.columns,
                 gridTemplateRows: gridLayout.rows,
                 gridTemplateAreas: gridLayout.areas.join(' '),
-                gap: 1,
+                gap: gridLayout.gap || 1,
                 width: '100%',
-                height: '100%',
-                pt: '40px', // Space for the logo and color palette
                 boxSizing: 'border-box'
               }}
             >
@@ -449,7 +436,9 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    border: '1px solid #B8BDD7' // Nude color for borders per Altare guidelines
+                    border: '1px solid #B8BDD7', // Nude color for borders per Altare guidelines
+                    aspectRatio: '1/1', // Maintain square aspect ratio for image containers
+                    minHeight: '200px' // Minimum height for each image container
                   }}
                 >
                   {/* Improved image container with aspect ratio preservation */}
