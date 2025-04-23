@@ -240,7 +240,7 @@ export default function VisionBoard() {
       
       // Get the current highest position
       try {
-        const { data: positionData, error: positionError } = await supabase
+        const { data: positionData } = await supabase
           .from('moodboard_images')
           .select('position')
           .eq('moodboard_id', moodboard.id)
@@ -449,6 +449,72 @@ export default function VisionBoard() {
     }
   };
 
+  // Save AI-generated template images to the database
+  const saveAITemplateToDB = async () => {
+    if (!moodboard || generatedImages.length === 0) {
+      alert('No AI-generated images to save');
+      return;
+    }
+
+    // Check if user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      console.error('User not authenticated');
+      return;
+    }
+
+    try {
+      // Get the current highest position
+      const { data: positionData } = await supabase
+        .from('moodboard_images')
+        .select('position')
+        .eq('moodboard_id', moodboard.id)
+        .order('position', { ascending: false })
+        .limit(1);
+      
+      let nextPosition = positionData && positionData.length > 0 
+        ? (positionData[0].position + 1) 
+        : 0;
+      
+      // Create an array of images to insert
+      const imagesToInsert = generatedImages.map((img, index) => ({
+        moodboard_id: moodboard.id,
+        title: img.category.charAt(0).toUpperCase() + img.category.slice(1),
+        description: 'AI-generated image',
+        url: img.imageUrl,
+        storage_path: null,
+        category: img.category,
+        source: 'AI Generator',
+        position: nextPosition + index
+      }));
+      
+      // Insert all images in a batch
+      const { data: insertData, error: insertError } = await supabase
+        .from('moodboard_images')
+        .insert(imagesToInsert)
+        .select();
+      
+      if (insertError) {
+        console.error('Error inserting AI-generated images:', insertError);
+        alert('Failed to save AI-generated images to your moodboard');
+        return;
+      }
+      
+      // Update the local state with the new images
+      if (insertData && insertData.length > 0) {
+        setImages(prev => [...prev, ...insertData]);
+        alert('AI-generated images saved to your moodboard!');
+        
+        // Switch back to classic view to see the saved images
+        setShowAITemplate(false);
+        setActiveTab('classic');
+      }
+    } catch (error) {
+      console.error('Error saving AI-generated images:', error);
+      alert('An error occurred while saving the AI-generated images');
+    }
+  };
+
   // Export the moodboard data to a JSON file
   const handleExportMoodboard = () => {
     if (!moodboard || images.length === 0) {
@@ -616,10 +682,45 @@ export default function VisionBoard() {
         </div>
 
         {showAITemplate ? (
-          <MoodboardTemplate 
-            images={convertGeneratedImagesToTemplateFormat()} 
-            colors={selectedColors}
-          />
+          <div className="relative">
+            <MoodboardTemplate 
+              images={convertGeneratedImagesToTemplateFormat()} 
+              colors={selectedColors}
+            />
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={saveAITemplateToDB}
+                className="inline-flex items-center px-6 py-3 text-sm font-medium"
+                style={{
+                  backgroundColor: '#E8B4B4',
+                  color: '#054697',
+                  fontFamily: 'Poppins, sans-serif',
+                  fontWeight: 400,
+                  textTransform: 'uppercase',
+                  border: 'none',
+                  cursor: 'pointer',
+                  marginRight: '12px'
+                }}
+              >
+                Save to Moodboard
+              </button>
+              <button
+                onClick={() => setShowAITemplate(false)}
+                className="inline-flex items-center px-6 py-3 text-sm font-medium"
+                style={{
+                  backgroundColor: '#EEEEEE',
+                  color: '#054697',
+                  fontFamily: 'Poppins, sans-serif',
+                  fontWeight: 400,
+                  textTransform: 'uppercase',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                Back
+              </button>
+            </div>
+          </div>
         ) : (
           <>
             {activeTab === 'classic' && (

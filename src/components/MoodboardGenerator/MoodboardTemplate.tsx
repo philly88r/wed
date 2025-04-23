@@ -56,9 +56,6 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
   // Filter out empty images
   const validImages = images.filter(img => img.url);
   
-  // Get primary color from selected colors or use default
-  const primaryColor = colors.length > 0 ? colors[0] : '#E8B4B4';
-  
   // Function to download the template as PDF
   const downloadAsPDF = async () => {
     if (!templateRef.current) return;
@@ -276,10 +273,10 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
           position: 'absolute',
           top: '-50px',
           right: 0,
-          backgroundColor: primaryColor,
-          color: '#054697',
+          backgroundColor: '#E8B4B4', // Soft Pink/Blush color per Altare brand guidelines
+          color: '#054697', // Primary Blue for text per Altare brand guidelines
           '&:hover': {
-            backgroundColor: primaryColor,
+            backgroundColor: '#FFD5CC', // Darker Soft Pink for hover state
             opacity: 0.9
           },
           fontFamily: 'Poppins, sans-serif',
