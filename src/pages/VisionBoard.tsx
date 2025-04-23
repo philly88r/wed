@@ -229,32 +229,12 @@ export default function VisionBoard() {
       
       if (newImage.url.startsWith('data:')) {
         try {
-          // Convert data URL to file
-          const res = await fetch(newImage.url);
-          const blob = await res.blob();
-          const file = new File([blob], `${Date.now()}.jpg`, { type: 'image/jpeg' });
-          
-          // Upload to storage
-          const filePath = `${moodboard.id}/${Date.now()}-${file.name}`;
-          const { data: storageData, error: storageError } = await supabase.storage
-            .from('moodboard-images')
-            .upload(filePath, file);
-          
-          if (storageError) {
-            console.error('Error uploading image:', storageError);
-            // Continue with the data URL as the image URL
-          } else {
-            // Get public URL
-            const { data: publicUrlData } = supabase.storage
-              .from('moodboard-images')
-              .getPublicUrl(filePath);
-            
-            storagePath = filePath;
-            imageUrl = publicUrlData.publicUrl;
-          }
+          // Instead of uploading to Supabase storage, just use the data URL directly
+          console.log('Using data URL directly for image');
+          imageUrl = newImage.url; // Keep the data URL as is
+          storagePath = null; // No storage path needed
         } catch (error) {
           console.error('Error processing image:', error);
-          // Continue with the data URL as the image URL
         }
       }
       
@@ -900,10 +880,17 @@ export default function VisionBoard() {
                           }}
                         ></div>
                         <div className="relative aspect-square overflow-hidden">
+                          {(() => {
+                            console.log('Displaying image with URL:', image.url);
+                            return null;
+                          })()}
                           <img 
                             src={image.url} 
                             alt={image.title}
                             className="w-full h-full object-cover"
+                            style={{ 
+                              border: '1px solid #B8BDD7' // Using Altare brand color for border
+                            }}
                           />
                           <button
                             onClick={() => deleteImage(image.id)}
