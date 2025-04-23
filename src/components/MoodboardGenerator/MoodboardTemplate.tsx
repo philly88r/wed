@@ -1,6 +1,9 @@
 import React from 'react';
 import { Box, Typography, Paper, Grid } from '@mui/material';
 
+// MoodboardTemplate component - displays images in a layout matching the reference design
+// with color palette in the bottom right corner
+// Trigger new build
 interface MoodboardTemplateProps {
   images: {
     id: string;
