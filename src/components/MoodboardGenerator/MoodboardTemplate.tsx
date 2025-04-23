@@ -34,8 +34,8 @@ const DraggableImage = ({
   image: MoodboardImage; 
   index: number; 
   moveImage: (dragIndex: number, hoverIndex: number) => void;
-  size: 'small' | 'medium' | 'large';
-  onSizeChange: (index: number, newSize: 'small' | 'medium' | 'large') => void;
+  size: 'small' | 'medium' | 'large' | 'wide' | 'tall';
+  onSizeChange: (index: number, newSize: 'small' | 'medium' | 'large' | 'wide' | 'tall') => void;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -50,7 +50,7 @@ const DraggableImage = ({
     setAnchorEl(null);
   };
   
-  const handleSizeChange = (newSize: 'small' | 'medium' | 'large') => {
+  const handleSizeChange = (newSize: 'small' | 'medium' | 'large' | 'wide' | 'tall') => {
     onSizeChange(index, newSize);
     handleClose();
   };
@@ -89,27 +89,38 @@ const DraggableImage = ({
   // Apply the drag and drop refs
   drag(drop(ref));
   
-  // Get grid span based on size and position
+  // Get grid span based on size
   const gridSpan = (() => {
     switch (size) {
       case 'large':
         return {
-          gridColumn: 'span 3',
+          gridColumn: 'span 2',
           gridRow: 'span 2',
-          minHeight: '350px'
         };
       case 'medium':
         return {
-          gridColumn: 'span 2',
+          gridColumn: 'span 1',
           gridRow: 'span 1',
-          minHeight: '250px'
         };
       case 'small':
+        return {
+          gridColumn: 'span 1',
+          gridRow: 'span 1',
+        };
+      case 'wide':
+        return {
+          gridColumn: 'span 2',
+          gridRow: 'span 1',
+        };
+      case 'tall':
+        return {
+          gridColumn: 'span 1',
+          gridRow: 'span 2',
+        };
       default:
         return {
           gridColumn: 'span 1',
           gridRow: 'span 1',
-          minHeight: '200px'
         };
     }
   })();
@@ -126,7 +137,7 @@ const DraggableImage = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        border: '1px solid #B8BDD7',
+        border: '1px solid #FFFFFF',
         height: '100%',
         transition: 'transform 0.2s ease',
         ...gridSpan
@@ -154,6 +165,7 @@ const DraggableImage = ({
       <IconButton
         size="small"
         onClick={handleClick}
+        className="resize-control"
         sx={{
           position: 'absolute',
           top: '5px',
@@ -186,9 +198,31 @@ const DraggableImage = ({
           <Maximize2 size={16} style={{ marginRight: '8px' }} />
           Large
         </MenuItem>
+        <MenuItem onClick={() => handleSizeChange('wide')} disabled={size === 'wide'}>
+          <Maximize2 size={16} style={{ marginRight: '8px' }} />
+          Wide
+        </MenuItem>
+        <MenuItem onClick={() => handleSizeChange('tall')} disabled={size === 'tall'}>
+          <Maximize2 size={16} style={{ marginRight: '8px' }} />
+          Tall
+        </MenuItem>
       </Menu>
     </Box>
   );
+};
+
+// Layout templates based on number of images
+const layoutTemplates = {
+  1: [{ size: 'large' }],
+  2: [{ size: 'large' }, { size: 'large' }],
+  3: [{ size: 'large' }, { size: 'medium' }, { size: 'medium' }],
+  4: [{ size: 'large' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }],
+  5: [{ size: 'large' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }],
+  6: [{ size: 'large' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }],
+  7: [{ size: 'large' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }],
+  8: [{ size: 'large' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }],
+  9: [{ size: 'large' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }],
+  10: [{ size: 'large' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }, { size: 'medium' }],
 };
 
 export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemplateProps) {
@@ -197,20 +231,24 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
   const [logoUrl, setLogoUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [moodboardImages, setMoodboardImages] = useState<MoodboardImage[]>([]);
-  const [imageSizes, setImageSizes] = useState<Record<number, 'small' | 'medium' | 'large'>>({});
-  
-  // Calculate aspect ratio for A4 paper (210mm × 297mm)
-  const A4_ASPECT_RATIO = 210 / 297;
+  const [imageSizes, setImageSizes] = useState<Record<number, 'small' | 'medium' | 'large' | 'wide' | 'tall'>>({});
   
   // Initialize moodboard images
   useEffect(() => {
     setMoodboardImages(images.filter(img => img.url));
     
-    // Initialize image sizes
-    const initialSizes: Record<number, 'small' | 'medium' | 'large'> = {};
-    images.forEach((_, index) => {
-      initialSizes[index] = getInitialImageSize(index, images.length);
+    // Initialize image sizes based on templates
+    const initialSizes: Record<number, 'small' | 'medium' | 'large' | 'wide' | 'tall'> = {};
+    const validImages = images.filter(img => img.url);
+    const count = validImages.length;
+    
+    // Use template if available, otherwise use default sizes
+    const template = layoutTemplates[count as keyof typeof layoutTemplates] || [];
+    
+    validImages.forEach((_, index) => {
+      initialSizes[index] = template[index]?.size || 'medium';
     });
+    
     setImageSizes(initialSizes);
   }, [images]);
   
@@ -242,7 +280,7 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
   };
   
   // Function to change image size
-  const handleSizeChange = (index: number, newSize: 'small' | 'medium' | 'large') => {
+  const handleSizeChange = (index: number, newSize: 'small' | 'medium' | 'large' | 'wide' | 'tall') => {
     setImageSizes(prev => ({
       ...prev,
       [index]: newSize
@@ -278,45 +316,6 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
   // Filter out empty images
   const validImages = moodboardImages.filter(img => img.url);
   
-  // Function to calculate grid layout based on image count
-  const getGridLayout = () => {
-    // Use a 3-column grid for a maximum of 3 images per row
-    return {
-      columns: 3,
-      gap: 2
-    };
-  };
-  
-  // Function to determine initial image size based on position and total count
-  const getInitialImageSize = (index: number, totalCount: number): 'small' | 'medium' | 'large' => {
-    // For 1-2 images
-    if (totalCount <= 2) {
-      return index === 0 ? 'large' : 'medium';
-    }
-    
-    // For 3-5 images - first is large, distribute others
-    if (totalCount <= 5) {
-      if (index === 0) return 'large';
-      if (index === 1) return 'medium';
-      return 'small';
-    }
-    
-    // For 6-9 images - create a more natural distribution
-    if (totalCount <= 9) {
-      // First image is large
-      if (index === 0) return 'large';
-      // Some medium images distributed throughout
-      if (index === 2 || index === 5) return 'medium';
-      // Rest are small
-      return 'small';
-    }
-    
-    // For 10+ images - create a natural gallery feel
-    if (index === 0) return 'large'; // First image is large
-    if (index === 3 || index === 7 || index === 11) return 'medium'; // Some medium images
-    return 'small'; // Rest are small
-  };
-
   // Function to download the template as PDF
   const downloadAsPDF = async () => {
     if (!templateRef.current) {
@@ -375,9 +374,9 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
         logging: true,
         onclone: (clonedDoc) => {
           // Hide resize controls in the PDF
-          const resizeButtons = clonedDoc.querySelectorAll('button');
+          const resizeButtons = clonedDoc.querySelectorAll('.resize-control');
           resizeButtons.forEach(button => {
-            button.style.display = 'none';
+            (button as HTMLElement).style.display = 'none';
           });
           
           // Hide menus in the PDF
@@ -425,9 +424,6 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
     }
   };
   
-  // Calculate layout
-  const layout = getGridLayout();
-  
   return (
     <DndProvider backend={HTML5Backend}>
       <Box sx={{ width: '100%', position: 'relative' }}>
@@ -440,10 +436,10 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
             position: 'absolute',
             top: '-50px',
             right: '0',
-            backgroundColor: '#054697',
-            color: 'white',
+            backgroundColor: '#FFE8E4', // Soft Pink per Altare brand guidelines
+            color: '#054697', // Primary Blue per Altare brand guidelines
             '&:hover': {
-              backgroundColor: alpha('#054697', 0.8)
+              backgroundColor: '#FFD5CC' // Darker Soft Pink for hover state
             },
             borderRadius: 0,
             fontFamily: 'Poppins',
@@ -465,12 +461,10 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
             borderRadius: 0,
             overflow: 'hidden',
             boxShadow: 'none',
-            border: '1px solid #B8BDD7',
-            display: 'flex',
-            flexDirection: 'column',
-            // Set aspect ratio to match A4 paper
-            aspectRatio: A4_ASPECT_RATIO.toString(),
-            maxHeight: '80vh' // Limit height for viewing on screen
+            border: '1px solid #FFFFFF',
+            aspectRatio: '210/297', // A4 aspect ratio
+            maxHeight: '80vh', // Limit height for viewing on screen
+            margin: '0 auto' // Center the moodboard
           }}
         >
           {/* Header with logo and color palette */}
@@ -482,7 +476,7 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
               justifyContent: 'center',
               padding: '20px 20px 10px',
               backgroundColor: '#FBFBF7',
-              borderBottom: '1px solid #B8BDD7'
+              borderBottom: '1px solid #FFFFFF'
             }}
           >
             {/* Logo */}
@@ -537,7 +531,7 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
                       height: '30px',
                       backgroundColor: color,
                       borderRadius: '50%',
-                      border: '1px solid #B8BDD7'
+                      border: '1px solid #FFFFFF'
                     }}
                   />
                 ))}
@@ -547,10 +541,8 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
           
           {/* Image grid */}
           <Box sx={{ 
-            padding: '10px',
-            flexGrow: 1, // Allow this section to grow and fill available space
-            display: 'flex',
-            flexDirection: 'column'
+            padding: '4px',
+            height: 'calc(100% - 120px)' // Subtract header height
           }}>
             {validImages.length === 0 ? (
               <Box
@@ -558,7 +550,7 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
-                  height: '300px',
+                  height: '100%',
                   backgroundColor: '#FBFBF7',
                   border: '1px dashed #B8BDD7',
                   color: '#054697',
@@ -576,14 +568,13 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
                 className="moodboard-grid"
                 sx={{
                   display: 'grid',
-                  gridTemplateColumns: `repeat(${layout.columns}, 1fr)`,
-                  gap: `${layout.gap}px`,
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gridAutoRows: 'minmax(100px, auto)',
+                  gap: '4px',
                   width: '100%',
+                  height: '100%',
                   boxSizing: 'border-box',
-                  backgroundColor: '#FBFBF7',
-                  height: '100%', // Fill the available space
-                  padding: '2px',
-                  paddingBottom: '20px' // Small gap at bottom for footer
+                  backgroundColor: '#FBFBF7'
                 }}
               >
                 {validImages.map((image, index) => (
@@ -592,7 +583,7 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
                     image={image}
                     index={index}
                     moveImage={moveImage}
-                    size={imageSizes[index] || getInitialImageSize(index, validImages.length)}
+                    size={imageSizes[index] || 'medium'}
                     onSizeChange={handleSizeChange}
                   />
                 ))}
