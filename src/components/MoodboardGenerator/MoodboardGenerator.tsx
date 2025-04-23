@@ -53,11 +53,13 @@ const weddingCategories = [
 interface MoodboardGeneratorProps {
   falApiKey?: string;
   onColorsSelected?: (colors: string[]) => void;
+  onImagesGenerated?: (images: {category: string, imageUrl: string}[]) => void;
 }
 
 const MoodboardGenerator: React.FC<MoodboardGeneratorProps> = ({ 
   falApiKey,
-  onColorsSelected 
+  onColorsSelected,
+  onImagesGenerated
 }) => {
   // Configure fal.ai client
   useEffect(() => {
@@ -160,6 +162,9 @@ const MoodboardGenerator: React.FC<MoodboardGeneratorProps> = ({
     setGeneratedImages([]);
     
     try {
+      // Create an array to collect all generated images
+      const newGeneratedImages: {category: string, imageUrl: string}[] = [];
+      
       // Generate one image for each category
       for (const category of weddingCategories) {
         setCurrentCategory(category);
@@ -180,10 +185,11 @@ const MoodboardGenerator: React.FC<MoodboardGeneratorProps> = ({
         const result = await generateMoodboardImage(prompt);
         
         if (result && result.images && result.images.length > 0) {
-          setGeneratedImages(prev => [
-            ...prev, 
-            { category, imageUrl: result.images[0].url }
-          ]);
+          const newImage = { category, imageUrl: result.images[0].url };
+          newGeneratedImages.push(newImage);
+          
+          // Update state with new image
+          setGeneratedImages(prev => [...prev, newImage]);
           
           // Save the image to local storage
           const moodboardData = JSON.parse(localStorage.getItem('wedding-mood-board') || '{}');
@@ -201,6 +207,11 @@ const MoodboardGenerator: React.FC<MoodboardGeneratorProps> = ({
         message: 'Moodboard generated successfully!',
         severity: 'success'
       });
+
+      // Notify parent component about generated images after all are generated
+      if (onImagesGenerated && newGeneratedImages.length > 0) {
+        onImagesGenerated(newGeneratedImages);
+      }
     } catch (error) {
       console.error('Error generating moodboard:', error);
       setSnackbar({

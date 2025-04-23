@@ -24,14 +24,14 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
 }) => {
   const templateRef = useRef<HTMLDivElement>(null);
   
-  // Ensure we have exactly 6 image slots (fill with empty if needed)
+  // Ensure we have exactly 7 image slots (fill with empty if needed)
   const filledImages = [...images];
-  while (filledImages.length < 6) {
+  while (filledImages.length < 7) {
     filledImages.push({ id: `empty-${filledImages.length}`, url: '' });
   }
   
-  // Take only the first 6 images if there are more
-  const displayImages = filledImages.slice(0, 6);
+  // Take only the first 7 images if there are more
+  const displayImages = filledImages.slice(0, 7);
   
   // Function to download the template as PDF
   const downloadAsPDF = async () => {
@@ -128,7 +128,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateColumns: 'repeat(4, 1fr)',
               gridTemplateRows: 'repeat(2, 1fr)',
               gap: 1,
               flex: 1,
@@ -139,7 +139,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
             {/* Large image on left */}
             <Box
               sx={{
-                gridColumn: '1 / 2',
+                gridColumn: '1 / 3',
                 gridRow: '1 / 3',
                 backgroundColor: '#EEEEEE',
                 overflow: 'hidden'
@@ -179,10 +179,10 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
               )}
             </Box>
             
-            {/* Top right image */}
+            {/* Top right images */}
             <Box
               sx={{
-                gridColumn: '2 / 4',
+                gridColumn: '3 / 4',
                 gridRow: '1 / 2',
                 backgroundColor: '#EEEEEE',
                 overflow: 'hidden'
@@ -222,11 +222,11 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
               )}
             </Box>
             
-            {/* Middle right image */}
+            {/* Top far right image */}
             <Box
               sx={{
-                gridColumn: '2 / 4',
-                gridRow: '2 / 3',
+                gridColumn: '4 / 5',
+                gridRow: '1 / 2',
                 backgroundColor: '#EEEEEE',
                 overflow: 'hidden'
               }}
@@ -264,24 +264,12 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                 </Box>
               )}
             </Box>
-          </Box>
-          
-          {/* Bottom section with images */}
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gridTemplateRows: '1fr',
-              gap: 1,
-              p: 1,
-              pt: 0.5,
-              pb: 0.5
-            }}
-          >
-            {/* Bottom left image */}
+            
+            {/* Middle right images */}
             <Box
               sx={{
-                gridColumn: '1 / 2',
+                gridColumn: '3 / 4',
+                gridRow: '2 / 3',
                 backgroundColor: '#EEEEEE',
                 overflow: 'hidden'
               }}
@@ -320,10 +308,11 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
               )}
             </Box>
             
-            {/* Bottom middle image */}
+            {/* Middle far right image */}
             <Box
               sx={{
-                gridColumn: '2 / 3',
+                gridColumn: '4 / 5',
+                gridRow: '2 / 3',
                 backgroundColor: '#EEEEEE',
                 overflow: 'hidden'
               }}
@@ -361,11 +350,24 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                 </Box>
               )}
             </Box>
-            
-            {/* Bottom right image */}
+          </Box>
+          
+          {/* Bottom section with images */}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gridTemplateRows: '1fr',
+              gap: 1,
+              p: 1,
+              pt: 0.5,
+              pb: 0.5
+            }}
+          >
+            {/* Bottom left images */}
             <Box
               sx={{
-                gridColumn: '3 / 4',
+                gridColumn: '1 / 3',
                 backgroundColor: '#EEEEEE',
                 overflow: 'hidden'
               }}
@@ -374,6 +376,48 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                 <img
                   src={displayImages[5].url}
                   alt={displayImages[5].title || 'Moodboard image 6'}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                />
+              ) : (
+                <Box 
+                  sx={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#EEEEEE'
+                  }}
+                >
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: '#AAAAAA',
+                      fontStyle: 'italic'
+                    }}
+                  >
+                    Image placeholder
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+            
+            {/* Bottom right image */}
+            <Box
+              sx={{
+                gridColumn: '3 / 5',
+                backgroundColor: '#EEEEEE',
+                overflow: 'hidden'
+              }}
+            >
+              {displayImages[6].url ? (
+                <img
+                  src={displayImages[6].url}
+                  alt={displayImages[6].title || 'Moodboard image 7'}
                   style={{
                     width: '100%',
                     height: '100%',

@@ -1,21 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Image as ImageIcon, X, ExternalLink, Download } from 'lucide-react';
+import { Plus, Image as ImageIcon, X, ExternalLink } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { createCustomLink } from '../utils/customLinksHelper';
 import MoodboardGenerator from '../components/MoodboardGenerator/MoodboardGenerator';
 import MoodboardTemplate from '../components/MoodboardGenerator/MoodboardTemplate';
 import { 
-  Tabs, 
-  Tab, 
   Box, 
-  Container, 
   Typography, 
   Button, 
-  Grid, 
-  Card, 
-  CardContent, 
-  CardMedia,
-  Chip,
   TextField,
   Select,
   MenuItem,
@@ -26,8 +18,7 @@ import {
   DialogContent,
   DialogActions,
   IconButton,
-  useTheme,
-  Paper
+  useTheme
 } from '@mui/material';
 
 interface InspirationImage {
@@ -39,27 +30,7 @@ interface InspirationImage {
   source?: string;
 }
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`moodboard-tabpanel-${index}`}
-      aria-labelledby={`moodboard-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
-}
-
+// Categories for the moodboard
 const categories = [
   'Ceremony',
   'Reception',
@@ -80,10 +51,11 @@ export default function VisionBoard() {
     category: categories[0]
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [tabValue, setTabValue] = useState(0);
   const [falApiKey, setFalApiKey] = useState<string>('');
   const [showMoodboardTemplate, setShowMoodboardTemplate] = useState(false);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [generatedImages, setGeneratedImages] = useState<{category: string, imageUrl: string}[]>([]);
+  const [showAITemplate, setShowAITemplate] = useState(false);
 
   // Create a custom link for the current path to fix the 406 error
   useEffect(() => {
@@ -192,19 +164,6 @@ export default function VisionBoard() {
     image => selectedCategory === 'all' || image.category === selectedCategory
   );
 
-  const downloadBoard = () => {
-    const data = JSON.stringify(images, null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'wedding-mood-board.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -223,407 +182,451 @@ export default function VisionBoard() {
     }
   };
 
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
+  // Convert AI-generated images to the format expected by MoodboardTemplate
+  const convertGeneratedImagesToTemplateFormat = () => {
+    return generatedImages.map((img, index) => ({
+      id: `ai-${index}`,
+      url: img.imageUrl,
+      title: img.category.charAt(0).toUpperCase() + img.category.slice(1),
+      category: img.category
+    }));
+  };
+
+  // Handle when AI generates images
+  const handleImagesGenerated = (images: {category: string, imageUrl: string}[]) => {
+    setGeneratedImages(images);
+    if (images.length > 0) {
+      setShowAITemplate(true);
+    }
   };
 
   return (
-    <Box sx={{ 
-      backgroundColor: '#FAFAFA', 
-      minHeight: '100vh',
-      pt: 4, 
-      pb: 8 
-    }}>
-      <Container maxWidth="lg">
-        <Box sx={{ 
-          mb: 6, 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center' 
-        }}>
-          <Typography 
-            variant="h4" 
-            component="h1" 
-            gutterBottom 
-            sx={{ 
-              color: theme.palette.primary.main,
-              textAlign: 'center',
-              fontFamily: 'Giaza, serif',
-              letterSpacing: '-0.05em',
-              fontSize: { xs: '2rem', md: '2.5rem' }
+    <div className="max-w-5xl mx-auto space-y-8 pb-8">
+      <div 
+        className="bg-white p-6 space-y-6"
+        style={{
+          border: '1px solid rgba(5, 70, 151, 0.1)',
+          boxShadow: '0 4px 20px rgba(5, 70, 151, 0.05)',
+          borderRadius: '4px'
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <h1 
+            className="text-2xl font-semibold"
+            style={{ 
+              fontFamily: "'Giaza', serif", 
+              color: '#054697',
+              letterSpacing: '-0.05em'
             }}
           >
             Wedding Vision Board
-          </Typography>
-          <Typography 
-            variant="body1" 
-            sx={{ 
-              color: theme.palette.primary.main, 
-              opacity: 0.8, 
-              textAlign: 'center',
-              maxWidth: '700px',
-              mb: 4
-            }}
-          >
-            Create a visual collection of your wedding inspiration. Add images that inspire your wedding style, colors, and overall aesthetic.
-          </Typography>
-        </Box>
-
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 4, gap: 2 }}>
-          <Button
-            variant="outlined"
-            onClick={downloadBoard}
-            startIcon={<Download />}
-            sx={{ 
-              color: theme.palette.primary.main,
-              borderColor: theme.palette.accent?.rose || '#FFE8E4',
-              borderRadius: 0, // Square corners per brand guidelines
-              '&:hover': {
-                backgroundColor: `${theme.palette.accent?.rose || '#FFE8E4'}20`,
-                borderColor: theme.palette.accent?.rose || '#FFE8E4'
-              },
-              textTransform: 'uppercase'
-            }}
-          >
-            Export Board
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={() => document.getElementById('import-board')?.click()}
-            startIcon={<ExternalLink />}
-            sx={{ 
-              color: theme.palette.primary.main,
-              borderColor: theme.palette.accent?.rose || '#FFE8E4',
-              borderRadius: 0, // Square corners per brand guidelines
-              '&:hover': {
-                backgroundColor: `${theme.palette.accent?.rose || '#FFE8E4'}20`,
-                borderColor: theme.palette.accent?.rose || '#FFE8E4'
-              },
-              textTransform: 'uppercase'
-            }}
-          >
-            Import Board
-          </Button>
-          <input
-            type="file"
-            id="import-board"
-            accept=".json"
-            style={{ display: 'none' }}
-            onChange={handleImport}
-          />
-          <Button
-            variant="contained"
-            onClick={() => {
-              setNewImage({ category: categories[0] });
-              setShowForm(true);
-            }}
-            startIcon={<Plus />}
-            sx={{ 
-              backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
-              color: theme.palette.primary.main,
-              borderRadius: 0, // Square corners per brand guidelines
-              '&:hover': {
-                backgroundColor: theme.palette.accent?.roseDark || '#FFD5CC'
-              },
-              textTransform: 'uppercase'
-            }}
-          >
-            Add Image
-          </Button>
-        </Box>
-
-      <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 4 }}>
-          <Chip 
-            label="All"
-            onClick={() => setSelectedCategory('all')}
-            sx={{
-              borderRadius: 0, // Square corners per brand guidelines
-              backgroundColor: selectedCategory === 'all' ? (theme.palette.accent?.rose || '#FFE8E4') : 'transparent',
-              color: theme.palette.primary.main,
-              border: `1px solid ${theme.palette.accent?.rose || '#FFE8E4'}`,
-              '&:hover': {
-                backgroundColor: selectedCategory === 'all' ? (theme.palette.accent?.roseDark || '#FFD5CC') : `${theme.palette.accent?.rose || '#FFE8E4'}20`
-              },
-              textTransform: 'uppercase',
-              fontWeight: 'regular',
-              px: 2
-            }}
-          />
-          {categories.map((category, index) => (
-            <Chip
-              key={index}
-              label={category}
-              onClick={() => setSelectedCategory(category === selectedCategory ? 'all' : category)}
-              sx={{
-                borderRadius: 0, // Square corners per brand guidelines
-                backgroundColor: category === selectedCategory ? (theme.palette.accent?.rose || '#FFE8E4') : 'transparent',
-                color: theme.palette.primary.main,
-                border: `1px solid ${theme.palette.accent?.rose || '#FFE8E4'}`,
-                '&:hover': {
-                  backgroundColor: category === selectedCategory ? (theme.palette.accent?.roseDark || '#FFD5CC') : `${theme.palette.accent?.rose || '#FFE8E4'}20`
-                },
-                textTransform: 'uppercase',
-                fontWeight: 'regular',
-                px: 2
+          </h1>
+          <div>
+            <button
+              onClick={() => {
+                setNewImage({ category: categories[0] });
+                setShowForm(true);
               }}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium"
+              style={{
+                backgroundColor: '#E8B4B4',
+                color: '#054697',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 400,
+                textTransform: 'uppercase',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Add Image
+            </button>
+            <button
+              onClick={() => document.getElementById('import-board')?.click()}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium"
+              style={{
+                backgroundColor: '#E8B4B4',
+                color: '#054697',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 400,
+                textTransform: 'uppercase',
+                border: 'none',
+                cursor: 'pointer',
+                marginLeft: '2px'
+              }}
+            >
+              <ExternalLink className="w-5 h-5 mr-2" />
+              Import Board
+            </button>
+            <input
+              type="file"
+              id="import-board"
+              accept=".json"
+              style={{ display: 'none' }}
+              onChange={handleImport}
             />
-          ))}
-        </Box>
-      </Box>
+          </div>
+        </div>
 
-      <Box sx={{ mb: 4 }}>
-        <Typography 
-          variant="h5" 
-          component="h2" 
-          sx={{ 
-            color: theme.palette.primary.main,
-            mb: 2,
-            fontFamily: 'Poppins, sans-serif',
-            fontWeight: 'medium',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
-          }}
-        >
-          Vision Board Options
-        </Typography>
-        <Tabs 
-          value={tabValue} 
-          onChange={handleTabChange} 
-          sx={{ 
-            '& .MuiTabs-indicator': {
-              backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
-              height: 3
-            },
-            '& .MuiTab-root': {
-              color: `${theme.palette.primary.main}80`,
-              textTransform: 'uppercase',
-              fontFamily: 'Poppins, sans-serif',
-              fontWeight: 'regular',
-              '&.Mui-selected': {
-                color: theme.palette.primary.main
-              }
-            }
-          }}
-        >
-          <Tab label="Classic Mood Board" />
-          <Tab label="AI Mood Board Generator" />
-        </Tabs>
-      </Box>
-
-      <TabPanel value={tabValue} index={0}>
-        {showMoodboardTemplate ? (
-          <Box sx={{ mb: 4 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-              <Button 
-                variant="outlined" 
-                onClick={() => setShowMoodboardTemplate(false)}
-                sx={{ 
-                  color: theme.palette.primary.main,
-                  borderColor: theme.palette.accent?.rose || '#FFE8E4',
-                  borderRadius: 0,
-                  '&:hover': {
-                    backgroundColor: `${theme.palette.accent?.rose || '#FFE8E4'}20`,
-                    borderColor: theme.palette.accent?.rose || '#FFE8E4'
-                  },
-                  textTransform: 'uppercase'
+        <div className="mb-6">
+          <div className="flex flex-wrap gap-3 mb-4">
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className="px-3 py-1 text-sm font-medium"
+              style={{
+                backgroundColor: selectedCategory === 'all' ? '#E8B4B4' : 'rgba(5, 70, 151, 0.1)',
+                color: '#054697',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 400,
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              All
+            </button>
+            {categories.map((category, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedCategory(category === selectedCategory ? 'all' : category)}
+                className="px-3 py-1 text-sm font-medium"
+                style={{
+                  backgroundColor: category === selectedCategory ? '#E8B4B4' : 'rgba(5, 70, 151, 0.1)',
+                  color: '#054697',
+                  fontFamily: 'Poppins, sans-serif',
+                  fontWeight: 400,
+                  border: 'none',
+                  cursor: 'pointer'
                 }}
               >
-                Back to Grid View
-              </Button>
-            </Box>
-            <MoodboardTemplate 
-              images={filteredImages.map(img => ({ 
-                id: img.id, 
-                url: img.url, 
-                title: img.title,
-                category: img.category
-              }))} 
-              colors={selectedColors}
-            />
-          </Box>
-        ) : (
-          <>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-              <Button 
-                variant="contained" 
-                onClick={() => setShowMoodboardTemplate(true)}
-                sx={{ 
-                  backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
-                  color: theme.palette.primary.main,
-                  borderRadius: 0,
-                  '&:hover': {
-                    backgroundColor: theme.palette.accent?.roseDark || '#FFD5CC'
-                  },
-                  textTransform: 'uppercase'
+                {category}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 
+              className="text-xl font-medium"
+              style={{ 
+                fontFamily: "'Giaza', serif", 
+                color: '#054697',
+                letterSpacing: '-0.05em'
+              }}
+            >
+              Vision Board Options
+            </h2>
+            <div>
+              {!showAITemplate && (
+                <button
+                  onClick={() => setShowMoodboardTemplate(!showMoodboardTemplate)}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium"
+                  style={{
+                    backgroundColor: showMoodboardTemplate ? 'transparent' : '#E8B4B4',
+                    color: '#054697',
+                    fontFamily: 'Poppins, sans-serif',
+                    fontWeight: 400,
+                    textTransform: 'uppercase',
+                    border: showMoodboardTemplate ? '1px solid #E8B4B4' : 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {showMoodboardTemplate ? 'Back to Grid View' : 'View as Template'}
+                </button>
+              )}
+              {showAITemplate && (
+                <button
+                  onClick={() => setShowAITemplate(false)}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium"
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: '#054697',
+                    fontFamily: 'Poppins, sans-serif',
+                    fontWeight: 400,
+                    textTransform: 'uppercase',
+                    border: '1px solid #E8B4B4',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Back to Generator
+                </button>
+              )}
+            </div>
+          </div>
+          <div 
+            className="border-b mb-4"
+            style={{
+              borderColor: 'rgba(5, 70, 151, 0.1)'
+            }}
+          >
+            <div className="flex">
+              <button
+                onClick={() => {}}
+                className={`py-2 px-4 text-sm font-medium relative`}
+                style={{
+                  fontFamily: 'Poppins, sans-serif',
+                  textTransform: 'uppercase',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  cursor: 'pointer'
                 }}
               >
-                View as Template
-              </Button>
-            </Box>
-            <Grid container spacing={3}>
-              {filteredImages.map(image => (
-                <Grid item xs={12} sm={6} md={4} key={image.id}>
-                  <Card 
-                    elevation={0}
-                    sx={{ 
-                      height: '100%', 
-                      display: 'flex', 
-                      flexDirection: 'column',
-                      transition: 'transform 0.2s',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)'
-                      },
-                      borderRadius: 0, // Square corners per brand guidelines
-                      border: `1px solid ${theme.palette.divider}`
-                    }}
-                  >
-                    <Box sx={{ position: 'relative' }}>
-                      <CardMedia
-                        component="img"
-                        image={image.url}
-                        alt={image.title}
-                        sx={{ 
-                          height: 0,
-                          paddingTop: '56.25%', // 16:9 aspect ratio
-                          position: 'relative'
-                        }}
-                      />
-                      <IconButton
-                        onClick={() => deleteImage(image.id)}
-                        size="small"
-                        sx={{
-                          position: 'absolute',
-                          top: 8,
-                          right: 8,
-                          backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
-                          color: theme.palette.primary.main,
-                          opacity: 0,
-                          transition: 'opacity 0.2s',
-                          borderRadius: 0, // Square corners per brand guidelines
-                          '&:hover': {
-                            backgroundColor: theme.palette.accent?.roseDark || '#FFD5CC',
-                            opacity: 1
-                          },
-                          '.MuiCard-root:hover &': {
-                            opacity: 1
-                          }
-                        }}
-                      >
-                        <X size={16} />
-                      </IconButton>
-                    </Box>
-                    <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                        <Typography 
-                          variant="h6" 
-                          gutterBottom 
-                          sx={{ 
-                            color: theme.palette.primary.main,
-                            fontWeight: 'medium',
-                            mb: 0
-                          }}
-                        >
-                          {image.title}
-                        </Typography>
-                        <Chip 
-                          label={image.category} 
-                          size="small"
-                          sx={{ 
-                            borderRadius: 0, // Square corners per brand guidelines
-                            backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
-                            color: theme.palette.primary.main,
-                            textTransform: 'uppercase',
-                            fontSize: '0.7rem',
-                            fontWeight: 'medium',
-                            ml: 1
-                          }}
-                        />
-                      </Box>
-                      {image.description && (
-                        <Typography 
-                          variant="body2" 
-                          sx={{ 
-                            color: theme.palette.primary.main,
-                            opacity: 0.8,
-                            mb: 2 
-                          }}
-                        >
-                          {image.description}
-                        </Typography>
-                      )}
-                      {image.source && (
-                        <Button
-                          href={image.source}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          startIcon={<ExternalLink size={16} />}
-                          size="small"
-                          sx={{ 
-                            mt: 'auto',
-                            color: theme.palette.primary.main,
-                            textTransform: 'none',
-                            padding: 0,
-                            '&:hover': {
-                              backgroundColor: 'transparent',
-                              textDecoration: 'underline'
-                            },
-                            justifyContent: 'flex-start',
-                            minWidth: 'auto'
-                          }}
-                        >
-                          Source
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </>
-        )}
-      </TabPanel>
+                Classic Mood Board
+              </button>
+              <button
+                onClick={() => {}}
+                className={`py-2 px-4 text-sm font-medium relative`}
+                style={{
+                  fontFamily: 'Poppins, sans-serif',
+                  textTransform: 'uppercase',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  cursor: 'pointer'
+                }}
+              >
+                AI Mood Board Generator
+              </button>
+            </div>
+          </div>
+        </div>
 
-      <TabPanel value={tabValue} index={1}>
-        <Paper 
-          elevation={0} 
-          sx={{ 
-            p: 4, 
-            border: `1px solid ${theme.palette.divider}`,
-            borderRadius: 0, // Square corners per brand guidelines
-            mb: 4
+        <div 
+          className="bg-white p-6 space-y-6"
+          style={{ 
+            border: '1px solid rgba(5, 70, 151, 0.1)',
+            borderRadius: '4px'
           }}
         >
-          <Typography 
-            variant="h5" 
-            sx={{ 
-              mb: 2, 
-              color: theme.palette.primary.main,
-              fontFamily: 'Poppins, sans-serif',
-              fontWeight: 'medium',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+          <h2 
+            className="text-xl font-medium"
+            style={{ 
+              fontFamily: "'Giaza', serif", 
+              color: '#054697',
+              letterSpacing: '-0.05em'
             }}
           >
             AI Vision Board Generator
-          </Typography>
-          <Typography 
-            variant="body1" 
-            sx={{ 
-              mb: 3, 
-              color: theme.palette.primary.main,
-              opacity: 0.8
+          </h2>
+          <p 
+            className="text-sm"
+            style={{ 
+              color: '#054697', 
+              opacity: 0.8,
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 300
             }}
           >
             Describe your dream wedding and our AI will generate a vision board for you.
-          </Typography>
+          </p>
           <MoodboardGenerator 
             falApiKey={falApiKey} 
             onColorsSelected={(colors) => setSelectedColors(colors)}
+            onImagesGenerated={handleImagesGenerated}
           />
-        </Paper>
-      </TabPanel>
+        </div>
+
+        {showAITemplate ? (
+          <MoodboardTemplate 
+            images={convertGeneratedImagesToTemplateFormat()} 
+            colors={selectedColors}
+            title={`${'Wedding'} Vision`}
+          />
+        ) : (
+          <>
+            {showMoodboardTemplate ? (
+              <MoodboardTemplate 
+                images={filteredImages.map(img => ({ 
+                  id: img.id, 
+                  url: img.url, 
+                  title: img.title,
+                  category: img.category
+                }))} 
+                colors={selectedColors}
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {filteredImages.map(image => (
+                  <div 
+                    key={image.id} 
+                    className="bg-white overflow-hidden flex flex-col relative"
+                    style={{
+                      border: '1px solid rgba(5, 70, 151, 0.1)',
+                      boxShadow: '0 2px 10px rgba(5, 70, 151, 0.03)',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    <div 
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '4px',
+                        height: '100%',
+                        backgroundColor: '#054697'
+                      }}
+                    ></div>
+                    <div className="relative aspect-w-16 aspect-h-9 bg-gray-200">
+                      <img
+                        src={image.url}
+                        alt={image.title}
+                        className="object-cover w-full h-full"
+                      />
+                      <button
+                        onClick={() => deleteImage(image.id)}
+                        className="absolute top-2 right-2 p-1 rounded-full bg-white text-gray-700 hover:bg-gray-100"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="p-4 flex-grow">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 
+                          className="text-lg font-medium"
+                          style={{ 
+                            fontFamily: "'Giaza', serif", 
+                            color: '#054697',
+                            letterSpacing: '-0.05em'
+                          }}
+                        >
+                          {image.title}
+                        </h3>
+                        <span 
+                          className="text-xs px-2 py-1"
+                          style={{
+                            backgroundColor: '#E8B4B4',
+                            color: '#054697',
+                            fontFamily: 'Poppins, sans-serif',
+                            fontWeight: 400
+                          }}
+                        >
+                          {image.category}
+                        </span>
+                      </div>
+                      {image.description && (
+                        <p 
+                          className="text-sm mb-3"
+                          style={{ 
+                            color: '#054697', 
+                            opacity: 0.8,
+                            fontFamily: 'Poppins, sans-serif',
+                            fontWeight: 300
+                          }}
+                        >
+                          {image.description}
+                        </p>
+                      )}
+                      {image.source && (
+                        <a
+                          href={image.source}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-xs mt-2"
+                          style={{ 
+                            color: '#054697', 
+                            opacity: 0.8,
+                            fontFamily: 'Poppins, sans-serif',
+                            fontWeight: 300
+                          }}
+                        >
+                          <ExternalLink className="w-3 h-3 mr-1" />
+                          Source
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {!showAITemplate && !showMoodboardTemplate && (
+          <div 
+            className="bg-white p-6 space-y-6"
+            style={{ 
+              border: '1px solid rgba(5, 70, 151, 0.1)',
+              borderRadius: '4px'
+            }}
+          >
+            <h2 
+              className="text-xl font-medium"
+              style={{ 
+                fontFamily: "'Giaza', serif", 
+                color: '#054697',
+                letterSpacing: '-0.05em'
+              }}
+            >
+              AI Vision Board Generator
+            </h2>
+            <p 
+              className="text-sm"
+              style={{ 
+                color: '#054697', 
+                opacity: 0.8,
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 300
+              }}
+            >
+              Describe your dream wedding and our AI will generate a vision board for you.
+            </p>
+            <MoodboardGenerator 
+              falApiKey={falApiKey} 
+              onColorsSelected={(colors) => setSelectedColors(colors)}
+              onImagesGenerated={handleImagesGenerated}
+            />
+          </div>
+        )}
+        {filteredImages.length === 0 && (
+          <div 
+            className="bg-gray-50 p-8 text-center border border-dashed"
+            style={{
+              borderColor: 'rgba(5, 70, 151, 0.2)',
+            }}
+          >
+            <ImageIcon className="w-12 h-12 mx-auto mb-4" style={{ color: 'rgba(5, 70, 151, 0.3)' }} />
+            <h3 
+              className="text-lg font-medium mb-2"
+              style={{ 
+                fontFamily: "'Giaza', serif", 
+                color: '#054697',
+                letterSpacing: '-0.05em'
+              }}
+            >
+              No images yet
+            </h3>
+            <p 
+              className="text-sm mb-4"
+              style={{ 
+                color: '#054697', 
+                opacity: 0.8,
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 300
+              }}
+            >
+              Start adding inspiration images to your mood board
+            </p>
+            <button
+              onClick={() => {
+                setNewImage({ category: categories[0] });
+                setShowForm(true);
+              }}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium"
+              style={{
+                backgroundColor: '#E8B4B4',
+                color: '#054697',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 400,
+                textTransform: 'uppercase',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Add First Image
+            </button>
+          </div>
+        )}
+      </div>
 
       {showForm && (
         <Dialog 
@@ -845,7 +848,7 @@ export default function VisionBoard() {
                 '&:hover': {
                   backgroundColor: theme.palette.accent?.roseDark || '#FFD5CC'
                 },
-                ml: 2,
+                marginLeft: '2px',
                 textTransform: 'uppercase'
               }}
             >
@@ -854,56 +857,6 @@ export default function VisionBoard() {
           </DialogActions>
         </Dialog>
       )}
-
-      {filteredImages.length === 0 && (
-        <Box sx={{ textAlign: 'center', py: 6 }}>
-          <ImageIcon size={64} style={{ margin: '0 auto', color: theme.palette.primary.main, opacity: 0.6 }} />
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              mt: 3, 
-              color: theme.palette.primary.main,
-              fontFamily: 'Poppins, sans-serif',
-              fontWeight: 'medium'
-            }}
-          >
-            Your Vision Board is Empty
-          </Typography>
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              mt: 1, 
-              color: theme.palette.primary.main,
-              opacity: 0.8,
-              maxWidth: '400px',
-              mx: 'auto'
-            }}
-          >
-            Start adding images to create your perfect wedding vision board.
-          </Typography>
-          <Button
-            onClick={() => setShowForm(true)}
-            variant="contained"
-            sx={{ 
-              mt: 4,
-              backgroundColor: theme.palette.accent?.rose || '#FFE8E4',
-              color: theme.palette.primary.main,
-              borderRadius: 0, // Square corners per brand guidelines
-              '&:hover': {
-                backgroundColor: theme.palette.accent?.roseDark || '#FFD5CC'
-              },
-              textTransform: 'uppercase',
-              fontFamily: 'Poppins, sans-serif',
-              fontWeight: 'medium',
-              px: 3,
-              py: 1
-            }}
-          >
-            Add Your First Image
-          </Button>
-        </Box>
-      )}
-      </Container>
-    </Box>
+    </div>
   );
 }
