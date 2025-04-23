@@ -28,8 +28,8 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
   useEffect(() => {
     const loadLogo = async () => {
       try {
-        // Use the JPEG logo instead of SVG
-        const absoluteLogoUrl = new URL('/altare-logo.jpg', window.location.origin).href;
+        // Use the new Peri submark logo
+        const absoluteLogoUrl = new URL('/altare-submark-peri.png', window.location.origin).href;
         
         // Fetch the logo and convert to data URL
         const response = await fetch(absoluteLogoUrl);
@@ -45,7 +45,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
       } catch (error) {
         console.error('Error loading logo:', error);
         // Fallback to direct URL if data URL fails
-        setLogoUrl('/altare-logo.jpg');
+        setLogoUrl('/altare-submark-peri.png');
         setLogoLoaded(true);
       }
     };
@@ -293,7 +293,7 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
         sx={{
           width: '100%',
           aspectRatio: validImages.length > 0 ? '1.414/1' : 'auto', // A4 aspect ratio (landscape) if images exist
-          backgroundColor: '#FAFAFA',
+          backgroundColor: '#FBFBF7', // Updated background color as requested
           overflow: 'hidden',
           position: 'relative',
           minHeight: validImages.length > 0 ? 'auto' : '300px' // Minimum height if no images
@@ -324,14 +324,14 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
             boxSizing: 'border-box'
           }}
         >
-          {/* Small logo box in top left */}
+          {/* Logo box in top left - made larger */}
           <Box
             sx={{
               position: 'absolute',
               top: '10px',
               left: '10px',
-              width: '60px',
-              height: '30px',
+              width: '100px', // Increased from 60px
+              height: '60px', // Increased from 30px
               zIndex: 10,
               display: 'flex',
               alignItems: 'center',
@@ -345,8 +345,8 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                 src={logoUrl}
                 alt="Altare Logo" 
                 style={{
-                  maxWidth: '50px',
-                  maxHeight: '20px',
+                  maxWidth: '90px', // Increased from 50px
+                  maxHeight: '50px', // Increased from 20px
                   objectFit: 'contain',
                   zIndex: 11
                 }}
@@ -452,13 +452,12 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                     border: '1px solid #B8BDD7' // Nude color for borders per Altare guidelines
                   }}
                 >
+                  {/* Improved image container with aspect ratio preservation */}
                   <Box
                     sx={{
                       width: '100%',
                       height: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
+                      position: 'relative',
                       overflow: 'hidden'
                     }}
                   >
@@ -466,11 +465,14 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
                       src={image.url}
                       alt={image.title || `Moodboard image ${index + 1}`}
                       style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
                         width: '100%',
                         height: '100%',
-                        objectFit: 'cover', // Changed from 'contain' to 'cover' to fill the box
-                        objectPosition: 'center', // Centers the image in the container
-                        display: 'block' // Removes any extra space below the image
+                        objectFit: 'cover',
+                        objectPosition: 'center'
                       }}
                       crossOrigin="anonymous"
                     />
