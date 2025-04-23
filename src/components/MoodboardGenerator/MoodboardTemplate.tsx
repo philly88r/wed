@@ -199,6 +199,9 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
   const [moodboardImages, setMoodboardImages] = useState<MoodboardImage[]>([]);
   const [imageSizes, setImageSizes] = useState<Record<number, 'small' | 'medium' | 'large'>>({});
   
+  // Calculate aspect ratio for A4 paper (210mm × 297mm)
+  const A4_ASPECT_RATIO = 210 / 297;
+  
   // Initialize moodboard images
   useEffect(() => {
     setMoodboardImages(images.filter(img => img.url));
@@ -351,25 +354,36 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
       
       console.log('All images loaded, generating PDF...');
       
+      // Create a clone of the template for PDF generation
+      const clone = templateElement.cloneNode(true) as HTMLElement;
+      document.body.appendChild(clone);
+      
+      // Set fixed dimensions for PDF (A4 size)
+      clone.style.width = '210mm';
+      clone.style.height = '297mm';
+      clone.style.position = 'absolute';
+      clone.style.top = '-9999px';
+      clone.style.left = '-9999px';
+      clone.style.overflow = 'hidden';
+      
       // Create canvas with better settings
-      const canvas = await html2canvas(templateElement, {
+      const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#FBFBF7',
         logging: true,
-        height: templateElement.scrollHeight, // Capture full height
-        windowHeight: templateElement.scrollHeight, // Ensure full height is captured
         onclone: (clonedDoc) => {
-          const clonedTemplate = clonedDoc.querySelector('[data-testid="moodboard-template"]');
-          if (clonedTemplate) {
-            (clonedTemplate as HTMLElement).style.backgroundColor = '#FBFBF7';
-          }
-          
           // Hide resize controls in the PDF
-          const resizeButtons = clonedDoc.querySelectorAll('.resize-control');
+          const resizeButtons = clonedDoc.querySelectorAll('button');
           resizeButtons.forEach(button => {
-            (button as HTMLElement).style.display = 'none';
+            button.style.display = 'none';
+          });
+          
+          // Hide menus in the PDF
+          const menus = clonedDoc.querySelectorAll('[role="menu"]');
+          menus.forEach(menu => {
+            (menu as HTMLElement).style.display = 'none';
           });
           
           // Ensure all images are visible
@@ -384,22 +398,20 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
         }
       });
       
-      // Create PDF with proper dimensions
+      // Remove the clone from the document
+      document.body.removeChild(clone);
+      
+      // Create PDF with A4 dimensions
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
       
-      // Use fixed dimensions for more reliable output
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
       
-      // Calculate dimensions to maintain aspect ratio
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      // Add the image to the PDF
-      pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+      // Add the image to fill the entire PDF
+      pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
       
       // Save the PDF
       pdf.save('wedding-moodboard.pdf');
@@ -455,7 +467,10 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
             boxShadow: 'none',
             border: '1px solid #B8BDD7',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            // Set aspect ratio to match A4 paper
+            aspectRatio: A4_ASPECT_RATIO.toString(),
+            maxHeight: '80vh' // Limit height for viewing on screen
           }}
         >
           {/* Header with logo and color palette */}
@@ -566,7 +581,7 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
                   width: '100%',
                   boxSizing: 'border-box',
                   backgroundColor: '#FBFBF7',
-                  height: 'auto', // Allow it to grow based on content
+                  height: '100%', // Fill the available space
                   padding: '2px',
                   paddingBottom: '20px' // Small gap at bottom for footer
                 }}
