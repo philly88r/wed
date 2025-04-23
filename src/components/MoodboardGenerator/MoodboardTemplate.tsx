@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Box, Typography, Paper, Button } from '@mui/material';
 import { Download } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -21,6 +21,37 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
   colors = []
 }) => {
   const templateRef = useRef<HTMLDivElement>(null);
+  const [logoLoaded, setLogoLoaded] = useState(false);
+  const [logoUrl, setLogoUrl] = useState('');
+  
+  // Load the logo as a data URL to ensure it appears in the PDF
+  useEffect(() => {
+    const loadLogo = async () => {
+      try {
+        // Get the absolute URL for the logo
+        const absoluteLogoUrl = new URL('/Altare Primary-Blanc.svg', window.location.origin).href;
+        
+        // Fetch the logo and convert to data URL
+        const response = await fetch(absoluteLogoUrl);
+        const blob = await response.blob();
+        const reader = new FileReader();
+        
+        reader.onload = () => {
+          setLogoUrl(reader.result as string);
+          setLogoLoaded(true);
+        };
+        
+        reader.readAsDataURL(blob);
+      } catch (error) {
+        console.error('Error loading logo:', error);
+        // Fallback to direct URL if data URL fails
+        setLogoUrl('/Altare Primary-Blanc.svg');
+        setLogoLoaded(true);
+      }
+    };
+    
+    loadLogo();
+  }, []);
   
   // Ensure we have exactly 7 image slots (fill with empty if needed)
   const filledImages = [...images];
@@ -43,7 +74,16 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
         scale: 2, // Higher scale for better quality
         useCORS: true, // Allow cross-origin images
         allowTaint: true,
-        backgroundColor: '#FAFAFA'
+        backgroundColor: '#FAFAFA',
+        logging: true, // Enable logging for debugging
+        onclone: (document) => {
+          // Fix for SVG images in PDF
+          const svgElements = document.querySelectorAll('svg');
+          svgElements.forEach(svg => {
+            svg.setAttribute('width', svg.getBoundingClientRect().width.toString());
+            svg.setAttribute('height', svg.getBoundingClientRect().height.toString());
+          });
+        }
       });
       
       const imgData = canvas.toDataURL('image/jpeg', 1.0);
@@ -137,15 +177,18 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
               borderRadius: '2px'
             }}
           >
-            <img 
-              src="/Altare Primary-Blanc.svg" 
-              alt="Altare Logo" 
-              style={{
-                height: '30px',
-                maxWidth: '120px',
-                objectFit: 'contain'
-              }}
-            />
+            {logoLoaded && (
+              <img 
+                src={logoUrl}
+                alt="Altare Logo" 
+                style={{
+                  height: '30px',
+                  maxWidth: '120px',
+                  objectFit: 'contain'
+                }}
+                crossOrigin="anonymous"
+              />
+            )}
           </Box>
           
           {/* Top section with images */}
@@ -486,15 +529,18 @@ const MoodboardTemplate: React.FC<MoodboardTemplateProps> = ({
               alignItems: 'center'
             }}
           >
-            <img 
-              src="/Altare Primary-Blanc.svg" 
-              alt="Altare Logo" 
-              style={{
-                height: '40px',
-                maxWidth: '180px',
-                objectFit: 'contain'
-              }}
-            />
+            {logoLoaded && (
+              <img 
+                src={logoUrl}
+                alt="Altare Logo" 
+                style={{
+                  height: '40px',
+                  maxWidth: '180px',
+                  objectFit: 'contain'
+                }}
+                crossOrigin="anonymous"
+              />
+            )}
           </Box>
           
           {/* Color palette in bottom left */}

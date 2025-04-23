@@ -56,6 +56,7 @@ export default function VisionBoard() {
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [generatedImages, setGeneratedImages] = useState<{category: string, imageUrl: string}[]>([]);
   const [showAITemplate, setShowAITemplate] = useState(false);
+  const [activeTab, setActiveTab] = useState<'classic' | 'ai'>('classic');
 
   // Create a custom link for the current path to fix the 406 error
   useEffect(() => {
@@ -317,7 +318,7 @@ export default function VisionBoard() {
               Vision Board Options
             </h2>
             <div>
-              {!showAITemplate && (
+              {!showAITemplate && activeTab === 'classic' && (
                 <button
                   onClick={() => setShowMoodboardTemplate(!showMoodboardTemplate)}
                   className="inline-flex items-center px-4 py-2 text-sm font-medium"
@@ -361,220 +362,212 @@ export default function VisionBoard() {
           >
             <div className="flex">
               <button
-                onClick={() => {}}
+                onClick={() => {
+                  setActiveTab('classic');
+                  setShowAITemplate(false);
+                }}
                 className={`py-2 px-4 text-sm font-medium relative`}
                 style={{
                   fontFamily: 'Poppins, sans-serif',
                   textTransform: 'uppercase',
                   border: 'none',
                   backgroundColor: 'transparent',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  color: activeTab === 'classic' ? '#054697' : 'rgba(5, 70, 151, 0.6)'
                 }}
               >
                 Classic Mood Board
+                {activeTab === 'classic' && (
+                  <div 
+                    className="absolute bottom-0 left-0 w-full h-0.5"
+                    style={{
+                      backgroundColor: '#E8B4B4'
+                    }}
+                  ></div>
+                )}
               </button>
               <button
-                onClick={() => {}}
+                onClick={() => {
+                  setActiveTab('ai');
+                  setShowMoodboardTemplate(false);
+                }}
                 className={`py-2 px-4 text-sm font-medium relative`}
                 style={{
                   fontFamily: 'Poppins, sans-serif',
                   textTransform: 'uppercase',
                   border: 'none',
                   backgroundColor: 'transparent',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  color: activeTab === 'ai' ? '#054697' : 'rgba(5, 70, 151, 0.6)'
                 }}
               >
                 AI Mood Board Generator
+                {activeTab === 'ai' && (
+                  <div 
+                    className="absolute bottom-0 left-0 w-full h-0.5"
+                    style={{
+                      backgroundColor: '#E8B4B4'
+                    }}
+                  ></div>
+                )}
               </button>
             </div>
           </div>
-        </div>
-
-        <div 
-          className="bg-white p-6 space-y-6"
-          style={{ 
-            border: '1px solid rgba(5, 70, 151, 0.1)',
-            borderRadius: '4px'
-          }}
-        >
-          <h2 
-            className="text-xl font-medium"
-            style={{ 
-              fontFamily: "'Giaza', serif", 
-              color: '#054697',
-              letterSpacing: '-0.05em'
-            }}
-          >
-            AI Vision Board Generator
-          </h2>
-          <p 
-            className="text-sm"
-            style={{ 
-              color: '#054697', 
-              opacity: 0.8,
-              fontFamily: 'Poppins, sans-serif',
-              fontWeight: 300
-            }}
-          >
-            Describe your dream wedding and our AI will generate a vision board for you.
-          </p>
-          <MoodboardGenerator 
-            falApiKey={falApiKey} 
-            onColorsSelected={(colors) => setSelectedColors(colors)}
-            onImagesGenerated={handleImagesGenerated}
-          />
         </div>
 
         {showAITemplate ? (
           <MoodboardTemplate 
             images={convertGeneratedImagesToTemplateFormat()} 
             colors={selectedColors}
-            title={`${'Wedding'} Vision`}
           />
         ) : (
           <>
-            {showMoodboardTemplate ? (
-              <MoodboardTemplate 
-                images={filteredImages.map(img => ({ 
-                  id: img.id, 
-                  url: img.url, 
-                  title: img.title,
-                  category: img.category
-                }))} 
-                colors={selectedColors}
-              />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {filteredImages.map(image => (
-                  <div 
-                    key={image.id} 
-                    className="bg-white overflow-hidden flex flex-col relative"
-                    style={{
-                      border: '1px solid rgba(5, 70, 151, 0.1)',
-                      boxShadow: '0 2px 10px rgba(5, 70, 151, 0.03)',
-                      borderRadius: '4px'
-                    }}
-                  >
-                    <div 
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '4px',
-                        height: '100%',
-                        backgroundColor: '#054697'
-                      }}
-                    ></div>
-                    <div className="relative aspect-w-16 aspect-h-9 bg-gray-200">
-                      <img
-                        src={image.url}
-                        alt={image.title}
-                        className="object-cover w-full h-full"
-                      />
-                      <button
-                        onClick={() => deleteImage(image.id)}
-                        className="absolute top-2 right-2 p-1 rounded-full bg-white text-gray-700 hover:bg-gray-100"
+            {activeTab === 'classic' && (
+              <>
+                {showMoodboardTemplate ? (
+                  <MoodboardTemplate 
+                    images={filteredImages.map(img => ({ 
+                      id: img.id, 
+                      url: img.url, 
+                      title: img.title,
+                      category: img.category
+                    }))} 
+                    colors={[]}
+                  />
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    {filteredImages.map(image => (
+                      <div 
+                        key={image.id} 
+                        className="bg-white overflow-hidden flex flex-col relative"
+                        style={{
+                          border: '1px solid rgba(5, 70, 151, 0.1)',
+                          boxShadow: '0 2px 10px rgba(5, 70, 151, 0.03)',
+                          borderRadius: '4px'
+                        }}
                       >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="p-4 flex-grow">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 
-                          className="text-lg font-medium"
-                          style={{ 
-                            fontFamily: "'Giaza', serif", 
-                            color: '#054697',
-                            letterSpacing: '-0.05em'
-                          }}
-                        >
-                          {image.title}
-                        </h3>
-                        <span 
-                          className="text-xs px-2 py-1"
+                        <div 
                           style={{
-                            backgroundColor: '#E8B4B4',
-                            color: '#054697',
-                            fontFamily: 'Poppins, sans-serif',
-                            fontWeight: 400
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '4px',
+                            height: '100%',
+                            backgroundColor: '#054697'
                           }}
-                        >
-                          {image.category}
-                        </span>
+                        ></div>
+                        <div className="relative aspect-w-16 aspect-h-9 bg-gray-200">
+                          <img
+                            src={image.url}
+                            alt={image.title}
+                            className="object-cover w-full h-full"
+                          />
+                          <button
+                            onClick={() => deleteImage(image.id)}
+                            className="absolute top-2 right-2 p-1 rounded-full bg-white text-gray-700 hover:bg-gray-100"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="p-4 flex-grow">
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 
+                              className="text-lg font-medium"
+                              style={{ 
+                                fontFamily: "'Giaza', serif", 
+                                color: '#054697',
+                                letterSpacing: '-0.05em'
+                              }}
+                            >
+                              {image.title}
+                            </h3>
+                            <span 
+                              className="text-xs px-2 py-1"
+                              style={{
+                                backgroundColor: '#E8B4B4',
+                                color: '#054697',
+                                fontFamily: 'Poppins, sans-serif',
+                                fontWeight: 400
+                              }}
+                            >
+                              {image.category}
+                            </span>
+                          </div>
+                          {image.description && (
+                            <p 
+                              className="text-sm mb-3"
+                              style={{ 
+                                color: '#054697', 
+                                opacity: 0.8,
+                                fontFamily: 'Poppins, sans-serif',
+                                fontWeight: 300
+                              }}
+                            >
+                              {image.description}
+                            </p>
+                          )}
+                          {image.source && (
+                            <a
+                              href={image.source}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center text-xs mt-2"
+                              style={{ 
+                                color: '#054697', 
+                                opacity: 0.8,
+                                fontFamily: 'Poppins, sans-serif',
+                                fontWeight: 300
+                              }}
+                            >
+                              <ExternalLink className="w-3 h-3 mr-1" />
+                              Source
+                            </a>
+                          )}
+                        </div>
                       </div>
-                      {image.description && (
-                        <p 
-                          className="text-sm mb-3"
-                          style={{ 
-                            color: '#054697', 
-                            opacity: 0.8,
-                            fontFamily: 'Poppins, sans-serif',
-                            fontWeight: 300
-                          }}
-                        >
-                          {image.description}
-                        </p>
-                      )}
-                      {image.source && (
-                        <a
-                          href={image.source}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center text-xs mt-2"
-                          style={{ 
-                            color: '#054697', 
-                            opacity: 0.8,
-                            fontFamily: 'Poppins, sans-serif',
-                            fontWeight: 300
-                          }}
-                        >
-                          <ExternalLink className="w-3 h-3 mr-1" />
-                          Source
-                        </a>
-                      )}
-                    </div>
+                    ))}
                   </div>
-                ))}
+                )}
+              </>
+            )}
+
+            {activeTab === 'ai' && !showAITemplate && (
+              <div 
+                className="bg-white p-6 space-y-6"
+                style={{ 
+                  border: '1px solid rgba(5, 70, 151, 0.1)',
+                  borderRadius: '4px'
+                }}
+              >
+                <h2 
+                  className="text-xl font-medium"
+                  style={{ 
+                    fontFamily: "'Giaza', serif", 
+                    color: '#054697',
+                    letterSpacing: '-0.05em'
+                  }}
+                >
+                  AI Vision Board Generator
+                </h2>
+                <p 
+                  className="text-sm"
+                  style={{ 
+                    color: '#054697', 
+                    opacity: 0.8,
+                    fontFamily: 'Poppins, sans-serif',
+                    fontWeight: 300
+                  }}
+                >
+                  Describe your dream wedding and our AI will generate a vision board for you.
+                </p>
+                <MoodboardGenerator 
+                  falApiKey={falApiKey} 
+                  onColorsSelected={(colors) => setSelectedColors(colors)}
+                  onImagesGenerated={handleImagesGenerated}
+                />
               </div>
             )}
           </>
-        )}
-
-        {!showAITemplate && !showMoodboardTemplate && (
-          <div 
-            className="bg-white p-6 space-y-6"
-            style={{ 
-              border: '1px solid rgba(5, 70, 151, 0.1)',
-              borderRadius: '4px'
-            }}
-          >
-            <h2 
-              className="text-xl font-medium"
-              style={{ 
-                fontFamily: "'Giaza', serif", 
-                color: '#054697',
-                letterSpacing: '-0.05em'
-              }}
-            >
-              AI Vision Board Generator
-            </h2>
-            <p 
-              className="text-sm"
-              style={{ 
-                color: '#054697', 
-                opacity: 0.8,
-                fontFamily: 'Poppins, sans-serif',
-                fontWeight: 300
-              }}
-            >
-              Describe your dream wedding and our AI will generate a vision board for you.
-            </p>
-            <MoodboardGenerator 
-              falApiKey={falApiKey} 
-              onColorsSelected={(colors) => setSelectedColors(colors)}
-              onImagesGenerated={handleImagesGenerated}
-            />
-          </div>
         )}
         {filteredImages.length === 0 && (
           <div 
