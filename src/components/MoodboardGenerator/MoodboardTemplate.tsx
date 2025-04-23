@@ -3,7 +3,7 @@ import { Box, Typography, Paper, Button, CircularProgress } from '@mui/material'
 import { Download as DownloadIcon } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { MasonryPhotoAlbum } from "react-photo-album";
+import PhotoAlbum from "react-photo-album";
 import type { Photo as PhotoType } from "react-photo-album";
 
 interface MoodboardImage {
@@ -179,11 +179,14 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
     // Add custom styles for masonry images
     const style = document.createElement('style');
     style.textContent = `
-      .moodboard-image {
+      .react-photo-album--photo {
+        border: 1px solid #FFFFFF !important;
+        transition: all 0.3s ease !important;
+      }
+      .react-photo-album--photo img {
         object-fit: cover !important;
         width: 100% !important;
         height: 100% !important;
-        border: 1px solid #FFFFFF !important;
       }
     `;
     document.head.appendChild(style);
@@ -311,7 +314,7 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
           )}
         </Box>
         
-        {/* Masonry Photo Album */}
+        {/* Photo Album */}
         <Box sx={{ 
           padding: '8px',
           flex: 1,
@@ -336,10 +339,11 @@ export default function MoodboardTemplate({ images, colors = [] }: MoodboardTemp
               </Typography>
             </Box>
           ) : (
-            <MasonryPhotoAlbum
+            <PhotoAlbum
+              layout="masonry"
               photos={photos}
               spacing={4}
-              imgClassName="moodboard-image"
+              padding={0}
               columns={(containerWidth) => {
                 // Responsive columns based on container width
                 if (containerWidth < 500) return 2;
