@@ -848,10 +848,10 @@ const WeddingPDFImageReplacer: React.FC = () => {
                   key={coords.id}
                   sx={{
                     position: 'absolute',
-                    left: coords.x,
-                    top: coords.y,
-                    width: coords.width,
-                    height: coords.height,
+                    left: `${(coords.x / (canvasRef.current?.width ?? 0) / pdfScale) * (canvasRef.current?.width ?? 0)}px`,
+                    top: `${(canvasRef.current?.height ?? 0) - ((coords.y + coords.height) / (canvasRef.current?.height ?? 0) / pdfScale) * (canvasRef.current?.height ?? 0)}px`,
+                    width: `${(coords.width / (canvasRef.current?.width ?? 0) / pdfScale) * (canvasRef.current?.width ?? 0)}px`,
+                    height: `${(coords.height / (canvasRef.current?.height ?? 0) / pdfScale) * (canvasRef.current?.height ?? 0)}px`,
                     cursor: editMode ? 'move' : 'pointer',
                     border: editMode
                       ? '2px solid #FF5722'
