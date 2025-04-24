@@ -31,19 +31,14 @@ type ReplacementImages = {
 
 // Exact image coordinates for the wedding template PDF
 const IMAGE_COORDINATES: ImageCoordinates[] = [
-  // Top row - small images
-  { id: 'living-room', page: 0, x: 70, y: 650, width: 160, height: 120, name: 'Living Room' },
+  { id: 'living-room', page: 0, x: 55.77258113727666, y: 677.7864475250244, width: 157.87764650836357, height: 120, name: 'Living Room' },
   { id: 'record-player', page: 0, x: 240, y: 650, width: 160, height: 120, name: 'Record Player Area' },
   { id: 'studio-light', page: 0, x: 410, y: 650, width: 160, height: 120, name: 'Studio Light' },
-  
-  // Bottom row - larger images
   { id: 'fashion', page: 0, x: 70, y: 250, width: 230, height: 300, name: 'Fashion Photo' },
   { id: 'wood-panel', page: 0, x: 310, y: 250, width: 260, height: 300, name: 'Wood Panel Room' },
-  
-  // Color swatches at the bottom
-  { id: 'art-shelf', page: 0, x: 310, y: 180, width: 60, height: 60, name: 'Color 1' },
-  { id: 'decor1', page: 0, x: 380, y: 180, width: 60, height: 60, name: 'Color 2' },
-  { id: 'decor2', page: 0, x: 450, y: 180, width: 60, height: 60, name: 'Color 3' },
+  { id: 'art-shelf', page: 0, x: 310, y: 180, width: 60, height: 60, name: 'Art Shelf' },
+  { id: 'decor1', page: 0, x: 380, y: 180, width: 60, height: 60, name: 'Decor 1' },
+  { id: 'decor2', page: 0, x: 450, y: 180, width: 60, height: 60, name: 'Decor 2' },
 ];
 
 const WeddingPDFImageReplacer: React.FC = () => {
