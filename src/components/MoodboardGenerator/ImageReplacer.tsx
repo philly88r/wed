@@ -214,12 +214,15 @@ const WeddingPDFImageReplacer: React.FC = () => {
     setEditMode(false);
   };
 
-  // FIXED: Handle resize start
+  // Handle resize start with improved event handling
   const handleResizeStart = (e: React.MouseEvent, id: string, direction: string): void => {
     if (!editMode) return;
     
+    // Prevent event propagation to avoid triggering drag
     e.preventDefault();
     e.stopPropagation();
+    
+    console.log(`Resize started: ${id}, direction: ${direction}`);
     
     // Set resize state
     resizingRef.current = true;
@@ -227,12 +230,18 @@ const WeddingPDFImageReplacer: React.FC = () => {
     resizeDirectionRef.current = direction;
     resizeStartPosRef.current = { x: e.clientX, y: e.clientY };
     
+    // Cancel any ongoing drag operation
+    if (draggedItemRef.current) {
+      draggedItemRef.current = null;
+      setDraggedItem(null);
+    }
+    
     // Add event listeners for mouse move and mouse up
     document.addEventListener('mousemove', handleResizeMoveGlobalRef);
     document.addEventListener('mouseup', handleResizeUpGlobalRef);
   };
   
-  // FIXED: Global mouse move handler for resizing
+  // Improved resize handler with better coordinate calculations
   const handleResizeMoveGlobalRef = (e: MouseEvent): void => {
     if (!resizingRef.current || !resizeItemRef.current || !resizeDirectionRef.current || !canvasRef.current) return;
     
@@ -250,6 +259,9 @@ const WeddingPDFImageReplacer: React.FC = () => {
     // Calculate the delta movement in screen coordinates
     const deltaX = e.clientX - resizeStartPosRef.current.x;
     const deltaY = e.clientY - resizeStartPosRef.current.y;
+    
+    // Log resize movement for debugging
+    console.log(`Resize move: deltaX=${deltaX}, deltaY=${deltaY}, direction=${resizeDirectionRef.current}`);
     
     // Convert screen delta to canvas scale with proper scaling
     const scaleFactorX = canvasWidth / canvasRect.width;
@@ -274,9 +286,11 @@ const WeddingPDFImageReplacer: React.FC = () => {
         };
         break;
       case 's': // Bottom edge
+        // Use pdfHeight to ensure we don't exceed PDF boundaries
+        const newHeightS = Math.max(20, Math.min(pdfHeight, item.height - scaledDeltaY));
         newCoordinates[itemIndex] = { 
           ...item, 
-          height: Math.max(20, item.height - scaledDeltaY) 
+          height: newHeightS 
         };
         break;
       case 'se': // Bottom-right corner
@@ -862,117 +876,186 @@ const WeddingPDFImageReplacer: React.FC = () => {
                   handleAreaClick(coords);
                 }
               }}
-              onMouseDown={(e) => handleMouseDown(e, coords.id)}
+              onMouseDown={(e) => {
+                // Only handle drag if we're not already resizing
+                if (!resizingRef.current) {
+                  handleMouseDown(e, coords.id);
+                }
+              }}
               >
                 {/* Resize handles - only show in edit mode */}
                 {editMode && (
                   <>
-                    {/* Corner resize handles */}
+                    {/* Corner resize handles - enlarged and more visible */}
                     <Box 
                       sx={{ 
                         position: 'absolute', 
-                        top: -5, 
-                        left: -5, 
-                        width: 10, 
-                        height: 10, 
+                        top: -8, 
+                        left: -8, 
+                        width: 16, 
+                        height: 16, 
                         bgcolor: '#FF5722', 
                         cursor: 'nw-resize',
-                        zIndex: 20
+                        zIndex: 30,
+                        border: '1px solid white',
+                        '&:hover': {
+                          transform: 'scale(1.2)',
+                          bgcolor: '#E64A19'
+                        }
                       }}
-                      onMouseDown={(e) => handleResizeStart(e, coords.id, 'nw')}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        handleResizeStart(e, coords.id, 'nw');
+                      }}
                     />
                     <Box 
                       sx={{ 
                         position: 'absolute', 
-                        top: -5, 
-                        right: -5, 
-                        width: 10, 
-                        height: 10, 
+                        top: -8, 
+                        right: -8, 
+                        width: 16, 
+                        height: 16, 
                         bgcolor: '#FF5722', 
                         cursor: 'ne-resize',
-                        zIndex: 20
+                        zIndex: 30,
+                        border: '1px solid white',
+                        '&:hover': {
+                          transform: 'scale(1.2)',
+                          bgcolor: '#E64A19'
+                        }
                       }}
-                      onMouseDown={(e) => handleResizeStart(e, coords.id, 'ne')}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        handleResizeStart(e, coords.id, 'ne');
+                      }}
                     />
                     <Box 
                       sx={{ 
                         position: 'absolute', 
-                        bottom: -5, 
-                        right: -5, 
-                        width: 10, 
-                        height: 10, 
+                        bottom: -8, 
+                        right: -8, 
+                        width: 16, 
+                        height: 16, 
                         bgcolor: '#FF5722', 
                         cursor: 'se-resize',
-                        zIndex: 20
+                        zIndex: 30,
+                        border: '1px solid white',
+                        '&:hover': {
+                          transform: 'scale(1.2)',
+                          bgcolor: '#E64A19'
+                        }
                       }}
-                      onMouseDown={(e) => handleResizeStart(e, coords.id, 'se')}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        handleResizeStart(e, coords.id, 'se');
+                      }}
                     />
                     <Box 
                       sx={{ 
                         position: 'absolute', 
-                        bottom: -5, 
-                        left: -5, 
-                        width: 10, 
-                        height: 10, 
+                        bottom: -8, 
+                        left: -8, 
+                        width: 16, 
+                        height: 16, 
                         bgcolor: '#FF5722', 
                         cursor: 'sw-resize',
-                        zIndex: 20
+                        zIndex: 30,
+                        border: '1px solid white',
+                        '&:hover': {
+                          transform: 'scale(1.2)',
+                          bgcolor: '#E64A19'
+                        }
                       }}
-                      onMouseDown={(e) => handleResizeStart(e, coords.id, 'sw')}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        handleResizeStart(e, coords.id, 'sw');
+                      }}
                     />
                     
-                    {/* Edge resize handles */}
+                    {/* Edge resize handles - enlarged and more visible */}
                     <Box 
                       sx={{ 
                         position: 'absolute', 
-                        top: -5, 
-                        left: 'calc(50% - 5px)', 
-                        width: 10, 
-                        height: 10, 
+                        top: -8, 
+                        left: 'calc(50% - 8px)', 
+                        width: 16, 
+                        height: 16, 
                         bgcolor: '#FF5722', 
                         cursor: 'n-resize',
-                        zIndex: 20
+                        zIndex: 30,
+                        border: '1px solid white',
+                        '&:hover': {
+                          transform: 'scale(1.2)',
+                          bgcolor: '#E64A19'
+                        }
                       }}
-                      onMouseDown={(e) => handleResizeStart(e, coords.id, 'n')}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        handleResizeStart(e, coords.id, 'n');
+                      }}
                     />
                     <Box 
                       sx={{ 
                         position: 'absolute', 
-                        right: -5, 
-                        top: 'calc(50% - 5px)', 
-                        width: 10, 
-                        height: 10, 
+                        right: -8, 
+                        top: 'calc(50% - 8px)', 
+                        width: 16, 
+                        height: 16, 
                         bgcolor: '#FF5722', 
                         cursor: 'e-resize',
-                        zIndex: 20
+                        zIndex: 30,
+                        border: '1px solid white',
+                        '&:hover': {
+                          transform: 'scale(1.2)',
+                          bgcolor: '#E64A19'
+                        }
                       }}
-                      onMouseDown={(e) => handleResizeStart(e, coords.id, 'e')}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        handleResizeStart(e, coords.id, 'e');
+                      }}
                     />
                     <Box 
                       sx={{ 
                         position: 'absolute', 
-                        bottom: -5, 
-                        left: 'calc(50% - 5px)', 
-                        width: 10, 
-                        height: 10, 
+                        bottom: -8, 
+                        left: 'calc(50% - 8px)', 
+                        width: 16, 
+                        height: 16, 
                         bgcolor: '#FF5722', 
                         cursor: 's-resize',
-                        zIndex: 20
+                        zIndex: 30,
+                        border: '1px solid white',
+                        '&:hover': {
+                          transform: 'scale(1.2)',
+                          bgcolor: '#E64A19'
+                        }
                       }}
-                      onMouseDown={(e) => handleResizeStart(e, coords.id, 's')}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        handleResizeStart(e, coords.id, 's');
+                      }}
                     />
                     <Box 
                       sx={{ 
                         position: 'absolute', 
-                        left: -5, 
-                        top: 'calc(50% - 5px)', 
-                        width: 10, 
-                        height: 10, 
+                        left: -8, 
+                        top: 'calc(50% - 8px)', 
+                        width: 16, 
+                        height: 16, 
                         bgcolor: '#FF5722', 
                         cursor: 'w-resize',
-                        zIndex: 20
+                        zIndex: 30,
+                        border: '1px solid white',
+                        '&:hover': {
+                          transform: 'scale(1.2)',
+                          bgcolor: '#E64A19'
+                        }
                       }}
-                      onMouseDown={(e) => handleResizeStart(e, coords.id, 'w')}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        handleResizeStart(e, coords.id, 'w');
+                      }}
                     />
                   </>
                 )}
