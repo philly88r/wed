@@ -74,7 +74,6 @@ const WeddingPDFImageReplacer: React.FC = () => {
         const arrayBuffer = await response.arrayBuffer();
         console.log('PDF template loaded successfully, size:', arrayBuffer.byteLength);
         setPdfBytes(arrayBuffer);
-        await renderPDF(arrayBuffer);
         setPdfLoaded(true);
       } catch (error) {
         console.error('Error loading template PDF:', error);
@@ -85,6 +84,23 @@ const WeddingPDFImageReplacer: React.FC = () => {
     
     loadTemplatePDF();
   }, []);
+  
+  // Separate effect to render the PDF once the canvas is available
+  useEffect(() => {
+    if (pdfBytes) {
+      // Add a small delay to ensure DOM is fully rendered
+      const timer = setTimeout(() => {
+        if (canvasRef.current) {
+          console.log('Canvas is ready, rendering PDF...');
+          renderPDF(pdfBytes);
+        } else {
+          console.log('Canvas still not available after delay');
+        }
+      }, 500); // 500ms delay
+      
+      return () => clearTimeout(timer);
+    }
+  }, [pdfBytes]);
   
   // Function to render the PDF
   const renderPDF = async (pdfData: ArrayBuffer): Promise<void> => {
@@ -463,12 +479,15 @@ const WeddingPDFImageReplacer: React.FC = () => {
             }}
           >
             <canvas 
+              id="pdfCanvas"
               ref={canvasRef} 
               style={{ 
                 display: 'block', 
                 margin: 0,
                 border: '1px solid #FFE8E4',
-                maxWidth: 'none'
+                maxWidth: 'none',
+                width: '100%',
+                height: '800px'
               }} 
             />
             
