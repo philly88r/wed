@@ -428,12 +428,17 @@ const WeddingPDFImageReplacer: React.FC = () => {
               mb: 3, 
               border: '1px solid #B8BDD7', 
               borderRadius: 0,
-              overflow: 'auto', 
-              maxHeight: '800px',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+              overflow: 'visible', 
+              maxHeight: 'none',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              width: 'fit-content',
+              margin: '0 auto'
             }}
           >
-            <canvas ref={canvasRef} style={{ margin: '0 auto' }} />
+            <canvas ref={canvasRef} style={{ display: 'block', margin: '0 auto' }} />
             
             {/* Clickable areas */}
             {IMAGE_COORDINATES.map((coords) => (
@@ -442,7 +447,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
                 sx={{
                   position: 'absolute',
                   left: `${coords.x * pdfScale}px`,
-                  top: `${((canvasRef.current?.height ?? 0) - coords.y - coords.height) * pdfScale}px`,
+                  top: `${(canvasRef.current?.height ?? 0) - ((coords.y + coords.height) * pdfScale)}px`,
                   width: `${coords.width * pdfScale}px`,
                   height: `${coords.height * pdfScale}px`,
                   cursor: 'pointer',
