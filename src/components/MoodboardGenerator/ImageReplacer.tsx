@@ -4,7 +4,6 @@ import * as pdfjs from 'pdfjs-dist';
 import { Box, Typography, Button, Radio, RadioGroup, FormControlLabel, FormControl, Paper, Grid, CircularProgress } from '@mui/material';
 
 // Configure PDF.js worker
-// Using a known working version (2.16.105) with a reliable CDN
 pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js';
 
 // Define types
@@ -31,15 +30,11 @@ type ReplacementImages = {
 };
 
 // Exact image coordinates for the wedding template PDF
-// Coordinates are adjusted for a PDF viewport of 567 x 850.5
 const IMAGE_COORDINATES: ImageCoordinates[] = [
   // Top row - small images
   { id: 'living-room', page: 0, x: 70, y: 650, width: 160, height: 120, name: 'Living Room' },
   { id: 'record-player', page: 0, x: 240, y: 650, width: 160, height: 120, name: 'Record Player Area' },
   { id: 'studio-light', page: 0, x: 410, y: 650, width: 160, height: 120, name: 'Studio Light' },
-  
-  // Middle row - Altare logo
-  // Logo area is at y: ~500, height: ~60
   
   // Bottom row - larger images
   { id: 'fashion', page: 0, x: 70, y: 250, width: 230, height: 300, name: 'Fashion Photo' },
@@ -72,12 +67,12 @@ const WeddingPDFImageReplacer: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const templatePdfRef = useRef<pdfjs.PDFDocumentProxy | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   // Load the template PDF on component mount
   useEffect(() => {
     const loadTemplatePDF = async (): Promise<void> => {
       try {
-        // Load the Altare moodboard template with absolute path
         console.log('Attempting to load PDF template...');
         const pdfUrl = `${window.location.origin}/wedding_template.pdf`;
         console.log('Loading PDF from:', pdfUrl);
@@ -102,10 +97,9 @@ const WeddingPDFImageReplacer: React.FC = () => {
     loadTemplatePDF();
   }, []);
   
-  // Separate effect to render the PDF once the canvas is available
+  // Render the PDF once the canvas is available
   useEffect(() => {
     if (pdfBytes) {
-      // Add a small delay to ensure DOM is fully rendered
       const timer = setTimeout(() => {
         if (canvasRef.current) {
           console.log('Canvas is ready, rendering PDF...');
@@ -113,7 +107,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
         } else {
           console.log('Canvas still not available after delay');
         }
-      }, 500); // 500ms delay
+      }, 500);
       
       return () => clearTimeout(timer);
     }
@@ -122,7 +116,6 @@ const WeddingPDFImageReplacer: React.FC = () => {
   // Function to render the PDF
   const renderPDF = async (pdfData: ArrayBuffer): Promise<void> => {
     try {
-      // Force a specific version of PDF.js to avoid compatibility issues
       const pdf = await pdfjs.getDocument({ data: pdfData }).promise;
       templatePdfRef.current = pdf;
       console.log('PDF document loaded successfully with', pdf.numPages, 'pages');
@@ -201,7 +194,13 @@ const WeddingPDFImageReplacer: React.FC = () => {
   // Toggle edit mode
   const toggleEditMode = (): void => {
     setEditMode(prev => !prev);
-    if (!editMode) {
+    if (editMode) {
+      // Exiting edit mode - clean up any event listeners
+      document.removeEventListener('mousemove', handleResizeMoveGlobal);
+      document.removeEventListener('mouseup', handleResizeUpGlobal);
+      document.removeEventListener('mousemove', handleMouseMoveGlobal);
+      document.removeEventListener('mouseup', handleMouseUpGlobal);
+    } else {
       // Entering edit mode - reset to editable coordinates
       setEditableCoordinates([...IMAGE_COORDINATES]);
     }
@@ -210,13 +209,11 @@ const WeddingPDFImageReplacer: React.FC = () => {
   // Save the current coordinates
   const saveCoordinates = (): void => {
     console.log('Saving coordinates:', editableCoordinates);
-    // Here you would typically save these to your backend
-    // For now, we'll just log them to the console for you to copy
     alert('Coordinates saved to console! Check developer tools and copy the new coordinates.');
     setEditMode(false);
   };
 
-  // Handle resize start
+  // FIXED: Handle resize start
   const handleResizeStart = (e: React.MouseEvent, id: string, direction: string): void => {
     if (!editMode) return;
     
@@ -234,53 +231,58 @@ const WeddingPDFImageReplacer: React.FC = () => {
     document.addEventListener('mouseup', handleResizeUpGlobal);
   };
   
-  // Global mouse move handler for resizing
+  // FIXED: Global mouse move handler for resizing
   const handleResizeMoveGlobal = (e: MouseEvent): void => {
     if (!resizing || !resizeItem || !resizeDirection || !canvasRef.current) return;
     
-    // Get canvas dimensions
+    // Get canvas dimensions and rect
     const canvas = canvasRef.current;
-    // We don't need canvasRect for the calculations, so removing it
+    const canvasRect = canvas.getBoundingClientRect();
+    
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
-    const pdfWidth = canvasWidth / pdfScale;
-    const pdfHeight = canvasHeight / pdfScale;
     
-    // Calculate the delta movement in PDF coordinates
-    const deltaX = (e.clientX - resizeStartPos.x) / canvasWidth * pdfWidth;
-    const deltaY = (e.clientY - resizeStartPos.y) / canvasHeight * pdfHeight;
+    // Calculate the delta movement in screen coordinates
+    const deltaX = e.clientX - resizeStartPos.x;
+    const deltaY = e.clientY - resizeStartPos.y;
+    
+    // Convert screen delta to canvas scale
+    const scaleFactorX = canvasWidth / canvasRect.width;
+    const scaleFactorY = canvasHeight / canvasRect.height;
+    const scaledDeltaX = deltaX * scaleFactorX;
+    const scaledDeltaY = deltaY * scaleFactorY;
     
     // Find the item being resized
     const itemIndex = editableCoordinates.findIndex(coord => coord.id === resizeItem);
     if (itemIndex === -1) return;
     
     const item = { ...editableCoordinates[itemIndex] };
-    
-    // Update dimensions based on resize direction
     const newCoordinates = [...editableCoordinates];
     
+    // Update dimensions based on resize direction
+    // Note: In PDF coordinates, Y increases upward (opposite of screen coords)
     switch (resizeDirection) {
       case 'e': // Right edge
         newCoordinates[itemIndex] = { 
           ...item, 
-          width: Math.max(20, item.width + deltaX) 
+          width: Math.max(20, item.width + scaledDeltaX / pdfScale) 
         };
         break;
       case 's': // Bottom edge
         newCoordinates[itemIndex] = { 
           ...item, 
-          height: Math.max(20, item.height - deltaY) 
+          height: Math.max(20, item.height - scaledDeltaY / pdfScale) 
         };
         break;
       case 'se': // Bottom-right corner
         newCoordinates[itemIndex] = { 
           ...item, 
-          width: Math.max(20, item.width + deltaX),
-          height: Math.max(20, item.height - deltaY) 
+          width: Math.max(20, item.width + scaledDeltaX / pdfScale),
+          height: Math.max(20, item.height - scaledDeltaY / pdfScale) 
         };
         break;
       case 'w': // Left edge
-        const newWidth = Math.max(20, item.width - deltaX);
+        const newWidth = Math.max(20, item.width - scaledDeltaX / pdfScale);
         newCoordinates[itemIndex] = { 
           ...item, 
           x: item.x + (item.width - newWidth),
@@ -288,7 +290,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
         };
         break;
       case 'n': // Top edge
-        const newHeight = Math.max(20, item.height + deltaY);
+        const newHeight = Math.max(20, item.height + scaledDeltaY / pdfScale);
         newCoordinates[itemIndex] = { 
           ...item, 
           y: item.y - (newHeight - item.height),
@@ -296,26 +298,26 @@ const WeddingPDFImageReplacer: React.FC = () => {
         };
         break;
       case 'sw': // Bottom-left corner
-        const newWidthSW = Math.max(20, item.width - deltaX);
+        const newWidthSW = Math.max(20, item.width - scaledDeltaX / pdfScale);
         newCoordinates[itemIndex] = { 
           ...item, 
           x: item.x + (item.width - newWidthSW),
           width: newWidthSW,
-          height: Math.max(20, item.height - deltaY) 
+          height: Math.max(20, item.height - scaledDeltaY / pdfScale) 
         };
         break;
       case 'ne': // Top-right corner
-        const newHeightNE = Math.max(20, item.height + deltaY);
+        const newHeightNE = Math.max(20, item.height + scaledDeltaY / pdfScale);
         newCoordinates[itemIndex] = { 
           ...item, 
           y: item.y - (newHeightNE - item.height),
-          width: Math.max(20, item.width + deltaX),
+          width: Math.max(20, item.width + scaledDeltaX / pdfScale),
           height: newHeightNE 
         };
         break;
       case 'nw': // Top-left corner
-        const newWidthNW = Math.max(20, item.width - deltaX);
-        const newHeightNW = Math.max(20, item.height + deltaY);
+        const newWidthNW = Math.max(20, item.width - scaledDeltaX / pdfScale);
+        const newHeightNW = Math.max(20, item.height + scaledDeltaY / pdfScale);
         newCoordinates[itemIndex] = { 
           ...item, 
           x: item.x + (item.width - newWidthNW),
@@ -341,9 +343,9 @@ const WeddingPDFImageReplacer: React.FC = () => {
     document.removeEventListener('mouseup', handleResizeUpGlobal);
   };
 
-  // Handle mouse down for dragging in edit mode
+  // FIXED: Handle mouse down for dragging in edit mode
   const handleMouseDown = (e: React.MouseEvent, id: string): void => {
-    if (!editMode) return;
+    if (!editMode || resizing) return;
     
     e.preventDefault();
     e.stopPropagation();
@@ -365,33 +367,34 @@ const WeddingPDFImageReplacer: React.FC = () => {
     document.addEventListener('mouseup', handleMouseUpGlobal);
   };
   
-  // Global mouse move handler (outside of React event system)
+  // FIXED: Global mouse move handler for dragging
   const handleMouseMoveGlobal = (e: MouseEvent): void => {
     if (!draggedItem || !canvasRef.current) return;
     
-    // Get canvas dimensions
+    // Get canvas dimensions and position
     const canvas = canvasRef.current;
     const canvasRect = canvas.getBoundingClientRect();
     
-    // Calculate new position in canvas coordinates
-    const newX = e.clientX - canvasRect.left - dragOffset.x;
-    const newY = e.clientY - canvasRect.top - dragOffset.y;
+    // Calculate new position in screen coordinates
+    const newScreenX = e.clientX - canvasRect.left - dragOffset.x;
+    const newScreenY = e.clientY - canvasRect.top - dragOffset.y;
     
-    // Convert to PDF coordinates
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
-    const pdfWidth = canvasWidth / pdfScale;
-    const pdfHeight = canvasHeight / pdfScale;
+    // Convert screen coordinates to canvas coordinates
+    const scaleFactorX = canvas.width / canvasRect.width;
+    const scaleFactorY = canvas.height / canvasRect.height;
+    const canvasX = newScreenX * scaleFactorX;
+    const canvasY = newScreenY * scaleFactorY;
     
-    // Calculate PDF coordinates directly from canvas position
-    // Keep coordinates within bounds
-    const pdfX = Math.max(0, Math.round((newX / canvasWidth) * pdfWidth));
+    // Get PDF dimensions
+    const pdfWidth = canvas.width / pdfScale;
+    const pdfHeight = canvas.height / pdfScale;
     
-    // For Y coordinate, we need to INVERT the Y axis because PDF coordinates
-    // have origin at bottom-left, while canvas has origin at top-left
-    const pdfY = Math.max(0, Math.round(pdfHeight - ((newY / canvasHeight) * pdfHeight)));
+    // Convert canvas coordinates to PDF coordinates
+    // PDF Y coordinate starts from bottom, canvas Y starts from top
+    const pdfX = Math.max(0, Math.min(pdfWidth, canvasX / pdfScale));
+    const pdfY = Math.max(0, Math.min(pdfHeight, (canvas.height - canvasY) / pdfScale));
     
-    // Update immediately without throttling for better responsiveness
+    // Update coordinates
     setEditableCoordinates(prev => {
       return prev.map(coord => {
         if (coord.id === draggedItem) {
@@ -417,6 +420,8 @@ const WeddingPDFImageReplacer: React.FC = () => {
     return () => {
       document.removeEventListener('mousemove', handleMouseMoveGlobal);
       document.removeEventListener('mouseup', handleMouseUpGlobal);
+      document.removeEventListener('mousemove', handleResizeMoveGlobal);
+      document.removeEventListener('mouseup', handleResizeUpGlobal);
     };
   }, []);
   
@@ -796,6 +801,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
               padding: 0,
               backgroundColor: '#ffffff'
             }}
+            ref={containerRef}
           >
             <canvas 
               id="pdfCanvas"
@@ -811,47 +817,30 @@ const WeddingPDFImageReplacer: React.FC = () => {
             />
             
             {/* Clickable areas */}
-            {(editMode ? editableCoordinates : IMAGE_COORDINATES).map((coords) => {
-              // Calculate the canvas-to-PDF ratio
-              const canvasWidth = canvasRef.current?.width ?? 0;
-              const canvasHeight = canvasRef.current?.height ?? 0;
-              
-              // Get PDF dimensions from the viewport
-              const pdfWidth = canvasWidth / pdfScale;
-              const pdfHeight = canvasHeight / pdfScale;
-              
-              // Calculate position based on PDF coordinates and canvas dimensions
-              const left = (coords.x / pdfWidth) * canvasWidth;
-              // For top position, we need to convert from PDF coordinates (bottom-left origin)
-              // to canvas coordinates (top-left origin)
-              const top = canvasHeight - ((coords.y + coords.height) / pdfHeight * canvasHeight);
-              const width = (coords.width / pdfWidth) * canvasWidth;
-              const height = (coords.height / pdfHeight) * canvasHeight;
-              
-              return (
-                <Box
-                  key={coords.id}
-                  sx={{
-                    position: 'absolute',
-                    left: `${left}px`,
-                    top: `${top}px`,
-                    width: `${width}px`,
-                    height: `${height}px`,
-                    cursor: editMode ? 'move' : 'pointer',
-                    border: editMode
-                      ? '2px solid #FF5722'
-                      : (replacementImages[coords.id] 
-                        ? '2px solid #FFE8E4' 
-                        : '1px solid #B8BDD7'),
-                    '&:hover': {
-                      border: editMode 
-                        ? '2px solid #E64A19'
-                        : '2px solid #054697'
-                    },
-                    transition: 'all 0.2s'
-                  }}
-                onClick={() => handleAreaClick(coords)}
-                onMouseDown={(e) => handleMouseDown(e, coords.id)}
+            {(editMode ? editableCoordinates : IMAGE_COORDINATES).map((coords) => (
+              <Box
+                key={coords.id}
+                sx={{
+                  position: 'absolute',
+                  left: `${(coords.x / (canvasRef.current?.width ?? 0) / pdfScale) * (canvasRef.current?.width ?? 0)}px`,
+                  top: `${(canvasRef.current?.height ?? 0) - ((coords.y + coords.height) / (canvasRef.current?.height ?? 0) / pdfScale) * (canvasRef.current?.height ?? 0)}px`,
+                  width: `${(coords.width / (canvasRef.current?.width ?? 0) / pdfScale) * (canvasRef.current?.width ?? 0)}px`,
+                  height: `${(coords.height / (canvasRef.current?.height ?? 0) / pdfScale) * (canvasRef.current?.height ?? 0)}px`,
+                  cursor: editMode ? 'move' : 'pointer',
+                  border: editMode
+                    ? '2px solid #FF5722'
+                    : (replacementImages[coords.id] 
+                      ? '2px solid #FFE8E4' 
+                      : '1px solid #B8BDD7'),
+                  '&:hover': {
+                    border: editMode 
+                      ? '2px solid #E64A19'
+                      : '2px solid #054697'
+                  },
+                  transition: 'all 0.2s'
+                }}
+              onClick={() => handleAreaClick(coords)}
+              onMouseDown={(e) => handleMouseDown(e, coords.id)}
               >
                 {/* Resize handles - only show in edit mode */}
                 {editMode && (
@@ -1025,7 +1014,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
                   )}
                 </Box>
               </Box>
-            )})}
+            ))}
           </Box>
           
           <Paper 
