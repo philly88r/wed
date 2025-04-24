@@ -1,35 +1,38 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 const PdfLibDemo: React.FC = () => {
-  // Handler for creating and downloading a PDF
-  const handleCreatePdf = async () => {
-    // 1. Create a new PDF document
-    const pdfDoc = await PDFDocument.create();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-    // 2. Add a blank page
-    const page = pdfDoc.addPage([595, 842]); // A4 size in points
+  // Handle PDF upload and annotate
+  const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const arrayBuffer = await file.arrayBuffer();
 
-    // 3. Embed a font
+    // 1. Load the existing PDF
+    const pdfDoc = await PDFDocument.load(arrayBuffer);
+
+    // 2. Embed a font
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-    // 4. Draw text on the page
-    page.drawText('Hello from pdf-lib!', {
+    // 3. Get the first page and annotate
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
+    firstPage.drawText('Edited with pdf-lib!', {
       x: 50,
-      y: 800,
-      size: 32,
+      y: 50,
+      size: 24,
       font,
-      color: rgb(0.02, 0.27, 0.59), // Brand Primary Blue #054697
+      color: rgb(0.02, 0.27, 0.59), // Brand Primary Blue
     });
 
-    // 5. Serialize the PDFDocument to bytes
+    // 4. Save and trigger download
     const pdfBytes = await pdfDoc.save();
-
-    // 6. Trigger download in the browser
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'demo.pdf';
+    link.download = 'edited.pdf';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -39,10 +42,17 @@ const PdfLibDemo: React.FC = () => {
     <div style={{ padding: 32, fontFamily: 'Poppins, sans-serif', background: '#FFF' }}>
       <h1 style={{ color: '#054697' }}>PDF-lib Demo</h1>
       <p style={{ color: 'rgba(5, 70, 151, 0.8)' }}>
-        Click the button below to generate and download a PDF using <b>pdf-lib</b>.
+        Upload a PDF and annotate it with <b>pdf-lib</b>.
       </p>
+      <input
+        type="file"
+        accept="application/pdf"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        onChange={handlePdfUpload}
+      />
       <button
-        onClick={handleCreatePdf}
+        onClick={() => fileInputRef.current?.click()}
         style={{
           background: '#FFE8E4',
           color: '#054697',
@@ -58,15 +68,14 @@ const PdfLibDemo: React.FC = () => {
         onMouseOver={e => (e.currentTarget.style.background = '#FFD5CC')}
         onMouseOut={e => (e.currentTarget.style.background = '#FFE8E4')}
       >
-        Download PDF
+        Upload and Annotate PDF
       </button>
     </div>
   );
 };
 
 export default PdfLibDemo;
-// Define types
-interface ImageCoordinates {
+
   id: string;
   page: number;
   x: number;
