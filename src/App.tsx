@@ -31,6 +31,8 @@ import Auth from './pages/Auth';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import PricingProtectedRoute from './components/Auth/PricingProtectedRoute';
 import Profile from './pages/Profile'; // Import the Profile component
+import ImageReplacer from './components/MoodboardGenerator/ImageReplacer'; // Import the ImageReplacer component
+import MoodboardTemplate from './components/MoodboardGenerator/MoodboardTemplate';
 
 // Define app routes to check against
 const appRoutes = [
@@ -211,6 +213,16 @@ const AppContent = () => {
         <Route path="/profile" element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        } />
+        <Route path="/pdf-replacer" element={
+          <ProtectedRoute>
+            <ImageReplacer />
+          </ProtectedRoute>
+        } />
+        <Route path="/moodboard" element={
+          <ProtectedRoute>
+            <MoodboardTemplate />
           </ProtectedRoute>
         } />
         {/* Wedding name route - use a separate component to handle the logic */}
