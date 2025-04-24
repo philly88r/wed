@@ -321,25 +321,39 @@ const WeddingPDFImageReplacer: React.FC = () => {
     
     try {
       setIsGenerating(true);
+      console.log('Starting PDF generation...');
       
       // Load the PDF document
       const pdfDoc = await PDFDocument.load(pdfBytes);
+      console.log('PDF document loaded successfully');
+      
       const pages = pdfDoc.getPages();
       const firstPage = pages[0];
+      console.log('Got first page from PDF');
       
       // Process each replacement image
       for (const replacement of Object.values(replacementImages)) {
         const { file, coords } = replacement;
+        console.log('Processing image for', coords.name);
+        
         const imageBytes = await file.arrayBuffer();
+        console.log('Image loaded as array buffer, size:', imageBytes.byteLength);
         
         // Embed the image based on type
         let image;
-        if (file.type === 'image/jpeg' || file.type.includes('jpg')) {
-          image = await pdfDoc.embedJpg(imageBytes);
-        } else if (file.type === 'image/png') {
-          image = await pdfDoc.embedPng(imageBytes);
-        } else {
-          console.error('Unsupported image type:', file.type);
+        try {
+          if (file.type === 'image/jpeg' || file.type.includes('jpg')) {
+            image = await pdfDoc.embedJpg(imageBytes);
+            console.log('Embedded JPEG image');
+          } else if (file.type === 'image/png') {
+            image = await pdfDoc.embedPng(imageBytes);
+            console.log('Embedded PNG image');
+          } else {
+            console.error('Unsupported image type:', file.type);
+            continue;
+          }
+        } catch (embedError) {
+          console.error('Error embedding image:', embedError);
           continue;
         }
         
@@ -350,6 +364,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
         // y needs to be adjusted from the bottom of the page
         const pdfHeight = firstPage.getHeight();
         const adjustedY = pdfHeight - y - height;
+        console.log('Adjusted coordinates:', { x, y: adjustedY, width, height });
         
         if (imageStyle === 'contain') {
           // Maintain aspect ratio within the frame
@@ -373,22 +388,21 @@ const WeddingPDFImageReplacer: React.FC = () => {
             offsetX = (width - drawWidth) / 2;
           }
           
-          // Draw a white background for the frame
-          firstPage.drawRectangle({
-            x,
-            y: adjustedY,
-            width,
-            height,
-            color: { r: 1, g: 1, b: 1 }, // Use pure white (1,1,1) instead of off-white to avoid color format issues
-          });
+          console.log('Drawing image with contain style');
           
-          // Draw the image centered in the frame
-          firstPage.drawImage(image, {
-            x: x + offsetX,
-            y: adjustedY + offsetY,
-            width: drawWidth,
-            height: drawHeight,
-          });
+          try {
+            // Skip drawing the background rectangle to avoid color issues
+            // Just draw the image directly
+            firstPage.drawImage(image, {
+              x: x + offsetX,
+              y: adjustedY + offsetY,
+              width: drawWidth,
+              height: drawHeight,
+            });
+            console.log('Image drawn successfully');
+          } catch (drawError) {
+            console.error('Error drawing image:', drawError);
+          }
         } else {
           // Cover - fill the frame, may crop image
           const imgWidth = image.width;
@@ -396,46 +410,62 @@ const WeddingPDFImageReplacer: React.FC = () => {
           const imgRatio = imgWidth / imgHeight;
           const frameRatio = width / height;
           
-          // For PDF lib, we can't easily crop the source image
-          // We'll use a different approach, scaling to the appropriate dimension
-          if (imgRatio > frameRatio) {
-            // Image is wider than frame - scale to height
-            const scaleFactor = height / imgHeight;
-            const scaledWidth = imgWidth * scaleFactor;
-            const offsetX = (scaledWidth - width) / 2;
-            
-            firstPage.drawImage(image, {
-              x: x - offsetX,
-              y: adjustedY,
-              width: scaledWidth,
-              height,
-            });
-          } else {
-            // Image is taller than frame - scale to width
-            const scaleFactor = width / imgWidth;
-            const scaledHeight = imgHeight * scaleFactor;
-            const offsetY = (scaledHeight - height) / 2;
-            
-            firstPage.drawImage(image, {
-              x,
-              y: adjustedY - offsetY,
-              width,
-              height: scaledHeight,
-            });
+          console.log('Drawing image with cover style');
+          
+          try {
+            // For PDF lib, we can't easily crop the source image
+            // We'll use a different approach, scaling to the appropriate dimension
+            if (imgRatio > frameRatio) {
+              // Image is wider than frame - scale to height
+              const scaleFactor = height / imgHeight;
+              const scaledWidth = imgWidth * scaleFactor;
+              const offsetX = (scaledWidth - width) / 2;
+              
+              firstPage.drawImage(image, {
+                x: x - offsetX,
+                y: adjustedY,
+                width: scaledWidth,
+                height,
+              });
+            } else {
+              // Image is taller than frame - scale to width
+              const scaleFactor = width / imgWidth;
+              const scaledHeight = imgHeight * scaleFactor;
+              const offsetY = (scaledHeight - height) / 2;
+              
+              firstPage.drawImage(image, {
+                x,
+                y: adjustedY - offsetY,
+                width,
+                height: scaledHeight,
+              });
+            }
+            console.log('Image drawn successfully');
+          } catch (drawError) {
+            console.error('Error drawing image:', drawError);
           }
         }
       }
       
-      // Save the PDF
-      const modifiedPdfBytes = await pdfDoc.save();
+      console.log('All images processed, saving PDF...');
       
-      // Create a download link
-      const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'altare_moodboard_completed.pdf';
-      link.click();
+      try {
+        // Save the PDF
+        const modifiedPdfBytes = await pdfDoc.save();
+        console.log('PDF saved successfully, size:', modifiedPdfBytes.length);
+        
+        // Create a download link
+        const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'altare_moodboard_completed.pdf';
+        console.log('Initiating download...');
+        link.click();
+      } catch (saveError) {
+        console.error('Error saving or downloading PDF:', saveError);
+        alert('Error saving the PDF. Please try again.');
+      }
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Error generating PDF. Please try again.');
