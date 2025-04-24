@@ -89,28 +89,57 @@ const WeddingPDFImageReplacer: React.FC = () => {
   // Function to render the PDF
   const renderPDF = async (pdfData: ArrayBuffer): Promise<void> => {
     try {
+      // Force a specific version of PDF.js to avoid compatibility issues
       const pdf = await pdfjs.getDocument({ data: pdfData }).promise;
       templatePdfRef.current = pdf;
+      console.log('PDF document loaded successfully with', pdf.numPages, 'pages');
       
-      const page = await pdf.getPage(1); // Get first page
-      const viewport = page.getViewport({ scale: pdfScale });
+      // Get first page
+      const page = await pdf.getPage(1);
+      console.log('PDF page loaded successfully');
       
+      // Set a fixed scale to ensure visibility
+      const fixedScale = 1.0;
+      const viewport = page.getViewport({ scale: fixedScale });
+      console.log('PDF viewport created with dimensions:', viewport.width, 'x', viewport.height);
+      
+      // Get the canvas element and set its dimensions
       const canvas = canvasRef.current;
-      if (!canvas) return;
+      if (!canvas) {
+        console.error('Canvas element not found');
+        return;
+      }
       
-      canvas.height = viewport.height;
+      // Set explicit dimensions
       canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      console.log('Canvas dimensions set to:', canvas.width, 'x', canvas.height);
       
+      // Get the rendering context
       const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      if (!ctx) {
+        console.error('Could not get canvas context');
+        return;
+      }
       
+      // Clear the canvas before rendering
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Set up the rendering context
       const renderContext = {
         canvasContext: ctx,
         viewport: viewport
       };
       
+      console.log('Starting PDF rendering...');
+      
+      // Render the PDF page
       await page.render(renderContext).promise;
+      console.log('PDF rendered successfully');
+      
+      // Update state to indicate rendering is complete
       setPdfRendered(true);
+      setPdfScale(fixedScale);
       
       // After rendering, draw any replacement images
       if (Object.keys(replacementImages).length > 0) {
@@ -420,25 +449,28 @@ const WeddingPDFImageReplacer: React.FC = () => {
           <CircularProgress sx={{ color: '#054697' }} />
         </Box>
       ) : pdfBytes ? (
-        <Box>
-          <Paper 
-            elevation={0} 
-            sx={{ 
-              position: 'relative', 
-              mb: 3, 
-              border: '1px solid #B8BDD7', 
+        <Box sx={{ width: '100%', overflowX: 'auto' }}>
+          <Box 
+            sx={{
+              position: 'relative',
+              mb: 3,
+              border: '1px solid #B8BDD7',
               borderRadius: 0,
-              overflow: 'visible', 
-              maxHeight: 'none',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              width: 'fit-content',
-              margin: '0 auto'
+              display: 'inline-block',
+              margin: '0 auto',
+              padding: 0,
+              backgroundColor: '#ffffff'
             }}
           >
-            <canvas ref={canvasRef} style={{ display: 'block', margin: '0 auto' }} />
+            <canvas 
+              ref={canvasRef} 
+              style={{ 
+                display: 'block', 
+                margin: 0,
+                border: '1px solid #FFE8E4',
+                maxWidth: 'none'
+              }} 
+            />
             
             {/* Clickable areas */}
             {IMAGE_COORDINATES.map((coords) => (
@@ -519,7 +551,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
                 </Box>
               </Box>
             ))}
-          </Paper>
+          </Box>
           
           <Paper 
             elevation={0} 
