@@ -34,21 +34,21 @@ type ReplacementImages = {
 // Coordinates are adjusted for a PDF viewport of 567 x 850.5
 const IMAGE_COORDINATES: ImageCoordinates[] = [
   // Top row - small images
-  { id: 'living-room', page: 0, x: 70, y: 80, width: 160, height: 120, name: 'Living Room' },
-  { id: 'record-player', page: 0, x: 240, y: 80, width: 160, height: 120, name: 'Record Player Area' },
-  { id: 'studio-light', page: 0, x: 410, y: 80, width: 160, height: 120, name: 'Studio Light' },
+  { id: 'living-room', page: 0, x: 70, y: 650, width: 160, height: 120, name: 'Living Room' },
+  { id: 'record-player', page: 0, x: 240, y: 650, width: 160, height: 120, name: 'Record Player Area' },
+  { id: 'studio-light', page: 0, x: 410, y: 650, width: 160, height: 120, name: 'Studio Light' },
   
   // Middle row - Altare logo
-  // Logo area is at y: ~220, height: ~60
+  // Logo area is at y: ~500, height: ~60
   
   // Bottom row - larger images
-  { id: 'fashion', page: 0, x: 70, y: 300, width: 230, height: 300, name: 'Fashion Photo' },
-  { id: 'wood-panel', page: 0, x: 310, y: 300, width: 260, height: 300, name: 'Wood Panel Room' },
+  { id: 'fashion', page: 0, x: 70, y: 250, width: 230, height: 300, name: 'Fashion Photo' },
+  { id: 'wood-panel', page: 0, x: 310, y: 250, width: 260, height: 300, name: 'Wood Panel Room' },
   
   // Color swatches at the bottom
-  { id: 'art-shelf', page: 0, x: 310, y: 610, width: 60, height: 60, name: 'Color 1' },
-  { id: 'decor1', page: 0, x: 380, y: 610, width: 60, height: 60, name: 'Color 2' },
-  { id: 'decor2', page: 0, x: 450, y: 610, width: 60, height: 60, name: 'Color 3' },
+  { id: 'art-shelf', page: 0, x: 310, y: 180, width: 60, height: 60, name: 'Color 1' },
+  { id: 'decor1', page: 0, x: 380, y: 180, width: 60, height: 60, name: 'Color 2' },
+  { id: 'decor2', page: 0, x: 450, y: 180, width: 60, height: 60, name: 'Color 3' },
 ];
 
 const WeddingPDFImageReplacer: React.FC = () => {
@@ -257,26 +257,18 @@ const WeddingPDFImageReplacer: React.FC = () => {
     // Calculate PDF coordinates directly from canvas position
     // Keep coordinates within bounds
     const pdfX = Math.max(0, Math.round((newX / canvasWidth) * pdfWidth));
-    const pdfY = Math.max(0, Math.round((newY / canvasHeight) * pdfHeight));
     
-    // Use requestAnimationFrame to make dragging smoother
-    requestAnimationFrame(() => {
-      // Throttle updates to reduce jitter
-      setEditableCoordinates(prev => {
-        const prevCoord = prev.find(coord => coord.id === draggedItem);
-        if (!prevCoord) return prev;
-        
-        // Only update if position changed by at least 2 PDF units
-        if (Math.abs(prevCoord.x - pdfX) < 2 && Math.abs(prevCoord.y - pdfY) < 2) {
-          return prev;
+    // For Y coordinate, we need to INVERT the Y axis because PDF coordinates
+    // have origin at bottom-left, while canvas has origin at top-left
+    const pdfY = Math.max(0, Math.round(pdfHeight - ((newY / canvasHeight) * pdfHeight)));
+    
+    // Update immediately without throttling for better responsiveness
+    setEditableCoordinates(prev => {
+      return prev.map(coord => {
+        if (coord.id === draggedItem) {
+          return { ...coord, x: pdfX, y: pdfY };
         }
-        
-        return prev.map(coord => {
-          if (coord.id === draggedItem) {
-            return { ...coord, x: pdfX, y: pdfY };
-          }
-          return coord;
-        });
+        return coord;
       });
     });
   };
@@ -703,7 +695,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
               const left = (coords.x / pdfWidth) * canvasWidth;
               // For top position, we need to convert from PDF coordinates (bottom-left origin)
               // to canvas coordinates (top-left origin)
-              const top = (coords.y / pdfHeight) * canvasHeight;
+              const top = canvasHeight - ((coords.y + coords.height) / pdfHeight * canvasHeight);
               const width = (coords.width / pdfWidth) * canvasWidth;
               const height = (coords.height / pdfHeight) * canvasHeight;
               
