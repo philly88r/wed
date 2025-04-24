@@ -476,10 +476,10 @@ const WeddingPDFImageReplacer: React.FC = () => {
     // Store the replacement image info
     setReplacementImages(prev => ({
       ...prev,
-      [selectedImage.id]: {
+      [coords.id]: {
         file,
         url: imageUrl,
-        coords: selectedImage
+        coords
       }
     }));
     
@@ -761,6 +761,9 @@ const WeddingPDFImageReplacer: React.FC = () => {
     }
   };
   
+  // Pick the first editable coordinate, or a default if empty
+  const coords = (editMode ? editableCoordinates : IMAGE_COORDINATES)[0] || { id: 'single', x: 100, y: 100, width: 100, height: 100, name: 'Single' };
+
   return (
     <Box sx={{ p: 4, maxWidth: '1200px', mx: 'auto' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -844,8 +847,8 @@ const WeddingPDFImageReplacer: React.FC = () => {
               }} 
             />
             
-            {/* Clickable areas */}
-            {(editMode ? editableCoordinates : IMAGE_COORDINATES).map((coords) => (
+            {/* Clickable area (single square for debugging) */}
+            
               <Box
                 key={coords.id}
                 data-id={coords.id}
