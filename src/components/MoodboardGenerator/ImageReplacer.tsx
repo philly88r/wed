@@ -58,8 +58,12 @@ const WeddingPDFImageReplacer: React.FC = () => {
   const [replacementImages, setReplacementImages] = useState<ReplacementImages>({});
   const [imageStyle, setImageStyle] = useState<ImageStyle>('contain');
   const [pdfScale, setPdfScale] = useState<number>(1.0);
-  const [pdfLoaded, setPdfLoaded] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [pdfLoaded, setPdfLoaded] = useState<boolean>(false);
+  const [editMode, setEditMode] = useState<boolean>(false);
+  const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState<{x: number, y: number}>({x: 0, y: 0});
+  const [editableCoordinates, setEditableCoordinates] = useState<ImageCoordinates[]>([...IMAGE_COORDINATES]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -190,8 +194,104 @@ const WeddingPDFImageReplacer: React.FC = () => {
     }
   };
   
+  // Toggle edit mode
+  const toggleEditMode = (): void => {
+    setEditMode(prev => !prev);
+    if (!editMode) {
+      // Entering edit mode - reset to editable coordinates
+      setEditableCoordinates([...IMAGE_COORDINATES]);
+    }
+  };
+  
+  // Save the current coordinates
+  const saveCoordinates = (): void => {
+    console.log('Saving coordinates:', editableCoordinates);
+    // Here you would typically save these to your backend
+    // For now, we'll just log them to the console for you to copy
+    alert('Coordinates saved to console! Check developer tools and copy the new coordinates.');
+    setEditMode(false);
+  };
+
+  // Handle mouse down for dragging in edit mode
+  const handleMouseDown = (e: React.MouseEvent, id: string): void => {
+    if (!editMode) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Find the element being dragged
+    const element = editableCoordinates.find(coord => coord.id === id);
+    if (!element) return;
+    
+    // Calculate the offset from the mouse position to the element's top-left corner
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+    
+    setDraggedItem(id);
+    setDragOffset({ x: offsetX, y: offsetY });
+    
+    // Add event listeners for mouse move and mouse up
+    document.addEventListener('mousemove', handleMouseMoveGlobal);
+    document.addEventListener('mouseup', handleMouseUpGlobal);
+  };
+  
+  // Global mouse move handler (outside of React event system)
+  const handleMouseMoveGlobal = (e: MouseEvent): void => {
+    if (!draggedItem || !canvasRef.current) return;
+    
+    // Get canvas dimensions
+    const canvas = canvasRef.current;
+    const canvasRect = canvas.getBoundingClientRect();
+    
+    // Calculate new position in canvas coordinates
+    const newX = e.clientX - canvasRect.left - dragOffset.x;
+    const newY = e.clientY - canvasRect.top - dragOffset.y;
+    
+    // Convert to PDF coordinates
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    const pdfWidth = canvasWidth / pdfScale;
+    const pdfHeight = canvasHeight / pdfScale;
+    
+    const pdfX = Math.round((newX / canvasWidth) * pdfWidth);
+    const pdfY = Math.round((newY / canvasHeight) * pdfHeight);
+    
+    // Update the coordinates of the dragged item
+    setEditableCoordinates(prev => {
+      return prev.map(coord => {
+        if (coord.id === draggedItem) {
+          return { ...coord, x: pdfX, y: pdfY };
+        }
+        return coord;
+      });
+    });
+  };
+  
+  // Global mouse up handler
+  const handleMouseUpGlobal = (): void => {
+    if (draggedItem) {
+      setDraggedItem(null);
+      // Remove event listeners
+      document.removeEventListener('mousemove', handleMouseMoveGlobal);
+      document.removeEventListener('mouseup', handleMouseUpGlobal);
+    }
+  };
+  
+  // Clean up event listeners on unmount
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMoveGlobal);
+      document.removeEventListener('mouseup', handleMouseUpGlobal);
+    };
+  }, []);
+  
   // Handle clicking on an image area
   const handleAreaClick = (coords: ImageCoordinates): void => {
+    if (editMode) {
+      // In edit mode, don't open file selector
+      return;
+    }
     setSelectedImage(coords);
     if (fileInputRef.current) {
       fileInputRef.current.click();
@@ -496,9 +596,44 @@ const WeddingPDFImageReplacer: React.FC = () => {
   
   return (
     <Box sx={{ p: 4, maxWidth: '1200px', mx: 'auto' }}>
-      <Typography variant="h4" sx={{ mb: 3, textAlign: 'center', color: '#054697', fontFamily: 'Giaza, serif' }}>
-        Altare Moodboard Template
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" sx={{ color: '#054697', fontFamily: 'Giaza, serif' }}>
+          Altare Moodboard Template
+        </Typography>
+        <Box>
+          <Button
+            onClick={toggleEditMode}
+            sx={{
+              mr: 2,
+              bgcolor: editMode ? '#FF5722' : '#FFE8E4',
+              color: editMode ? 'white' : '#054697',
+              '&:hover': {
+                bgcolor: editMode ? '#E64A19' : '#FFD5CC',
+              },
+              borderRadius: 0,
+              fontFamily: 'Poppins, sans-serif',
+            }}
+          >
+            {editMode ? 'Cancel Edit' : 'Edit Grid Layout'}
+          </Button>
+          {editMode && (
+            <Button
+              onClick={saveCoordinates}
+              sx={{
+                bgcolor: '#054697',
+                color: 'white',
+                '&:hover': {
+                  bgcolor: '#043876',
+                },
+                borderRadius: 0,
+                fontFamily: 'Poppins, sans-serif',
+              }}
+            >
+              Save Layout
+            </Button>
+          )}
+        </Box>
+      </Box>
       
       {!pdfLoaded ? (
         <Box 
@@ -542,7 +677,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
             />
             
             {/* Clickable areas */}
-            {IMAGE_COORDINATES.map((coords) => {
+            {(editMode ? editableCoordinates : IMAGE_COORDINATES).map((coords) => {
               // Calculate the canvas-to-PDF ratio
               const canvasWidth = canvasRef.current?.width ?? 0;
               const canvasHeight = canvasRef.current?.height ?? 0;
@@ -566,16 +701,21 @@ const WeddingPDFImageReplacer: React.FC = () => {
                     top: `${top}px`,
                     width: `${width}px`,
                     height: `${height}px`,
-                    cursor: 'pointer',
-                    border: replacementImages[coords.id] 
-                      ? '2px solid #FFE8E4' 
-                      : '1px solid #B8BDD7',
+                    cursor: editMode ? 'move' : 'pointer',
+                    border: editMode
+                      ? '2px solid #FF5722'
+                      : (replacementImages[coords.id] 
+                        ? '2px solid #FFE8E4' 
+                        : '1px solid #B8BDD7'),
                     '&:hover': {
-                      border: '2px solid #054697'
+                      border: editMode 
+                        ? '2px solid #E64A19'
+                        : '2px solid #054697'
                     },
                     transition: 'all 0.2s'
                   }}
                 onClick={() => handleAreaClick(coords)}
+                onMouseDown={(e) => handleMouseDown(e, coords.id)}
               >
                 <Box 
                   sx={{ 
