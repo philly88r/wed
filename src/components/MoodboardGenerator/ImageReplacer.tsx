@@ -379,7 +379,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
             y: adjustedY,
             width,
             height,
-            color: { r: 0.984, g: 0.984, b: 0.968 }, // #FBFBF7 in RGB
+            color: { r: 1, g: 1, b: 1 }, // Use pure white (1,1,1) instead of off-white to avoid color format issues
           });
           
           // Draw the image centered in the frame
