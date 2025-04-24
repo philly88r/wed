@@ -33,19 +33,17 @@ type ReplacementImages = {
 // Exact image coordinates for the wedding template PDF
 // Coordinates are adjusted for a PDF viewport of 567 x 850.5
 const IMAGE_COORDINATES: ImageCoordinates[] = [
-  // Top row images
-  { id: 'living-room', page: 0, x: 70, y: 100, width: 220, height: 150, name: 'Living Room' },
-  { id: 'studio-light', page: 0, x: 300, y: 100, width: 220, height: 320, name: 'Studio Light' },
+  // Left column images (top to bottom)
+  { id: 'living-room', page: 0, x: 50, y: 100, width: 200, height: 150, name: 'Living Room' },
+  { id: 'record-player', page: 0, x: 50, y: 260, width: 200, height: 150, name: 'Record Player Area' },
+  { id: 'art-shelf', page: 0, x: 50, y: 420, width: 130, height: 100, name: 'Art Shelf' },
+  { id: 'fashion', page: 0, x: 50, y: 530, width: 150, height: 180, name: 'Fashion Photo' },
   
-  // Middle row images
-  { id: 'record-player', page: 0, x: 70, y: 260, width: 220, height: 150, name: 'Record Player Area' },
-  { id: 'art-shelf', page: 0, x: 70, y: 420, width: 140, height: 100, name: 'Art Shelf' },
-  { id: 'decor1', page: 0, x: 220, y: 420, width: 140, height: 100, name: 'Yellow Couch' },
-  { id: 'decor2', page: 0, x: 370, y: 420, width: 150, height: 100, name: 'Orange Pillows' },
-  
-  // Bottom row images
-  { id: 'fashion', page: 0, x: 70, y: 530, width: 160, height: 180, name: 'Fashion Photo' },
-  { id: 'wood-panel', page: 0, x: 240, y: 530, width: 280, height: 180, name: 'Wood Panel Room' },
+  // Right column images (top to bottom)
+  { id: 'studio-light', page: 0, x: 260, y: 100, width: 200, height: 310, name: 'Studio Light' },
+  { id: 'decor1', page: 0, x: 190, y: 420, width: 130, height: 100, name: 'Yellow Couch' },
+  { id: 'decor2', page: 0, x: 330, y: 420, width: 130, height: 100, name: 'Orange Pillows' },
+  { id: 'wood-panel', page: 0, x: 210, y: 530, width: 250, height: 180, name: 'Wood Panel Room' },
 ];
 
 const WeddingPDFImageReplacer: React.FC = () => {
