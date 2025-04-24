@@ -252,11 +252,11 @@ const WeddingPDFImageReplacer: React.FC = () => {
     document.addEventListener('mouseup', handleResizeUpGlobalRef);
   };
 
-  // Ultra-simple direct resize handler with no coordinate transformations
+  // Simplified resize handler using the same approach as the table dragging
   const handleResizeMoveGlobalRef = (e: MouseEvent): void => {
-    if (!resizingRef.current || !resizeItemRef.current || !resizeDirectionRef.current) return;
+    if (!resizingRef.current || !resizeItemRef.current || !resizeDirectionRef.current || !canvasRef.current) return;
 
-    // Calculate the delta movement in screen coordinates
+    // Calculate the delta movement
     const deltaX = e.clientX - resizeStartPosRef.current.x;
     const deltaY = e.clientY - resizeStartPosRef.current.y;
     
@@ -267,65 +267,95 @@ const WeddingPDFImageReplacer: React.FC = () => {
     const item = { ...editableCoordinates[itemIndex] };
     const newCoordinates = [...editableCoordinates];
     
-    // Direct manipulation of coordinates based on resize direction
+    // Calculate scaling factor for PDF coordinates
+    const canvas = canvasRef.current;
+    const canvasRect = canvas.getBoundingClientRect();
+    const scaleX = (canvas.width / canvasRect.width) / pdfScale;
+    const scaleY = (canvas.height / canvasRect.height) / pdfScale;
+    
+    // Apply the delta directly to the item's dimensions
+    // Similar to how the table dragging works
     switch (resizeDirectionRef.current) {
       case 'e': // Right edge
         newCoordinates[itemIndex] = { 
           ...item, 
-          width: item.width + deltaX / pdfScale
+          width: item.width + deltaX * scaleX
         };
         break;
       case 'w': // Left edge
-        newCoordinates[itemIndex] = { 
-          ...item, 
-          x: item.x + deltaX / pdfScale,
-          width: item.width - deltaX / pdfScale
-        };
+        const newWidthW = item.width - deltaX * scaleX;
+        if (newWidthW > 10) { // Minimum width check
+          newCoordinates[itemIndex] = { 
+            ...item, 
+            x: item.x + deltaX * scaleX,
+            width: newWidthW
+          };
+        }
         break;
       case 'n': // Top edge
-        newCoordinates[itemIndex] = { 
-          ...item, 
-          y: item.y + deltaY / pdfScale,
-          height: item.height - deltaY / pdfScale
-        };
+        const newHeightN = item.height + deltaY * scaleY;
+        if (newHeightN > 10) { // Minimum height check
+          newCoordinates[itemIndex] = { 
+            ...item, 
+            y: item.y - deltaY * scaleY,
+            height: newHeightN
+          };
+        }
         break;
       case 's': // Bottom edge
-        newCoordinates[itemIndex] = { 
-          ...item, 
-          height: item.height - deltaY / pdfScale
-        };
+        const newHeightS = item.height - deltaY * scaleY;
+        if (newHeightS > 10) { // Minimum height check
+          newCoordinates[itemIndex] = { 
+            ...item, 
+            height: newHeightS
+          };
+        }
         break;
       case 'se': // Bottom-right corner
-        newCoordinates[itemIndex] = { 
-          ...item, 
-          width: item.width + deltaX / pdfScale,
-          height: item.height - deltaY / pdfScale
-        };
+        const newHeightSE = item.height - deltaY * scaleY;
+        if (newHeightSE > 10) { // Minimum height check
+          newCoordinates[itemIndex] = { 
+            ...item, 
+            width: item.width + deltaX * scaleX,
+            height: newHeightSE
+          };
+        }
         break;
       case 'sw': // Bottom-left corner
-        newCoordinates[itemIndex] = { 
-          ...item, 
-          x: item.x + deltaX / pdfScale,
-          width: item.width - deltaX / pdfScale,
-          height: item.height - deltaY / pdfScale
-        };
+        const newWidthSW = item.width - deltaX * scaleX;
+        const newHeightSW = item.height - deltaY * scaleY;
+        if (newWidthSW > 10 && newHeightSW > 10) { // Minimum size check
+          newCoordinates[itemIndex] = { 
+            ...item, 
+            x: item.x + deltaX * scaleX,
+            width: newWidthSW,
+            height: newHeightSW
+          };
+        }
         break;
       case 'ne': // Top-right corner
-        newCoordinates[itemIndex] = { 
-          ...item, 
-          y: item.y + deltaY / pdfScale,
-          width: item.width + deltaX / pdfScale,
-          height: item.height - deltaY / pdfScale
-        };
+        const newHeightNE = item.height + deltaY * scaleY;
+        if (newHeightNE > 10) { // Minimum height check
+          newCoordinates[itemIndex] = { 
+            ...item, 
+            y: item.y - deltaY * scaleY,
+            width: item.width + deltaX * scaleX,
+            height: newHeightNE
+          };
+        }
         break;
       case 'nw': // Top-left corner
-        newCoordinates[itemIndex] = { 
-          ...item, 
-          x: item.x + deltaX / pdfScale,
-          y: item.y + deltaY / pdfScale,
-          width: item.width - deltaX / pdfScale,
-          height: item.height - deltaY / pdfScale
-        };
+        const newWidthNW = item.width - deltaX * scaleX;
+        const newHeightNW = item.height + deltaY * scaleY;
+        if (newWidthNW > 10 && newHeightNW > 10) { // Minimum size check
+          newCoordinates[itemIndex] = { 
+            ...item, 
+            x: item.x + deltaX * scaleX,
+            y: item.y - deltaY * scaleY,
+            width: newWidthNW,
+            height: newHeightNW
+          };
+        }
         break;
     }
     
