@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import * as pdfjs from 'pdfjs-dist';
 import { Box, Typography, Button, Radio, RadioGroup, FormControlLabel, FormControl, Paper, Grid, CircularProgress } from '@mui/material';
+import { Rnd } from 'react-rnd';
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js';
@@ -53,7 +54,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
   const [editMode, setEditMode] = useState<boolean>(false);
   const draggedItemRef = useRef<string | null>(null);
   const dragOffsetRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
-  const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  
   const [editableCoordinates, setEditableCoordinates] = useState<ImageCoordinates[]>([...IMAGE_COORDINATES]);
   const resizingRef = useRef<boolean>(false);
   const resizeDirectionRef = useRef<string | null>(null);
@@ -175,17 +176,10 @@ const WeddingPDFImageReplacer: React.FC = () => {
   };
   
   // Upload a custom template PDF
-  const handleTemplateUpload = async (event: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-    
-    const file = files[0];
-    if (file) {
-      const arrayBuffer = await file.arrayBuffer();
-      setPdfBytes(arrayBuffer);
-      await renderPDF(arrayBuffer);
-    }
-  };
+  const handleTemplateUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Stub: No-op for now, avoids errors.
+  console.log('Template upload not implemented.');
+};
   
   // Toggle edit mode
   const toggleEditMode = (): void => {
@@ -236,7 +230,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
     // Cancel any ongoing drag operation
     if (draggedItemRef.current) {
       draggedItemRef.current = null;
-      setDraggedItem(null);
+      
     }
     
     // Add event listeners for mouse move and mouse up
@@ -374,7 +368,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
     
     draggedItemRef.current = id;
     dragOffsetRef.current = { x: offsetX, y: offsetY };
-    setDraggedItem(id);
+    
     
     // Add event listeners for mouse move and mouse up
     document.addEventListener('mousemove', handleMouseMoveGlobalRef);
@@ -431,7 +425,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
   // Clean up drag listeners
   const handleMouseUpGlobalRef = (): void => {
     draggedItemRef.current = null;
-    setDraggedItem(null);
+    
     document.removeEventListener('mousemove', handleMouseMoveGlobalRef);
     document.removeEventListener('mouseup', handleMouseUpGlobalRef);
   };
@@ -839,182 +833,84 @@ const WeddingPDFImageReplacer: React.FC = () => {
                 maxWidth: 'none',
                 width: '100%',
                 height: '800px'
-              }} 
+              }}
             />
-            
-            {/* Clickable area (single square for debugging) */}
-            
-              <Box
-                key={coords.id}
-                data-id={coords.id}
-                sx={{
-                  position: 'absolute',
-                  left: `${(coords.x / (canvasRef.current?.width ?? 0) / pdfScale) * (canvasRef.current?.width ?? 0)}px`,
-                  top: `${(canvasRef.current?.height ?? 0) - ((coords.y + coords.height) / (canvasRef.current?.height ?? 0) / pdfScale) * (canvasRef.current?.height ?? 0)}px`,
-                  width: `${(coords.width / (canvasRef.current?.width ?? 0) / pdfScale) * (canvasRef.current?.width ?? 0)}px`,
-                  height: `${(coords.height / (canvasRef.current?.height ?? 0) / pdfScale) * (canvasRef.current?.height ?? 0)}px`,
-                  cursor: editMode ? 'move' : 'pointer',
-                  border: editMode
-                    ? '2px solid #FF5722'
-                    : (replacementImages[coords.id] 
-                      ? '2px solid #FFE8E4' 
-                      : '1px solid #B8BDD7'),
-                  '&:hover': {
-                    border: editMode 
-                      ? '2px solid #E64A19'
-                      : '2px solid #054697'
-                  },
-                  zIndex: draggedItem === coords.id || resizeItemRef.current === coords.id ? 10 : 1,
-                  pointerEvents: editMode ? 'auto' : 'auto',
-                  transition: 'all 0.2s'
-                }}
-              onClick={(e) => {
-                if (editMode) {
-                  e.stopPropagation();
-                } else {
-                  handleAreaClick(coords);
-                }
-              }}
-              onMouseDown={(e) => {
-                // Only handle drag if we're not already resizing
-                if (!resizingRef.current) {
-                  handleMouseDown(e, coords.id);
-                }
-              }}
-              >
-                {/* Resize handles - only show in edit mode */}
-                {editMode && (
-                  <>
-                    {/* Corner resize handles - enlarged and more visible */}
-                    <Box 
-                      sx={{ 
-                        position: 'absolute', 
-                        top: -8, 
-                        left: -8, 
-                        width: 16, 
-                        height: 16, 
-                        bgcolor: '#FF5722', 
-                        cursor: 'nw-resize',
-                        zIndex: 30,
-                        border: '1px solid white',
-                        '&:hover': {
-                          transform: 'scale(1.2)',
-                          bgcolor: '#E64A19'
-                        }
-                      }}
-                      onMouseDown={(e) => {
-                        e.stopPropagation();
-                        handleResizeStart(e, coords.id, 'nw');
-                      }}
-                    />
-                    <Box 
-                      sx={{ 
-                        position: 'absolute', 
-                        top: -8, 
-                        right: -8, 
-                        width: 16, 
-                        height: 16, 
-                        bgcolor: '#FF5722', 
-                        cursor: 'ne-resize',
-                        zIndex: 30,
-                        border: '1px solid white',
-                        '&:hover': {
-                          transform: 'scale(1.2)',
-                          bgcolor: '#E64A19'
-                        }
-                      }}
-                      onMouseDown={(e) => {
-                        e.stopPropagation();
-                        handleResizeStart(e, coords.id, 'ne');
-                      }}
-                    />
-                    <Box 
-                      sx={{ 
-                        position: 'absolute', 
-                        bottom: -8, 
-                        right: -8, 
-                        width: 16, 
-                        height: 16, 
-                        bgcolor: '#FF5722', 
-                        cursor: 'se-resize',
-                        zIndex: 30,
-                        border: '1px solid white',
-                        '&:hover': {
-                          transform: 'scale(1.2)',
-                          bgcolor: '#E64A19'
-                        }
-                      }}
-                      onMouseDown={(e) => {
-                        e.stopPropagation();
-                        handleResizeStart(e, coords.id, 'se');
-                      }}
-                    />
-                    <Box 
-                      sx={{ 
-                        position: 'absolute', 
-                        bottom: -8, 
-                        left: -8, 
-                        width: 16, 
-                        height: 16, 
-                        bgcolor: '#FF5722', 
-                        cursor: 'sw-resize',
-                        zIndex: 30,
-                        border: '1px solid white',
-                        '&:hover': {
-                          transform: 'scale(1.2)',
-                          bgcolor: '#E64A19'
-                        }
-                      }}
-                      onMouseDown={(e) => {
-                        e.stopPropagation();
-                        handleResizeStart(e, coords.id, 'sw');
-                      }}
-                    />
-                    
-                    {/* Edge resize handles - enlarged and more visible */}
-                    <Box 
-                      sx={{ 
-                        position: 'absolute', 
-                        top: -8, 
-                        left: 'calc(50% - 8px)', 
-                        width: 16, 
-                        height: 16, 
-                        bgcolor: '#FF5722', 
-                        cursor: 'n-resize',
-                        zIndex: 30,
-                        border: '1px solid white',
-                        '&:hover': {
-                          transform: 'scale(1.2)',
-                          bgcolor: '#E64A19'
-                        }
-                      }}
-                      onMouseDown={(e) => {
-                        e.stopPropagation();
-                        handleResizeStart(e, coords.id, 'n');
-                      }}
-                    />
-                    <Box 
-                      sx={{ 
-                        position: 'absolute', 
-                        right: -8, 
-                        top: 'calc(50% - 8px)', 
-                        width: 16, 
-                        height: 16, 
-                        bgcolor: '#FF5722', 
-                        cursor: 'e-resize',
-                        zIndex: 30,
-                        border: '1px solid white',
-                        '&:hover': {
-                          transform: 'scale(1.2)',
-                          bgcolor: '#E64A19'
-                        }
-                      }}
-                      onMouseDown={(e) => {
-                        e.stopPropagation();
-                        handleResizeStart(e, coords.id, 'e');
-                      }}
-                    />
-                    <Box 
+            {(editMode ? editableCoordinates : IMAGE_COORDINATES).map((coords) => {
+  // Calculate scaled position and size
+  const canvasW = canvasRef.current?.width ?? 1;
+  const canvasH = canvasRef.current?.height ?? 1;
+  const x = (coords.x / canvasW / pdfScale) * canvasW;
+  const y = canvasH - ((coords.y + coords.height) / canvasH / pdfScale) * canvasH;
+  const width = (coords.width / canvasW / pdfScale) * canvasW;
+  const height = (coords.height / canvasH / pdfScale) * canvasH;
+  return (
+    <Rnd
+      key={coords.id}
+      size={{ width, height }}
+      position={{ x, y }}
+      bounds="parent"
+      enableResizing={editMode}
+      disableDragging={!editMode}
+      onDragStop={(_, d) => {
+        if (!editMode) return;
+        const updated = editableCoordinates.map(box =>
+          box.id === coords.id
+            ? { ...box, x: (d.x * pdfScale) } // store in PDF units
+            : box
+        );
+        setEditableCoordinates(updated);
+      }}
+      onResizeStop={(_, __, ref, ___, position) => {
+        if (!editMode) return;
+        const newWidth = parseFloat(ref.style.width);
+        const newHeight = parseFloat(ref.style.height);
+        const updated = editableCoordinates.map(box =>
+          box.id === coords.id
+            ? {
+                ...box,
+                width: (newWidth * pdfScale), // store in PDF units
+                height: (newHeight * pdfScale),
+                x: (position.x * pdfScale),
+                y: (canvasH - position.y - newHeight) * pdfScale // convert back to PDF units
+              }
+            : box
+        );
+        setEditableCoordinates(updated);
+      }}
+    >
+      <Box
+        data-id={coords.id}
+        sx={{
+          width: '100%',
+          height: '100%',
+          cursor: editMode ? 'move' : 'pointer',
+          border: editMode
+            ? '2px solid #FF5722'
+            : (replacementImages[coords.id] 
+              ? '2px solid #FFE8E4' 
+              : '1px solid #B8BDD7'),
+          '&:hover': {
+            border: editMode 
+              ? '2px solid #E64A19'
+              : '2px solid #054697'
+          },
+          zIndex: resizeItemRef.current === coords.id ? 10 : 1,
+          pointerEvents: editMode ? 'auto' : 'auto',
+          transition: 'all 0.2s',
+          position: 'relative',
+        }}
+        onClick={(e) => {
+          if (editMode) {
+            e.stopPropagation();
+          } else {
+            handleAreaClick(coords);
+          }
+        }}
+      >
+        {/* Overlay content for this image box (e.g. label, controls, etc.) can go here */}
+      </Box>
+    </Rnd>
+  );
                       sx={{ 
                         position: 'absolute', 
                         bottom: -8, 
