@@ -252,7 +252,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
     document.addEventListener('mouseup', handleResizeUpGlobalRef);
   };
 
-  // Completely new resize handler using direct DOM manipulation
+  // Improved resize handler using direct DOM manipulation with better handling for both growing and shrinking
   const handleResizeMoveGlobalRef = (e: MouseEvent): void => {
     if (!resizingRef.current || !resizeItemRef.current || !resizeDirectionRef.current || !canvasRef.current) return;
 
@@ -292,12 +292,14 @@ const WeddingPDFImageReplacer: React.FC = () => {
         newWidth = Math.max(MIN_SIZE, rect.width + deltaX);
         break;
       case 'w': // Left edge
-        newWidth = Math.max(MIN_SIZE, rect.width - deltaX);
-        newLeft = rect.left - canvasRect.left + deltaX;
+        const widthChange = Math.min(rect.width - MIN_SIZE, deltaX);
+        newWidth = rect.width - widthChange;
+        newLeft = rect.left - canvasRect.left + widthChange;
         break;
       case 'n': // Top edge
-        newHeight = Math.max(MIN_SIZE, rect.height - deltaY);
-        newTop = rect.top - canvasRect.top + deltaY;
+        const heightChange = Math.min(rect.height - MIN_SIZE, deltaY);
+        newHeight = rect.height - heightChange;
+        newTop = rect.top - canvasRect.top + heightChange;
         break;
       case 's': // Bottom edge
         newHeight = Math.max(MIN_SIZE, rect.height + deltaY);
@@ -307,20 +309,24 @@ const WeddingPDFImageReplacer: React.FC = () => {
         newHeight = Math.max(MIN_SIZE, rect.height + deltaY);
         break;
       case 'sw': // Bottom-left corner
-        newWidth = Math.max(MIN_SIZE, rect.width - deltaX);
-        newLeft = rect.left - canvasRect.left + deltaX;
+        const swWidthChange = Math.min(rect.width - MIN_SIZE, deltaX);
+        newWidth = rect.width - swWidthChange;
+        newLeft = rect.left - canvasRect.left + swWidthChange;
         newHeight = Math.max(MIN_SIZE, rect.height + deltaY);
         break;
       case 'ne': // Top-right corner
         newWidth = Math.max(MIN_SIZE, rect.width + deltaX);
-        newHeight = Math.max(MIN_SIZE, rect.height - deltaY);
-        newTop = rect.top - canvasRect.top + deltaY;
+        const neHeightChange = Math.min(rect.height - MIN_SIZE, deltaY);
+        newHeight = rect.height - neHeightChange;
+        newTop = rect.top - canvasRect.top + neHeightChange;
         break;
       case 'nw': // Top-left corner
-        newWidth = Math.max(MIN_SIZE, rect.width - deltaX);
-        newLeft = rect.left - canvasRect.left + deltaX;
-        newHeight = Math.max(MIN_SIZE, rect.height - deltaY);
-        newTop = rect.top - canvasRect.top + deltaY;
+        const nwWidthChange = Math.min(rect.width - MIN_SIZE, deltaX);
+        newWidth = rect.width - nwWidthChange;
+        newLeft = rect.left - canvasRect.left + nwWidthChange;
+        const nwHeightChange = Math.min(rect.height - MIN_SIZE, deltaY);
+        newHeight = rect.height - nwHeightChange;
+        newTop = rect.top - canvasRect.top + nwHeightChange;
         break;
     }
     
@@ -362,7 +368,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
     document.removeEventListener('mouseup', handleResizeUpGlobalRef);
   };
 
-  // FIXED: Handle mouse down for dragging in edit mode
+  // Handle mouse down for dragging in edit mode
   const handleMouseDown = (e: React.MouseEvent, id: string): void => {
     if (!editMode || resizingRef.current) return;
     
@@ -387,7 +393,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
     document.addEventListener('mouseup', handleMouseUpGlobalRef);
   };
   
-  // FIXED: Global mouse move handler for dragging
+  // Improved smooth drag handler similar to TableEditor
   const handleMouseMoveGlobalRef = (e: MouseEvent): void => {
     if (!draggedItemRef.current || !canvasRef.current) return;
     
@@ -399,27 +405,31 @@ const WeddingPDFImageReplacer: React.FC = () => {
     const draggedElement = editableCoordinates.find(coord => coord.id === draggedItemRef.current);
     if (!draggedElement) return;
 
-    // Calculate new position in screen coordinates
+    // Find the element in the DOM
+    const elements = document.querySelectorAll(`[data-id="${draggedItemRef.current}"]`);
+    if (elements.length === 0) return;
+    
+    const element = elements[0] as HTMLElement;
+    
+    // Calculate new position in screen coordinates with smooth movement
     const newScreenX = e.clientX - canvasRect.left - dragOffsetRef.current.x;
     const newScreenY = e.clientY - canvasRect.top - dragOffsetRef.current.y;
     
-    // Convert screen coordinates to canvas coordinates
+    // Ensure we don't go outside the canvas
+    const elementWidth = element.offsetWidth;
+    const elementHeight = element.offsetHeight;
+    const boundedX = Math.max(0, Math.min(canvasRect.width - elementWidth, newScreenX));
+    const boundedY = Math.max(0, Math.min(canvasRect.height - elementHeight, newScreenY));
+    
+    // Convert screen coordinates to PDF coordinates
     const scaleFactorX = canvas.width / canvasRect.width;
     const scaleFactorY = canvas.height / canvasRect.height;
-    const canvasX = newScreenX * scaleFactorX;
-    const canvasY = newScreenY * scaleFactorY;
     
-    // Get PDF dimensions
-    const pdfWidth = canvas.width / pdfScale;
-    const pdfHeight = canvas.height / pdfScale;
+    // Calculate PDF coordinates
+    const pdfX = (boundedX * scaleFactorX) / pdfScale;
+    const pdfY = (canvas.height - ((boundedY + elementHeight) * scaleFactorY)) / pdfScale;
     
-    // Convert canvas coordinates to PDF coordinates
-    // PDF Y coordinate starts from bottom, canvas Y starts from top
-    // Also ensure the item stays within bounds considering its dimensions
-    const pdfX = Math.max(0, Math.min(pdfWidth - draggedElement.width, canvasX / pdfScale));
-    const pdfY = Math.max(0, Math.min(pdfHeight - draggedElement.height, (canvas.height - canvasY) / pdfScale));
-    
-    // Update coordinates
+    // Update coordinates with immediate feedback
     setEditableCoordinates(prev => {
       return prev.map(coord => {
         if (coord.id === draggedItemRef.current) {
