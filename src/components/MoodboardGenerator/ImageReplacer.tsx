@@ -254,16 +254,29 @@ const WeddingPDFImageReplacer: React.FC = () => {
     const pdfWidth = canvasWidth / pdfScale;
     const pdfHeight = canvasHeight / pdfScale;
     
-    const pdfX = Math.round((newX / canvasWidth) * pdfWidth);
-    const pdfY = Math.round((newY / canvasHeight) * pdfHeight);
+    // Calculate PDF coordinates directly from canvas position
+    // Keep coordinates within bounds
+    const pdfX = Math.max(0, Math.round((newX / canvasWidth) * pdfWidth));
+    const pdfY = Math.max(0, Math.round((newY / canvasHeight) * pdfHeight));
     
-    // Update the coordinates of the dragged item
-    setEditableCoordinates(prev => {
-      return prev.map(coord => {
-        if (coord.id === draggedItem) {
-          return { ...coord, x: pdfX, y: pdfY };
+    // Use requestAnimationFrame to make dragging smoother
+    requestAnimationFrame(() => {
+      // Throttle updates to reduce jitter
+      setEditableCoordinates(prev => {
+        const prevCoord = prev.find(coord => coord.id === draggedItem);
+        if (!prevCoord) return prev;
+        
+        // Only update if position changed by at least 2 PDF units
+        if (Math.abs(prevCoord.x - pdfX) < 2 && Math.abs(prevCoord.y - pdfY) < 2) {
+          return prev;
         }
-        return coord;
+        
+        return prev.map(coord => {
+          if (coord.id === draggedItem) {
+            return { ...coord, x: pdfX, y: pdfY };
+          }
+          return coord;
+        });
       });
     });
   };
@@ -688,7 +701,9 @@ const WeddingPDFImageReplacer: React.FC = () => {
               
               // Calculate position based on PDF coordinates and canvas dimensions
               const left = (coords.x / pdfWidth) * canvasWidth;
-              const top = ((pdfHeight - coords.y - coords.height) / pdfHeight) * canvasHeight;
+              // For top position, we need to convert from PDF coordinates (bottom-left origin)
+              // to canvas coordinates (top-left origin)
+              const top = (coords.y / pdfHeight) * canvasHeight;
               const width = (coords.width / pdfWidth) * canvasWidth;
               const height = (coords.height / pdfHeight) * canvasHeight;
               
