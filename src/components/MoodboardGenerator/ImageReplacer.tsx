@@ -252,7 +252,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
     document.addEventListener('mouseup', handleResizeUpGlobalRef);
   };
 
-  // Improved resize handler using direct DOM manipulation with better handling for both growing and shrinking
+  // Completely rewritten resize handler with simplified approach for both growing and shrinking
   const handleResizeMoveGlobalRef = (e: MouseEvent): void => {
     if (!resizingRef.current || !resizeItemRef.current || !resizeDirectionRef.current || !canvasRef.current) return;
 
@@ -265,7 +265,6 @@ const WeddingPDFImageReplacer: React.FC = () => {
     if (elements.length === 0) return;
     
     const element = elements[0] as HTMLElement;
-    const rect = element.getBoundingClientRect();
     
     // Find the item in our state
     const itemIndex = editableCoordinates.findIndex(coord => coord.id === resizeItemRef.current);
@@ -281,52 +280,54 @@ const WeddingPDFImageReplacer: React.FC = () => {
     // Minimum size in pixels
     const MIN_SIZE = 20;
     
+    // Get the current position and size in screen coordinates
+    const left = (item.x * pdfScale) / (canvas.width / canvasRect.width);
+    const top = canvasRect.height - ((item.y + item.height) * pdfScale) / (canvas.height / canvasRect.height);
+    const width = (item.width * pdfScale) / (canvas.width / canvasRect.width);
+    const height = (item.height * pdfScale) / (canvas.height / canvasRect.height);
+    
     // Calculate new dimensions based on resize direction
-    let newWidth = rect.width;
-    let newHeight = rect.height;
-    let newLeft = rect.left - canvasRect.left;
-    let newTop = rect.top - canvasRect.top;
+    let newLeft = left;
+    let newTop = top;
+    let newWidth = width;
+    let newHeight = height;
     
     switch (resizeDirectionRef.current) {
       case 'e': // Right edge
-        newWidth = Math.max(MIN_SIZE, rect.width + deltaX);
+        newWidth = Math.max(MIN_SIZE, width + deltaX);
         break;
       case 'w': // Left edge
-        const widthChange = Math.min(rect.width - MIN_SIZE, deltaX);
-        newWidth = rect.width - widthChange;
-        newLeft = rect.left - canvasRect.left + widthChange;
+        // For left edge, we need to adjust both left and width
+        newWidth = Math.max(MIN_SIZE, width - deltaX);
+        newLeft = left + (width - newWidth);
         break;
       case 'n': // Top edge
-        const heightChange = Math.min(rect.height - MIN_SIZE, deltaY);
-        newHeight = rect.height - heightChange;
-        newTop = rect.top - canvasRect.top + heightChange;
+        // For top edge, we need to adjust both top and height
+        newHeight = Math.max(MIN_SIZE, height - deltaY);
+        newTop = top + (height - newHeight);
         break;
       case 's': // Bottom edge
-        newHeight = Math.max(MIN_SIZE, rect.height + deltaY);
+        newHeight = Math.max(MIN_SIZE, height + deltaY);
         break;
       case 'se': // Bottom-right corner
-        newWidth = Math.max(MIN_SIZE, rect.width + deltaX);
-        newHeight = Math.max(MIN_SIZE, rect.height + deltaY);
+        newWidth = Math.max(MIN_SIZE, width + deltaX);
+        newHeight = Math.max(MIN_SIZE, height + deltaY);
         break;
       case 'sw': // Bottom-left corner
-        const swWidthChange = Math.min(rect.width - MIN_SIZE, deltaX);
-        newWidth = rect.width - swWidthChange;
-        newLeft = rect.left - canvasRect.left + swWidthChange;
-        newHeight = Math.max(MIN_SIZE, rect.height + deltaY);
+        newWidth = Math.max(MIN_SIZE, width - deltaX);
+        newLeft = left + (width - newWidth);
+        newHeight = Math.max(MIN_SIZE, height + deltaY);
         break;
       case 'ne': // Top-right corner
-        newWidth = Math.max(MIN_SIZE, rect.width + deltaX);
-        const neHeightChange = Math.min(rect.height - MIN_SIZE, deltaY);
-        newHeight = rect.height - neHeightChange;
-        newTop = rect.top - canvasRect.top + neHeightChange;
+        newWidth = Math.max(MIN_SIZE, width + deltaX);
+        newHeight = Math.max(MIN_SIZE, height - deltaY);
+        newTop = top + (height - newHeight);
         break;
       case 'nw': // Top-left corner
-        const nwWidthChange = Math.min(rect.width - MIN_SIZE, deltaX);
-        newWidth = rect.width - nwWidthChange;
-        newLeft = rect.left - canvasRect.left + nwWidthChange;
-        const nwHeightChange = Math.min(rect.height - MIN_SIZE, deltaY);
-        newHeight = rect.height - nwHeightChange;
-        newTop = rect.top - canvasRect.top + nwHeightChange;
+        newWidth = Math.max(MIN_SIZE, width - deltaX);
+        newLeft = left + (width - newWidth);
+        newHeight = Math.max(MIN_SIZE, height - deltaY);
+        newTop = top + (height - newHeight);
         break;
     }
     
