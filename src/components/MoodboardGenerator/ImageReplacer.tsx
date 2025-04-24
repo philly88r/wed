@@ -1,12 +1,70 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { PDFDocument } from 'pdf-lib';
-import * as pdfjs from 'pdfjs-dist';
-import { Box, Typography, Button, Radio, RadioGroup, FormControlLabel, FormControl, Paper, Grid, CircularProgress } from '@mui/material';
-import { Rnd } from 'react-rnd';
+import React from 'react';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js';
+const PdfLibDemo: React.FC = () => {
+  // Handler for creating and downloading a PDF
+  const handleCreatePdf = async () => {
+    // 1. Create a new PDF document
+    const pdfDoc = await PDFDocument.create();
 
+    // 2. Add a blank page
+    const page = pdfDoc.addPage([595, 842]); // A4 size in points
+
+    // 3. Embed a font
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    // 4. Draw text on the page
+    page.drawText('Hello from pdf-lib!', {
+      x: 50,
+      y: 800,
+      size: 32,
+      font,
+      color: rgb(0.02, 0.27, 0.59), // Brand Primary Blue #054697
+    });
+
+    // 5. Serialize the PDFDocument to bytes
+    const pdfBytes = await pdfDoc.save();
+
+    // 6. Trigger download in the browser
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'demo.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div style={{ padding: 32, fontFamily: 'Poppins, sans-serif', background: '#FFF' }}>
+      <h1 style={{ color: '#054697' }}>PDF-lib Demo</h1>
+      <p style={{ color: 'rgba(5, 70, 151, 0.8)' }}>
+        Click the button below to generate and download a PDF using <b>pdf-lib</b>.
+      </p>
+      <button
+        onClick={handleCreatePdf}
+        style={{
+          background: '#FFE8E4',
+          color: '#054697',
+          border: '1px solid #B8BDD7',
+          borderRadius: 6,
+          padding: '12px 28px',
+          fontSize: 18,
+          fontWeight: 600,
+          cursor: 'pointer',
+          fontFamily: 'Poppins, sans-serif',
+          transition: 'background 0.2s',
+        }}
+        onMouseOver={e => (e.currentTarget.style.background = '#FFD5CC')}
+        onMouseOut={e => (e.currentTarget.style.background = '#FFE8E4')}
+      >
+        Download PDF
+      </button>
+    </div>
+  );
+};
+
+export default PdfLibDemo;
 // Define types
 interface ImageCoordinates {
   id: string;
