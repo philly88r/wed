@@ -249,14 +249,10 @@ const WeddingPDFImageReplacer: React.FC = () => {
     document.addEventListener('mouseup', handleResizeUpGlobalRef);
   };
 
-  // Simplified resize handler using the same approach as the table dragging
+  // Ultra-simple resize handler based on TableEditor approach
   const handleResizeMoveGlobalRef = (e: MouseEvent): void => {
     if (!resizingRef.current || !resizeItemRef.current || !resizeDirectionRef.current || !canvasRef.current) return;
 
-    // Calculate the delta movement
-    const deltaX = e.clientX - resizeStartPosRef.current.x;
-    const deltaY = e.clientY - resizeStartPosRef.current.y;
-    
     // Find the item in our state
     const itemIndex = editableCoordinates.findIndex(coord => coord.id === resizeItemRef.current);
     if (itemIndex === -1) return;
@@ -264,95 +260,95 @@ const WeddingPDFImageReplacer: React.FC = () => {
     const item = { ...editableCoordinates[itemIndex] };
     const newCoordinates = [...editableCoordinates];
     
-    // Calculate scaling factor for PDF coordinates
+    // Get canvas dimensions for scaling
     const canvas = canvasRef.current;
     const canvasRect = canvas.getBoundingClientRect();
-    const scaleX = (canvas.width / canvasRect.width) / pdfScale;
-    const scaleY = (canvas.height / canvasRect.height) / pdfScale;
     
-    // Apply the delta directly to the item's dimensions
-    // Similar to how the table dragging works
+    // Calculate mouse movement in screen pixels
+    const deltaX = e.clientX - resizeStartPosRef.current.x;
+    const deltaY = e.clientY - resizeStartPosRef.current.y;
+    
+    // Calculate scaling factor to convert screen pixels to PDF units
+    const scaleX = canvas.width / canvasRect.width / pdfScale;
+    const scaleY = canvas.height / canvasRect.height / pdfScale;
+    
+    // Convert screen deltas to PDF coordinate deltas
+    const pdfDeltaX = deltaX * scaleX;
+    const pdfDeltaY = deltaY * scaleY;
+    
+    // Apply resize based on handle direction
     switch (resizeDirectionRef.current) {
       case 'e': // Right edge
-        // Allow resizing smaller by removing any minimum size check
-        newCoordinates[itemIndex] = { 
-          ...item, 
-          width: Math.max(1, item.width + deltaX * scaleX)
+        newCoordinates[itemIndex] = {
+          ...item,
+          width: item.width + pdfDeltaX
         };
         break;
+        
       case 'w': // Left edge
-        // Allow resizing smaller by removing minimum width restriction
-        const newWidthW = Math.max(1, item.width - deltaX * scaleX);
-        newCoordinates[itemIndex] = { 
-          ...item, 
-          x: item.x + deltaX * scaleX,
-          width: newWidthW
+        newCoordinates[itemIndex] = {
+          ...item,
+          x: item.x + pdfDeltaX,
+          width: item.width - pdfDeltaX
         };
         break;
-      case 'n': // Top edge
-        // Allow resizing smaller by removing minimum height restriction
-        const newHeightN = Math.max(1, item.height + deltaY * scaleY);
-        newCoordinates[itemIndex] = { 
-          ...item, 
-          y: item.y - deltaY * scaleY,
-          height: newHeightN
-        };
-        break;
+        
       case 's': // Bottom edge
-        // Allow resizing smaller by removing minimum height restriction
-        const newHeightS = Math.max(1, item.height - deltaY * scaleY);
-        newCoordinates[itemIndex] = { 
-          ...item, 
-          height: newHeightS
+        newCoordinates[itemIndex] = {
+          ...item,
+          height: item.height - pdfDeltaY
         };
         break;
+        
+      case 'n': // Top edge
+        newCoordinates[itemIndex] = {
+          ...item,
+          y: item.y - pdfDeltaY,
+          height: item.height + pdfDeltaY
+        };
+        break;
+        
       case 'se': // Bottom-right corner
-        // Allow resizing smaller in both dimensions
-        const newWidthSE = Math.max(1, item.width + deltaX * scaleX);
-        const newHeightSE = Math.max(1, item.height - deltaY * scaleY);
-        newCoordinates[itemIndex] = { 
-          ...item, 
-          width: newWidthSE,
-          height: newHeightSE
+        newCoordinates[itemIndex] = {
+          ...item,
+          width: item.width + pdfDeltaX,
+          height: item.height - pdfDeltaY
         };
         break;
+        
       case 'sw': // Bottom-left corner
-        // Allow resizing smaller in both dimensions
-        const newWidthSW = Math.max(1, item.width - deltaX * scaleX);
-        const newHeightSW = Math.max(1, item.height - deltaY * scaleY);
-        newCoordinates[itemIndex] = { 
-          ...item, 
-          x: item.x + deltaX * scaleX,
-          width: newWidthSW,
-          height: newHeightSW
+        newCoordinates[itemIndex] = {
+          ...item,
+          x: item.x + pdfDeltaX,
+          width: item.width - pdfDeltaX,
+          height: item.height - pdfDeltaY
         };
         break;
+        
       case 'ne': // Top-right corner
-        // Allow resizing smaller in both dimensions
-        const newWidthNE = Math.max(1, item.width + deltaX * scaleX);
-        const newHeightNE = Math.max(1, item.height + deltaY * scaleY);
-        newCoordinates[itemIndex] = { 
-          ...item, 
-          y: item.y - deltaY * scaleY,
-          width: newWidthNE,
-          height: newHeightNE
+        newCoordinates[itemIndex] = {
+          ...item,
+          y: item.y - pdfDeltaY,
+          width: item.width + pdfDeltaX,
+          height: item.height + pdfDeltaY
         };
         break;
+        
       case 'nw': // Top-left corner
-        // Allow resizing smaller in both dimensions
-        const newWidthNW = Math.max(1, item.width - deltaX * scaleX);
-        const newHeightNW = Math.max(1, item.height + deltaY * scaleY);
-        newCoordinates[itemIndex] = { 
-          ...item, 
-          x: item.x + deltaX * scaleX,
-          y: item.y - deltaY * scaleY,
-          width: newWidthNW,
-          height: newHeightNW
+        newCoordinates[itemIndex] = {
+          ...item,
+          x: item.x + pdfDeltaX,
+          y: item.y - pdfDeltaY,
+          width: item.width - pdfDeltaX,
+          height: item.height + pdfDeltaY
         };
         break;
     }
     
+    // Update state with new coordinates
     setEditableCoordinates(newCoordinates);
+    
+    // Update start position for next move
     resizeStartPosRef.current = { x: e.clientX, y: e.clientY };
   };
 
