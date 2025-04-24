@@ -31,15 +31,21 @@ type ReplacementImages = {
 };
 
 // Exact image coordinates for the wedding template PDF
+// Coordinates are adjusted for a PDF viewport of 567 x 850.5
 const IMAGE_COORDINATES: ImageCoordinates[] = [
-  { id: 'living-room', page: 0, x: 94, y: 124, width: 340, height: 232, name: 'Living Room' },
-  { id: 'studio-light', page: 0, x: 454, y: 124, width: 340, height: 488, name: 'Studio Light' },
-  { id: 'record-player', page: 0, x: 94, y: 372, width: 340, height: 232, name: 'Record Player Area' },
-  { id: 'art-shelf', page: 0, x: 94, y: 620, width: 207, height: 156, name: 'Art Shelf' },
-  { id: 'decor1', page: 0, x: 321, y: 620, width: 207, height: 156, name: 'Yellow Couch' },
-  { id: 'decor2', page: 0, x: 548, y: 620, width: 246, height: 156, name: 'Orange Pillows' },
-  { id: 'fashion', page: 0, x: 94, y: 796, width: 246, height: 280, name: 'Fashion Photo' },
-  { id: 'wood-panel', page: 0, x: 382, y: 796, width: 412, height: 280, name: 'Wood Panel Room' },
+  // Top row images
+  { id: 'living-room', page: 0, x: 70, y: 100, width: 220, height: 150, name: 'Living Room' },
+  { id: 'studio-light', page: 0, x: 300, y: 100, width: 220, height: 320, name: 'Studio Light' },
+  
+  // Middle row images
+  { id: 'record-player', page: 0, x: 70, y: 260, width: 220, height: 150, name: 'Record Player Area' },
+  { id: 'art-shelf', page: 0, x: 70, y: 420, width: 140, height: 100, name: 'Art Shelf' },
+  { id: 'decor1', page: 0, x: 220, y: 420, width: 140, height: 100, name: 'Yellow Couch' },
+  { id: 'decor2', page: 0, x: 370, y: 420, width: 150, height: 100, name: 'Orange Pillows' },
+  
+  // Bottom row images
+  { id: 'fashion', page: 0, x: 70, y: 530, width: 160, height: 180, name: 'Fashion Photo' },
+  { id: 'wood-panel', page: 0, x: 240, y: 530, width: 280, height: 180, name: 'Wood Panel Room' },
 ];
 
 const WeddingPDFImageReplacer: React.FC = () => {
@@ -114,8 +120,10 @@ const WeddingPDFImageReplacer: React.FC = () => {
       const page = await pdf.getPage(1);
       console.log('PDF page loaded successfully');
       
-      // Set a fixed scale to ensure visibility
-      const fixedScale = 1.0;
+      // Set a fixed scale to match the expected dimensions (567 x 850.5)
+      const targetWidth = 567;
+      const originalViewport = page.getViewport({ scale: 1.0 });
+      const fixedScale = targetWidth / originalViewport.width;
       const viewport = page.getViewport({ scale: fixedScale });
       console.log('PDF viewport created with dimensions:', viewport.width, 'x', viewport.height);
       
@@ -595,6 +603,9 @@ const WeddingPDFImageReplacer: React.FC = () => {
                     <br />
                     <Typography variant="caption" sx={{ display: 'block' }}>
                       {coords.name}
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', fontSize: '0.6rem' }}>
+                      x:{coords.x} y:{coords.y} w:{coords.width} h:{coords.height}
                     </Typography>
                   </Typography>
                   
