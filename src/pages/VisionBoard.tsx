@@ -224,17 +224,55 @@ export default function VisionBoard() {
     
     if (newImage.url && newImage.title) {
       // If the image is a data URL (uploaded file), save it to storage
-      let storagePath = '';
+      let storagePath: string | null = '';
       let imageUrl = newImage.url;
       
       if (newImage.url.startsWith('data:')) {
         try {
-          // Instead of uploading to Supabase storage, just use the data URL directly
-          console.log('Using data URL directly for image');
-          imageUrl = newImage.url; // Keep the data URL as is
-          storagePath = null; // No storage path needed
+          // Upload to Supabase storage
+          console.log('Uploading image to Supabase storage');
+          
+          // Extract file data from data URL
+          const base64Data = newImage.url.split(',')[1];
+          const mimeType = newImage.url.split(';')[0].split(':')[1];
+          const fileExt = mimeType.split('/')[1];
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+          const filePath = `moodboard-images/${moodboard.id}/${fileName}`;
+          
+          // Convert base64 to blob
+          const byteCharacters = atob(base64Data);
+          const byteArrays = [];
+          for (let i = 0; i < byteCharacters.length; i += 512) {
+            const slice = byteCharacters.slice(i, i + 512);
+            const byteNumbers = new Array(slice.length);
+            for (let j = 0; j < slice.length; j++) {
+              byteNumbers[j] = slice.charCodeAt(j);
+            }
+            byteArrays.push(new Uint8Array(byteNumbers));
+          }
+          const blob = new Blob(byteArrays, { type: mimeType });
+          
+          // Upload to Supabase
+          const { error: uploadError } = await supabase.storage
+            .from('moodboard-images')
+            .upload(filePath, blob, { contentType: mimeType });
+          
+          if (uploadError) {
+            throw uploadError;
+          }
+          
+          // Get public URL
+          const { data: urlData } = supabase.storage
+            .from('moodboard-images')
+            .getPublicUrl(filePath);
+          
+          imageUrl = urlData.publicUrl;
+          storagePath = filePath;
+          console.log('Image uploaded successfully to:', imageUrl);
         } catch (error) {
-          console.error('Error processing image:', error);
+          console.error('Error uploading image to Supabase:', error);
+          alert('Failed to upload image. Please try again.');
+          return;
         }
       }
       
@@ -585,21 +623,38 @@ export default function VisionBoard() {
             </h2>
             <div>
               {!showAITemplate && activeTab === 'classic' && (
-                <button
-                  onClick={() => setShowMoodboardTemplate(!showMoodboardTemplate)}
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium"
-                  style={{
-                    backgroundColor: showMoodboardTemplate ? 'transparent' : '#E8B4B4',
-                    color: '#054697',
-                    fontFamily: 'Poppins, sans-serif',
-                    fontWeight: 400,
-                    textTransform: 'uppercase',
-                    border: showMoodboardTemplate ? '1px solid #E8B4B4' : 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {showMoodboardTemplate ? 'Back to Grid View' : 'View as Template'}
-                </button>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowMoodboardTemplate(!showMoodboardTemplate)}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium"
+                    style={{
+                      backgroundColor: showMoodboardTemplate ? 'transparent' : '#E8B4B4',
+                      color: '#054697',
+                      fontFamily: 'Poppins, sans-serif',
+                      fontWeight: 400,
+                      textTransform: 'uppercase',
+                      border: showMoodboardTemplate ? '1px solid #E8B4B4' : 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {showMoodboardTemplate ? 'Back to Grid View' : 'Gallery'}
+                  </button>
+                  <button
+                    onClick={() => window.location.href = '/pdf-replacer'}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium"
+                    style={{
+                      backgroundColor: '#E8B4B4',
+                      color: '#054697',
+                      fontFamily: 'Poppins, sans-serif',
+                      fontWeight: 400,
+                      textTransform: 'uppercase',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Template View
+                  </button>
+                </div>
               )}
               {showAITemplate && (
                 <button
