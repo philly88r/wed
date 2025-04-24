@@ -841,24 +841,230 @@ const WeddingPDFImageReplacer: React.FC = () => {
                 height: '800px'
               }} 
             />
-            
-            {/* Clickable area (single square for debugging) */}
-            
-              <Box
-                key={coords.id}
-                data-id={coords.id}
-                sx={{
-                  position: 'absolute',
-                  left: `${(coords.x / (canvasRef.current?.width ?? 0) / pdfScale) * (canvasRef.current?.width ?? 0)}px`,
-                  top: `${(canvasRef.current?.height ?? 0) - ((coords.y + coords.height) / (canvasRef.current?.height ?? 0) / pdfScale) * (canvasRef.current?.height ?? 0)}px`,
-                  width: `${(coords.width / (canvasRef.current?.width ?? 0) / pdfScale) * (canvasRef.current?.width ?? 0)}px`,
-                  height: `${(coords.height / (canvasRef.current?.height ?? 0) / pdfScale) * (canvasRef.current?.height ?? 0)}px`,
-                  cursor: editMode ? 'move' : 'pointer',
-                  border: editMode
-                    ? '2px solid #FF5722'
-                    : (replacementImages[coords.id] 
-                      ? '2px solid #FFE8E4' 
-                      : '1px solid #B8BDD7'),
+            {/* Render all clickable boxes */}
+            <>
+              {(editMode ? editableCoordinates : IMAGE_COORDINATES).map(coords => (
+                <Box
+                  key={coords.id}
+                  sx={{
+                    position: 'absolute',
+                    left: coords.x,
+                    top: coords.y,
+                    width: coords.width,
+                    height: coords.height,
+                    cursor: editMode ? 'move' : 'pointer',
+                    border: editMode
+                      ? '2px solid #FF5722'
+                      : (replacementImages[coords.id] 
+                        ? '2px solid #FFE8E4' 
+                        : '1px solid #B8BDD7'),
+                    '&:hover': {
+                      border: editMode 
+                        ? '2px solid #E64A19'
+                        : '2px solid #054697'
+                    },
+                    zIndex: draggedItem === coords.id || resizeItemRef.current === coords.id ? 10 : 1,
+                    pointerEvents: editMode ? 'auto' : 'auto',
+                    transition: 'all 0.2s'
+                  }}
+                  onClick={(e) => {
+                    if (editMode) {
+                      e.stopPropagation();
+                    } else {
+                      handleAreaClick(coords);
+                    }
+                  }}
+                  onMouseDown={(e) => {
+                    // Only handle drag if we're not already resizing
+                    if (!resizingRef.current) {
+                      handleMouseDown(e, coords.id);
+                    }
+                  }}
+                >
+                  {/* Resize handles - only show in edit mode */}
+                  {editMode && (
+                    <>
+                      {/* Corner resize handles - enlarged and more visible */}
+                      <Box 
+                        sx={{ 
+                          position: 'absolute', 
+                          top: -8, 
+                          left: -8, 
+                          width: 16, 
+                          height: 16, 
+                          bgcolor: '#FF5722', 
+                          cursor: 'nw-resize',
+                          zIndex: 30,
+                          border: '1px solid white',
+                          '&:hover': {
+                            transform: 'scale(1.2)',
+                            bgcolor: '#E64A19'
+                          }
+                        }}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          handleResizeStart(e, coords.id, 'nw');
+                        }}
+                      />
+                      <Box 
+                        sx={{ 
+                          position: 'absolute', 
+                          top: -8, 
+                          right: -8, 
+                          width: 16, 
+                          height: 16, 
+                          bgcolor: '#FF5722', 
+                          cursor: 'ne-resize',
+                          zIndex: 30,
+                          border: '1px solid white',
+                          '&:hover': {
+                            transform: 'scale(1.2)',
+                            bgcolor: '#E64A19'
+                          }
+                        }}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          handleResizeStart(e, coords.id, 'ne');
+                        }}
+                      />
+                      <Box 
+                        sx={{ 
+                          position: 'absolute', 
+                          bottom: -8, 
+                          right: -8, 
+                          width: 16, 
+                          height: 16, 
+                          bgcolor: '#FF5722', 
+                          cursor: 'se-resize',
+                          zIndex: 30,
+                          border: '1px solid white',
+                          '&:hover': {
+                            transform: 'scale(1.2)',
+                            bgcolor: '#E64A19'
+                          }
+                        }}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          handleResizeStart(e, coords.id, 'se');
+                        }}
+                      />
+                      <Box 
+                        sx={{ 
+                          position: 'absolute', 
+                          bottom: -8, 
+                          left: -8, 
+                          width: 16, 
+                          height: 16, 
+                          bgcolor: '#FF5722', 
+                          cursor: 'sw-resize',
+                          zIndex: 30,
+                          border: '1px solid white',
+                          '&:hover': {
+                            transform: 'scale(1.2)',
+                            bgcolor: '#E64A19'
+                          }
+                        }}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          handleResizeStart(e, coords.id, 'sw');
+                        }}
+                      />
+                      
+                      {/* Edge resize handles - enlarged and more visible */}
+                      <Box 
+                        sx={{ 
+                          position: 'absolute', 
+                          top: -8, 
+                          left: 'calc(50% - 8px)', 
+                          width: 16, 
+                          height: 16, 
+                          bgcolor: '#FF5722', 
+                          cursor: 'n-resize',
+                          zIndex: 30,
+                          border: '1px solid white',
+                          '&:hover': {
+                            transform: 'scale(1.2)',
+                            bgcolor: '#E64A19'
+                          }
+                        }}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          handleResizeStart(e, coords.id, 'n');
+                        }}
+                      />
+                      <Box 
+                        sx={{ 
+                          position: 'absolute', 
+                          right: -8, 
+                          top: 'calc(50% - 8px)', 
+                          width: 16, 
+                          height: 16, 
+                          bgcolor: '#FF5722', 
+                          cursor: 'e-resize',
+                          zIndex: 30,
+                          border: '1px solid white',
+                          '&:hover': {
+                            transform: 'scale(1.2)',
+                            bgcolor: '#E64A19'
+                          }
+                        }}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          handleResizeStart(e, coords.id, 'e');
+                        }}
+                      />
+                      <Box 
+                        sx={{ 
+                          position: 'absolute', 
+                          bottom: -8, 
+                          left: 'calc(50% - 8px)', 
+                          width: 16, 
+                          height: 16, 
+                          bgcolor: '#FF5722', 
+                          cursor: 's-resize',
+                          zIndex: 30,
+                          border: '1px solid white',
+                          '&:hover': {
+                            transform: 'scale(1.2)',
+                            bgcolor: '#E64A19'
+                          }
+                        }}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          handleResizeStart(e, coords.id, 's');
+                        }}
+                      />
+                      <Box 
+                        sx={{ 
+                          position: 'absolute', 
+                          left: -8, 
+                          top: 'calc(50% - 8px)', 
+                          width: 16, 
+                          height: 16, 
+                          bgcolor: '#FF5722', 
+                          cursor: 'w-resize',
+                          zIndex: 30,
+                          border: '1px solid white',
+                          '&:hover': {
+                            transform: 'scale(1.2)',
+                            bgcolor: '#E64A19'
+                          }
+                        }}
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          handleResizeStart(e, coords.id, 'w');
+                        }}
+                      />
+                    </>
+                  )}
+                </Box>
+              ))}
+            </>
+          </Box>
+        </Box>
+      ) : null}
+    </Box>
+  );
                   '&:hover': {
                     border: editMode 
                       ? '2px solid #E64A19'
