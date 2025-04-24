@@ -1123,7 +1123,6 @@ const WeddingPDFImageReplacer: React.FC = () => {
                   )}
                 </Box>
               </Box>
-            ))}
           </Box>
           
           <Paper 
