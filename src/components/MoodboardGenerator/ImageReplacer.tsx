@@ -4,10 +4,8 @@ import * as pdfjs from 'pdfjs-dist';
 import { Box, Typography, Button, Radio, RadioGroup, FormControlLabel, FormControl, Paper, Grid, CircularProgress } from '@mui/material';
 
 // Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.js',
-  import.meta.url
-).toString();
+// Use CDN for production environment
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 // Define types
 interface ImageCoordinates {
@@ -62,9 +60,15 @@ const WeddingPDFImageReplacer: React.FC = () => {
   useEffect(() => {
     const loadTemplatePDF = async (): Promise<void> => {
       try {
-        // Load the Altare moodboard template
+        console.log('Attempting to load PDF template...');
         const response = await fetch('/wedding_template.pdf');
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch PDF: ${response.status} ${response.statusText}`);
+        }
+        
         const arrayBuffer = await response.arrayBuffer();
+        console.log('PDF template loaded successfully, size:', arrayBuffer.byteLength);
         setPdfBytes(arrayBuffer);
         await renderPDF(arrayBuffer);
         setPdfLoaded(true);
