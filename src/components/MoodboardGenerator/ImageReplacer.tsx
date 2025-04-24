@@ -911,19 +911,6 @@ const WeddingPDFImageReplacer: React.FC = () => {
       </Box>
     </Rnd>
   );
-                      sx={{ 
-                        position: 'absolute', 
-                        bottom: -8, 
-                        left: 'calc(50% - 8px)', 
-                        width: 16, 
-                        height: 16, 
-                        bgcolor: '#FF5722', 
-                        cursor: 's-resize',
-                        zIndex: 30,
-                        border: '1px solid white',
-                        '&:hover': {
-                          transform: 'scale(1.2)',
-                          bgcolor: '#E64A19'
                         }
                       }}
                       onMouseDown={(e) => {
