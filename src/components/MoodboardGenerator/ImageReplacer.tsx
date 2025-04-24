@@ -3,9 +3,9 @@ import { PDFDocument } from 'pdf-lib';
 import * as pdfjs from 'pdfjs-dist';
 import { Box, Typography, Button, Radio, RadioGroup, FormControlLabel, FormControl, Paper, Grid, CircularProgress } from '@mui/material';
 
-// Configure PDF.js worker
-// Use a specific version from CDN that we know exists
-pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+// Configure PDF.js worker with a specific version from jsDelivr CDN
+// jsDelivr is reliable and should have the exact version we need
+pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.1.91/build/pdf.worker.min.js';
 
 // Define types
 interface ImageCoordinates {
