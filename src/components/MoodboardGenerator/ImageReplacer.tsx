@@ -228,9 +228,6 @@ const WeddingPDFImageReplacer: React.FC = () => {
     const element = e.currentTarget.parentElement;
     if (!element) return;
     
-    // Get the initial dimensions and position
-    const rect = element.getBoundingClientRect();
-    
     // Set resize state
     resizingRef.current = true;
     resizeItemRef.current = id;
