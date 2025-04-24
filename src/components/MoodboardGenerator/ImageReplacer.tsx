@@ -214,7 +214,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
     setEditMode(false);
   };
 
-  // Handle resize start with improved event handling
+  // Handle resize start with direct DOM manipulation
   const handleResizeStart = (e: React.MouseEvent, id: string, direction: string): void => {
     if (!editMode) return;
     
@@ -224,11 +224,22 @@ const WeddingPDFImageReplacer: React.FC = () => {
     
     console.log(`Resize started: ${id}, direction: ${direction}`);
     
+    // Get the element being resized
+    const element = e.currentTarget.parentElement;
+    if (!element) return;
+    
+    // Get the initial dimensions and position
+    const rect = element.getBoundingClientRect();
+    
     // Set resize state
     resizingRef.current = true;
     resizeItemRef.current = id;
     resizeDirectionRef.current = direction;
     resizeStartPosRef.current = { x: e.clientX, y: e.clientY };
+    
+    // Store initial element dimensions
+    const item = editableCoordinates.find(coord => coord.id === id);
+    if (!item) return;
     
     // Cancel any ongoing drag operation
     if (draggedItemRef.current) {
@@ -240,98 +251,104 @@ const WeddingPDFImageReplacer: React.FC = () => {
     document.addEventListener('mousemove', handleResizeMoveGlobalRef);
     document.addEventListener('mouseup', handleResizeUpGlobalRef);
   };
-  
-  // Simplified resize handler using direct screen coordinates
+
+  // Completely new resize handler using direct DOM manipulation
   const handleResizeMoveGlobalRef = (e: MouseEvent): void => {
     if (!resizingRef.current || !resizeItemRef.current || !resizeDirectionRef.current || !canvasRef.current) return;
-
-    // Get canvas dimensions and rect
-    const canvas = canvasRef.current;
-    const canvasRect = canvas.getBoundingClientRect();
 
     // Calculate the delta movement in screen coordinates
     const deltaX = e.clientX - resizeStartPosRef.current.x;
     const deltaY = e.clientY - resizeStartPosRef.current.y;
-
-    // Find the item being resized
+    
+    // Find the element being resized by its ID
+    const elements = document.querySelectorAll(`[data-id="${resizeItemRef.current}"]`);
+    if (elements.length === 0) return;
+    
+    const element = elements[0] as HTMLElement;
+    const rect = element.getBoundingClientRect();
+    
+    // Find the item in our state
     const itemIndex = editableCoordinates.findIndex(coord => coord.id === resizeItemRef.current);
     if (itemIndex === -1) return;
-  
+    
     const item = { ...editableCoordinates[itemIndex] };
     const newCoordinates = [...editableCoordinates];
-
+    
+    // Get canvas dimensions
+    const canvas = canvasRef.current;
+    const canvasRect = canvas.getBoundingClientRect();
+    
     // Minimum size in pixels
     const MIN_SIZE = 20;
-  
-    // Get the current dimensions in screen space
-    const screenX = (item.x * pdfScale / (canvas.width / canvasRect.width));
-    const screenY = ((canvas.height - (item.y + item.height) * pdfScale) / (canvas.height / canvasRect.height));
-    const screenWidth = (item.width * pdfScale / (canvas.width / canvasRect.width));
-    const screenHeight = (item.height * pdfScale / (canvas.height / canvasRect.height));
-
-    // Update dimensions based on resize direction
-    let newScreenX = screenX;
-    let newScreenY = screenY;
-    let newScreenWidth = screenWidth;
-    let newScreenHeight = screenHeight;
-
+    
+    // Calculate new dimensions based on resize direction
+    let newWidth = rect.width;
+    let newHeight = rect.height;
+    let newLeft = rect.left - canvasRect.left;
+    let newTop = rect.top - canvasRect.top;
+    
     switch (resizeDirectionRef.current) {
       case 'e': // Right edge
-        newScreenWidth = Math.max(MIN_SIZE, screenWidth + deltaX);
-        break;
-      case 's': // Bottom edge
-        newScreenHeight = Math.max(MIN_SIZE, screenHeight + deltaY);
-        break;
-      case 'se': // Bottom-right corner
-        newScreenWidth = Math.max(MIN_SIZE, screenWidth + deltaX);
-        newScreenHeight = Math.max(MIN_SIZE, screenHeight + deltaY);
+        newWidth = Math.max(MIN_SIZE, rect.width + deltaX);
         break;
       case 'w': // Left edge
-        newScreenWidth = Math.max(MIN_SIZE, screenWidth - deltaX);
-        newScreenX = screenX + deltaX;
+        newWidth = Math.max(MIN_SIZE, rect.width - deltaX);
+        newLeft = rect.left - canvasRect.left + deltaX;
         break;
       case 'n': // Top edge
-        newScreenHeight = Math.max(MIN_SIZE, screenHeight - deltaY);
-        newScreenY = screenY + deltaY;
+        newHeight = Math.max(MIN_SIZE, rect.height - deltaY);
+        newTop = rect.top - canvasRect.top + deltaY;
+        break;
+      case 's': // Bottom edge
+        newHeight = Math.max(MIN_SIZE, rect.height + deltaY);
+        break;
+      case 'se': // Bottom-right corner
+        newWidth = Math.max(MIN_SIZE, rect.width + deltaX);
+        newHeight = Math.max(MIN_SIZE, rect.height + deltaY);
         break;
       case 'sw': // Bottom-left corner
-        newScreenWidth = Math.max(MIN_SIZE, screenWidth - deltaX);
-        newScreenX = screenX + deltaX;
-        newScreenHeight = Math.max(MIN_SIZE, screenHeight + deltaY);
+        newWidth = Math.max(MIN_SIZE, rect.width - deltaX);
+        newLeft = rect.left - canvasRect.left + deltaX;
+        newHeight = Math.max(MIN_SIZE, rect.height + deltaY);
         break;
       case 'ne': // Top-right corner
-        newScreenWidth = Math.max(MIN_SIZE, screenWidth + deltaX);
-        newScreenHeight = Math.max(MIN_SIZE, screenHeight - deltaY);
-        newScreenY = screenY + deltaY;
+        newWidth = Math.max(MIN_SIZE, rect.width + deltaX);
+        newHeight = Math.max(MIN_SIZE, rect.height - deltaY);
+        newTop = rect.top - canvasRect.top + deltaY;
         break;
       case 'nw': // Top-left corner
-        newScreenWidth = Math.max(MIN_SIZE, screenWidth - deltaX);
-        newScreenX = screenX + deltaX;
-        newScreenHeight = Math.max(MIN_SIZE, screenHeight - deltaY);
-        newScreenY = screenY + deltaY;
+        newWidth = Math.max(MIN_SIZE, rect.width - deltaX);
+        newLeft = rect.left - canvasRect.left + deltaX;
+        newHeight = Math.max(MIN_SIZE, rect.height - deltaY);
+        newTop = rect.top - canvasRect.top + deltaY;
         break;
     }
-
-    // Convert back to PDF coordinates
-    const scaleX = canvas.width / canvasRect.width / pdfScale;
-    const scaleY = canvas.height / canvasRect.height / pdfScale;
-  
-    const newX = newScreenX * scaleX;
-    const newHeight = newScreenHeight * scaleY;
-    const newWidth = newScreenWidth * scaleX;
-  
-    // In PDF coordinates, Y starts from bottom
-    const newY = (canvas.height / pdfScale) - ((newScreenY + newScreenHeight) * scaleY);
-
+    
+    // Ensure we don't go outside the canvas
+    newLeft = Math.max(0, Math.min(canvasRect.width - newWidth, newLeft));
+    newTop = Math.max(0, Math.min(canvasRect.height - newHeight, newTop));
+    
+    // Convert screen coordinates back to PDF coordinates
+    const scaleFactorX = canvas.width / canvasRect.width;
+    const scaleFactorY = canvas.height / canvasRect.height;
+    
+    // Calculate PDF coordinates
+    const pdfX = (newLeft * scaleFactorX) / pdfScale;
+    const pdfWidth = (newWidth * scaleFactorX) / pdfScale;
+    const pdfHeight = (newHeight * scaleFactorY) / pdfScale;
+    
+    // For PDF Y coordinate, we need to invert since PDF origin is bottom-left
+    const pdfY = (canvas.height - ((newTop + newHeight) * scaleFactorY)) / pdfScale;
+    
     // Update the coordinates
     newCoordinates[itemIndex] = {
       ...item,
-      x: Math.max(0, newX),
-      y: Math.max(0, newY),
-      width: newWidth,
-      height: newHeight
+      x: pdfX,
+      y: pdfY,
+      width: pdfWidth,
+      height: pdfHeight
     };
-
+    
     setEditableCoordinates(newCoordinates);
     resizeStartPosRef.current = { x: e.clientX, y: e.clientY };
   };
@@ -828,6 +845,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
             {(editMode ? editableCoordinates : IMAGE_COORDINATES).map((coords) => (
               <Box
                 key={coords.id}
+                data-id={coords.id}
                 sx={{
                   position: 'absolute',
                   left: `${(coords.x / (canvasRef.current?.width ?? 0) / pdfScale) * (canvasRef.current?.width ?? 0)}px`,
