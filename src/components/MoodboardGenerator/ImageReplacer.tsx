@@ -217,21 +217,30 @@ const WeddingPDFImageReplacer: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
+    console.log('Drawing replacement images on canvas with dimensions:', canvas.width, 'x', canvas.height);
+    
     Object.values(replacementImages).forEach(replacement => {
       const img = new Image();
       img.onload = () => {
         const { coords } = replacement;
         const { x, y, width, height } = coords;
+        console.log('Processing image:', coords.name, 'with coords:', { x, y, width, height });
         
-        // Adjust y-coordinate for PDF coordinate system
-        // PDF coordinates start from bottom-left, canvas from top-left
-        const adjustedY = canvas.height - y - height;
+        // Calculate the canvas-to-PDF ratio
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
         
-        // Scale coordinates based on PDF scale
-        const scaledX = x * pdfScale;
-        const scaledY = adjustedY * pdfScale;
-        const scaledWidth = width * pdfScale;
-        const scaledHeight = height * pdfScale;
+        // Get PDF dimensions from the viewport
+        const pdfWidth = canvasWidth / pdfScale;
+        const pdfHeight = canvasHeight / pdfScale;
+        
+        // Calculate position based on PDF coordinates and canvas dimensions
+        const scaledX = (x / pdfWidth) * canvasWidth;
+        const scaledY = ((pdfHeight - y - height) / pdfHeight) * canvasHeight;
+        const scaledWidth = (width / pdfWidth) * canvasWidth;
+        const scaledHeight = (height / pdfHeight) * canvasHeight;
+        
+        console.log('Calculated scaled coordinates:', { scaledX, scaledY, scaledWidth, scaledHeight });
         
         if (imageStyle === 'contain') {
           // Maintain aspect ratio, fit entire image
@@ -522,24 +531,39 @@ const WeddingPDFImageReplacer: React.FC = () => {
             />
             
             {/* Clickable areas */}
-            {IMAGE_COORDINATES.map((coords) => (
-              <Box
-                key={coords.id}
-                sx={{
-                  position: 'absolute',
-                  left: `${coords.x * pdfScale}px`,
-                  top: `${(canvasRef.current?.height ?? 0) - ((coords.y + coords.height) * pdfScale)}px`,
-                  width: `${coords.width * pdfScale}px`,
-                  height: `${coords.height * pdfScale}px`,
-                  cursor: 'pointer',
-                  border: replacementImages[coords.id] 
-                    ? '2px solid #FFE8E4' 
-                    : '1px solid #B8BDD7',
-                  '&:hover': {
-                    border: '2px solid #054697'
-                  },
-                  transition: 'all 0.2s'
-                }}
+            {IMAGE_COORDINATES.map((coords) => {
+              // Calculate the canvas-to-PDF ratio
+              const canvasWidth = canvasRef.current?.width ?? 0;
+              const canvasHeight = canvasRef.current?.height ?? 0;
+              
+              // Get PDF dimensions from the viewport
+              const pdfWidth = canvasWidth / pdfScale;
+              const pdfHeight = canvasHeight / pdfScale;
+              
+              // Calculate position based on PDF coordinates and canvas dimensions
+              const left = (coords.x / pdfWidth) * canvasWidth;
+              const top = ((pdfHeight - coords.y - coords.height) / pdfHeight) * canvasHeight;
+              const width = (coords.width / pdfWidth) * canvasWidth;
+              const height = (coords.height / pdfHeight) * canvasHeight;
+              
+              return (
+                <Box
+                  key={coords.id}
+                  sx={{
+                    position: 'absolute',
+                    left: `${left}px`,
+                    top: `${top}px`,
+                    width: `${width}px`,
+                    height: `${height}px`,
+                    cursor: 'pointer',
+                    border: replacementImages[coords.id] 
+                      ? '2px solid #FFE8E4' 
+                      : '1px solid #B8BDD7',
+                    '&:hover': {
+                      border: '2px solid #054697'
+                    },
+                    transition: 'all 0.2s'
+                  }}
                 onClick={() => handleAreaClick(coords)}
               >
                 <Box 
@@ -599,7 +623,7 @@ const WeddingPDFImageReplacer: React.FC = () => {
                   )}
                 </Box>
               </Box>
-            ))}
+            )})}
           </Box>
           
           <Paper 
