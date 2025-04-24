@@ -64,6 +64,10 @@ const WeddingPDFImageReplacer: React.FC = () => {
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState<{x: number, y: number}>({x: 0, y: 0});
   const [editableCoordinates, setEditableCoordinates] = useState<ImageCoordinates[]>([...IMAGE_COORDINATES]);
+  const [resizing, setResizing] = useState<boolean>(false);
+  const [resizeDirection, setResizeDirection] = useState<string | null>(null);
+  const [resizeStartPos, setResizeStartPos] = useState<{x: number, y: number}>({x: 0, y: 0});
+  const [resizeItem, setResizeItem] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -210,6 +214,131 @@ const WeddingPDFImageReplacer: React.FC = () => {
     // For now, we'll just log them to the console for you to copy
     alert('Coordinates saved to console! Check developer tools and copy the new coordinates.');
     setEditMode(false);
+  };
+
+  // Handle resize start
+  const handleResizeStart = (e: React.MouseEvent, id: string, direction: string): void => {
+    if (!editMode) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Set resize state
+    setResizing(true);
+    setResizeItem(id);
+    setResizeDirection(direction);
+    setResizeStartPos({ x: e.clientX, y: e.clientY });
+    
+    // Add event listeners for mouse move and mouse up
+    document.addEventListener('mousemove', handleResizeMoveGlobal);
+    document.addEventListener('mouseup', handleResizeUpGlobal);
+  };
+  
+  // Global mouse move handler for resizing
+  const handleResizeMoveGlobal = (e: MouseEvent): void => {
+    if (!resizing || !resizeItem || !resizeDirection || !canvasRef.current) return;
+    
+    // Get canvas dimensions
+    const canvas = canvasRef.current;
+    // We don't need canvasRect for the calculations, so removing it
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    const pdfWidth = canvasWidth / pdfScale;
+    const pdfHeight = canvasHeight / pdfScale;
+    
+    // Calculate the delta movement in PDF coordinates
+    const deltaX = (e.clientX - resizeStartPos.x) / canvasWidth * pdfWidth;
+    const deltaY = (e.clientY - resizeStartPos.y) / canvasHeight * pdfHeight;
+    
+    // Find the item being resized
+    const itemIndex = editableCoordinates.findIndex(coord => coord.id === resizeItem);
+    if (itemIndex === -1) return;
+    
+    const item = { ...editableCoordinates[itemIndex] };
+    
+    // Update dimensions based on resize direction
+    const newCoordinates = [...editableCoordinates];
+    
+    switch (resizeDirection) {
+      case 'e': // Right edge
+        newCoordinates[itemIndex] = { 
+          ...item, 
+          width: Math.max(20, item.width + deltaX) 
+        };
+        break;
+      case 's': // Bottom edge
+        newCoordinates[itemIndex] = { 
+          ...item, 
+          height: Math.max(20, item.height - deltaY) 
+        };
+        break;
+      case 'se': // Bottom-right corner
+        newCoordinates[itemIndex] = { 
+          ...item, 
+          width: Math.max(20, item.width + deltaX),
+          height: Math.max(20, item.height - deltaY) 
+        };
+        break;
+      case 'w': // Left edge
+        const newWidth = Math.max(20, item.width - deltaX);
+        newCoordinates[itemIndex] = { 
+          ...item, 
+          x: item.x + (item.width - newWidth),
+          width: newWidth 
+        };
+        break;
+      case 'n': // Top edge
+        const newHeight = Math.max(20, item.height + deltaY);
+        newCoordinates[itemIndex] = { 
+          ...item, 
+          y: item.y - (newHeight - item.height),
+          height: newHeight 
+        };
+        break;
+      case 'sw': // Bottom-left corner
+        const newWidthSW = Math.max(20, item.width - deltaX);
+        newCoordinates[itemIndex] = { 
+          ...item, 
+          x: item.x + (item.width - newWidthSW),
+          width: newWidthSW,
+          height: Math.max(20, item.height - deltaY) 
+        };
+        break;
+      case 'ne': // Top-right corner
+        const newHeightNE = Math.max(20, item.height + deltaY);
+        newCoordinates[itemIndex] = { 
+          ...item, 
+          y: item.y - (newHeightNE - item.height),
+          width: Math.max(20, item.width + deltaX),
+          height: newHeightNE 
+        };
+        break;
+      case 'nw': // Top-left corner
+        const newWidthNW = Math.max(20, item.width - deltaX);
+        const newHeightNW = Math.max(20, item.height + deltaY);
+        newCoordinates[itemIndex] = { 
+          ...item, 
+          x: item.x + (item.width - newWidthNW),
+          y: item.y - (newHeightNW - item.height),
+          width: newWidthNW,
+          height: newHeightNW 
+        };
+        break;
+    }
+    
+    setEditableCoordinates(newCoordinates);
+    setResizeStartPos({ x: e.clientX, y: e.clientY });
+  };
+  
+  // Global mouse up handler for resizing
+  const handleResizeUpGlobal = (): void => {
+    setResizing(false);
+    setResizeItem(null);
+    setResizeDirection(null);
+    
+    // Remove event listeners
+    document.removeEventListener('mousemove', handleResizeMoveGlobal);
+    document.removeEventListener('mouseup', handleResizeUpGlobal);
   };
 
   // Handle mouse down for dragging in edit mode
@@ -724,6 +853,118 @@ const WeddingPDFImageReplacer: React.FC = () => {
                 onClick={() => handleAreaClick(coords)}
                 onMouseDown={(e) => handleMouseDown(e, coords.id)}
               >
+                {/* Resize handles - only show in edit mode */}
+                {editMode && (
+                  <>
+                    {/* Corner resize handles */}
+                    <Box 
+                      sx={{ 
+                        position: 'absolute', 
+                        top: -5, 
+                        left: -5, 
+                        width: 10, 
+                        height: 10, 
+                        bgcolor: '#FF5722', 
+                        cursor: 'nw-resize',
+                        zIndex: 20
+                      }}
+                      onMouseDown={(e) => handleResizeStart(e, coords.id, 'nw')}
+                    />
+                    <Box 
+                      sx={{ 
+                        position: 'absolute', 
+                        top: -5, 
+                        right: -5, 
+                        width: 10, 
+                        height: 10, 
+                        bgcolor: '#FF5722', 
+                        cursor: 'ne-resize',
+                        zIndex: 20
+                      }}
+                      onMouseDown={(e) => handleResizeStart(e, coords.id, 'ne')}
+                    />
+                    <Box 
+                      sx={{ 
+                        position: 'absolute', 
+                        bottom: -5, 
+                        right: -5, 
+                        width: 10, 
+                        height: 10, 
+                        bgcolor: '#FF5722', 
+                        cursor: 'se-resize',
+                        zIndex: 20
+                      }}
+                      onMouseDown={(e) => handleResizeStart(e, coords.id, 'se')}
+                    />
+                    <Box 
+                      sx={{ 
+                        position: 'absolute', 
+                        bottom: -5, 
+                        left: -5, 
+                        width: 10, 
+                        height: 10, 
+                        bgcolor: '#FF5722', 
+                        cursor: 'sw-resize',
+                        zIndex: 20
+                      }}
+                      onMouseDown={(e) => handleResizeStart(e, coords.id, 'sw')}
+                    />
+                    
+                    {/* Edge resize handles */}
+                    <Box 
+                      sx={{ 
+                        position: 'absolute', 
+                        top: -5, 
+                        left: 'calc(50% - 5px)', 
+                        width: 10, 
+                        height: 10, 
+                        bgcolor: '#FF5722', 
+                        cursor: 'n-resize',
+                        zIndex: 20
+                      }}
+                      onMouseDown={(e) => handleResizeStart(e, coords.id, 'n')}
+                    />
+                    <Box 
+                      sx={{ 
+                        position: 'absolute', 
+                        right: -5, 
+                        top: 'calc(50% - 5px)', 
+                        width: 10, 
+                        height: 10, 
+                        bgcolor: '#FF5722', 
+                        cursor: 'e-resize',
+                        zIndex: 20
+                      }}
+                      onMouseDown={(e) => handleResizeStart(e, coords.id, 'e')}
+                    />
+                    <Box 
+                      sx={{ 
+                        position: 'absolute', 
+                        bottom: -5, 
+                        left: 'calc(50% - 5px)', 
+                        width: 10, 
+                        height: 10, 
+                        bgcolor: '#FF5722', 
+                        cursor: 's-resize',
+                        zIndex: 20
+                      }}
+                      onMouseDown={(e) => handleResizeStart(e, coords.id, 's')}
+                    />
+                    <Box 
+                      sx={{ 
+                        position: 'absolute', 
+                        left: -5, 
+                        top: 'calc(50% - 5px)', 
+                        width: 10, 
+                        height: 10, 
+                        bgcolor: '#FF5722', 
+                        cursor: 'w-resize',
+                        zIndex: 20
+                      }}
+                      onMouseDown={(e) => handleResizeStart(e, coords.id, 'w')}
+                    />
+                  </>
+                )}
                 <Box 
                   sx={{ 
                     position: 'absolute', 
