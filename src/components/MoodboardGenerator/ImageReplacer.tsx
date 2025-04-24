@@ -60,8 +60,12 @@ const WeddingPDFImageReplacer: React.FC = () => {
   useEffect(() => {
     const loadTemplatePDF = async (): Promise<void> => {
       try {
+        // Load the Altare moodboard template with absolute path
         console.log('Attempting to load PDF template...');
-        const response = await fetch('/wedding_template.pdf');
+        const pdfUrl = `${window.location.origin}/wedding_template.pdf`;
+        console.log('Loading PDF from:', pdfUrl);
+        
+        const response = await fetch(pdfUrl);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch PDF: ${response.status} ${response.statusText}`);
@@ -401,7 +405,21 @@ const WeddingPDFImageReplacer: React.FC = () => {
         Altare Moodboard Template
       </Typography>
       
-      {pdfLoaded ? (
+      {!pdfLoaded ? (
+        <Box 
+          sx={{ 
+            textAlign: 'center', 
+            p: 6, 
+            border: '2px dashed #B8BDD7', 
+            borderRadius: 0
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 3, color: '#054697' }}>
+            Loading template...
+          </Typography>
+          <CircularProgress sx={{ color: '#054697' }} />
+        </Box>
+      ) : pdfBytes ? (
         <Box>
           <Paper 
             elevation={0} 
@@ -692,9 +710,8 @@ const WeddingPDFImageReplacer: React.FC = () => {
           }}
         >
           <Typography variant="h6" sx={{ mb: 3, color: '#054697' }}>
-            Loading template...
+            No template loaded.
           </Typography>
-          <CircularProgress sx={{ color: '#054697' }} />
         </Box>
       )}
       
