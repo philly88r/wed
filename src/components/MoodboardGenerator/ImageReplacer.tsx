@@ -32,14 +32,14 @@ type ReplacementImages = {
 
 // Exact image coordinates for the wedding template PDF
 const IMAGE_COORDINATES: ImageCoordinates[] = [
-  { id: 'living-room', page: 0, x: 94, y: 1124, width: 340, height: 232, name: 'Living Room' },
-  { id: 'studio-light', page: 0, x: 454, y: 1124, width: 340, height: 488, name: 'Studio Light' },
-  { id: 'record-player', page: 0, x: 94, y: 872, width: 340, height: 232, name: 'Record Player Area' },
-  { id: 'art-shelf', page: 0, x: 94, y: 696, width: 207, height: 156, name: 'Art Shelf' },
-  { id: 'decor1', page: 0, x: 321, y: 696, width: 207, height: 156, name: 'Yellow Couch' },
-  { id: 'decor2', page: 0, x: 548, y: 696, width: 246, height: 156, name: 'Orange Pillows' },
-  { id: 'fashion', page: 0, x: 94, y: 396, width: 246, height: 280, name: 'Fashion Photo' },
-  { id: 'wood-panel', page: 0, x: 382, y: 396, width: 412, height: 280, name: 'Wood Panel Room' },
+  { id: 'living-room', page: 0, x: 94, y: 124, width: 340, height: 232, name: 'Living Room' },
+  { id: 'studio-light', page: 0, x: 454, y: 124, width: 340, height: 488, name: 'Studio Light' },
+  { id: 'record-player', page: 0, x: 94, y: 372, width: 340, height: 232, name: 'Record Player Area' },
+  { id: 'art-shelf', page: 0, x: 94, y: 620, width: 207, height: 156, name: 'Art Shelf' },
+  { id: 'decor1', page: 0, x: 321, y: 620, width: 207, height: 156, name: 'Yellow Couch' },
+  { id: 'decor2', page: 0, x: 548, y: 620, width: 246, height: 156, name: 'Orange Pillows' },
+  { id: 'fashion', page: 0, x: 94, y: 796, width: 246, height: 280, name: 'Fashion Photo' },
+  { id: 'wood-panel', page: 0, x: 382, y: 796, width: 412, height: 280, name: 'Wood Panel Room' },
 ];
 
 const WeddingPDFImageReplacer: React.FC = () => {
