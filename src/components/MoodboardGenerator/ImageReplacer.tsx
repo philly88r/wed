@@ -277,85 +277,81 @@ const WeddingPDFImageReplacer: React.FC = () => {
     // Similar to how the table dragging works
     switch (resizeDirectionRef.current) {
       case 'e': // Right edge
+        // Allow resizing smaller by removing any minimum size check
         newCoordinates[itemIndex] = { 
           ...item, 
-          width: item.width + deltaX * scaleX
+          width: Math.max(1, item.width + deltaX * scaleX)
         };
         break;
       case 'w': // Left edge
-        const newWidthW = item.width - deltaX * scaleX;
-        if (newWidthW > 10) { // Minimum width check
-          newCoordinates[itemIndex] = { 
-            ...item, 
-            x: item.x + deltaX * scaleX,
-            width: newWidthW
-          };
-        }
+        // Allow resizing smaller by removing minimum width restriction
+        const newWidthW = Math.max(1, item.width - deltaX * scaleX);
+        newCoordinates[itemIndex] = { 
+          ...item, 
+          x: item.x + deltaX * scaleX,
+          width: newWidthW
+        };
         break;
       case 'n': // Top edge
-        const newHeightN = item.height + deltaY * scaleY;
-        if (newHeightN > 10) { // Minimum height check
-          newCoordinates[itemIndex] = { 
-            ...item, 
-            y: item.y - deltaY * scaleY,
-            height: newHeightN
-          };
-        }
+        // Allow resizing smaller by removing minimum height restriction
+        const newHeightN = Math.max(1, item.height + deltaY * scaleY);
+        newCoordinates[itemIndex] = { 
+          ...item, 
+          y: item.y - deltaY * scaleY,
+          height: newHeightN
+        };
         break;
       case 's': // Bottom edge
-        const newHeightS = item.height - deltaY * scaleY;
-        if (newHeightS > 10) { // Minimum height check
-          newCoordinates[itemIndex] = { 
-            ...item, 
-            height: newHeightS
-          };
-        }
+        // Allow resizing smaller by removing minimum height restriction
+        const newHeightS = Math.max(1, item.height - deltaY * scaleY);
+        newCoordinates[itemIndex] = { 
+          ...item, 
+          height: newHeightS
+        };
         break;
       case 'se': // Bottom-right corner
-        const newHeightSE = item.height - deltaY * scaleY;
-        if (newHeightSE > 10) { // Minimum height check
-          newCoordinates[itemIndex] = { 
-            ...item, 
-            width: item.width + deltaX * scaleX,
-            height: newHeightSE
-          };
-        }
+        // Allow resizing smaller in both dimensions
+        const newWidthSE = Math.max(1, item.width + deltaX * scaleX);
+        const newHeightSE = Math.max(1, item.height - deltaY * scaleY);
+        newCoordinates[itemIndex] = { 
+          ...item, 
+          width: newWidthSE,
+          height: newHeightSE
+        };
         break;
       case 'sw': // Bottom-left corner
-        const newWidthSW = item.width - deltaX * scaleX;
-        const newHeightSW = item.height - deltaY * scaleY;
-        if (newWidthSW > 10 && newHeightSW > 10) { // Minimum size check
-          newCoordinates[itemIndex] = { 
-            ...item, 
-            x: item.x + deltaX * scaleX,
-            width: newWidthSW,
-            height: newHeightSW
-          };
-        }
+        // Allow resizing smaller in both dimensions
+        const newWidthSW = Math.max(1, item.width - deltaX * scaleX);
+        const newHeightSW = Math.max(1, item.height - deltaY * scaleY);
+        newCoordinates[itemIndex] = { 
+          ...item, 
+          x: item.x + deltaX * scaleX,
+          width: newWidthSW,
+          height: newHeightSW
+        };
         break;
       case 'ne': // Top-right corner
-        const newHeightNE = item.height + deltaY * scaleY;
-        if (newHeightNE > 10) { // Minimum height check
-          newCoordinates[itemIndex] = { 
-            ...item, 
-            y: item.y - deltaY * scaleY,
-            width: item.width + deltaX * scaleX,
-            height: newHeightNE
-          };
-        }
+        // Allow resizing smaller in both dimensions
+        const newWidthNE = Math.max(1, item.width + deltaX * scaleX);
+        const newHeightNE = Math.max(1, item.height + deltaY * scaleY);
+        newCoordinates[itemIndex] = { 
+          ...item, 
+          y: item.y - deltaY * scaleY,
+          width: newWidthNE,
+          height: newHeightNE
+        };
         break;
       case 'nw': // Top-left corner
-        const newWidthNW = item.width - deltaX * scaleX;
-        const newHeightNW = item.height + deltaY * scaleY;
-        if (newWidthNW > 10 && newHeightNW > 10) { // Minimum size check
-          newCoordinates[itemIndex] = { 
-            ...item, 
-            x: item.x + deltaX * scaleX,
-            y: item.y - deltaY * scaleY,
-            width: newWidthNW,
-            height: newHeightNW
-          };
-        }
+        // Allow resizing smaller in both dimensions
+        const newWidthNW = Math.max(1, item.width - deltaX * scaleX);
+        const newHeightNW = Math.max(1, item.height + deltaY * scaleY);
+        newCoordinates[itemIndex] = { 
+          ...item, 
+          x: item.x + deltaX * scaleX,
+          y: item.y - deltaY * scaleY,
+          width: newWidthNW,
+          height: newHeightNW
+        };
         break;
     }
     
