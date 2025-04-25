@@ -13,7 +13,7 @@ const PdfLibDemo: React.FC = () => {
   
   const [pdfDoc, setPdfDoc] = useState<PDFDocument | null>(null);
   const [selectedImage, setSelectedImage] = useState<{ data: Uint8Array; type: string } | null>(null);
-  const [imagePosition, setImagePosition] = useState<ImagePosition>({ x: 100, y: 100, scale: 0.5 });
+  const [imagePosition, setImagePosition] = useState<ImagePosition>({ x: 334, y: 124, scale: 0.5 });
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [pdfName, setPdfName] = useState<string>('');
   
@@ -99,7 +99,8 @@ const PdfLibDemo: React.FC = () => {
       
       // Calculate the actual position based on PDF coordinates
       // PDF uses bottom-left origin, our UI uses top-left origin
-      const pdfX = imagePosition.x;
+      // Adjust X position to match the desired position in the downloaded PDF
+      const pdfX = imagePosition.x - 124; // Adjust X coordinate to match desired position (458 - 124 = 334)
       const pdfY = pageHeight - imagePosition.y - imageDims.height;
       
       console.log('PDF coordinates:', pdfX, pdfY);
