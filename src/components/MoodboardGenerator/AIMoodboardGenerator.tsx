@@ -371,24 +371,7 @@ const AIMoodboardGenerator: React.FC = () => {
             />
           </div>
           
-          <div style={{ display: 'flex', marginBottom: 16 }}>
-            <button
-              style={positionButtonStyle(activePosition === 'top')}
-              onClick={() => setActivePosition('top')}
-              onMouseOver={e => !isGenerating.top && (e.currentTarget.style.background = activePosition === 'top' ? '#043d82' : '#FFD5CC')}
-              onMouseOut={e => !isGenerating.top && (e.currentTarget.style.background = activePosition === 'top' ? '#054697' : '#FFE8E4')}
-            >
-              Top Image
-            </button>
-            <button
-              style={positionButtonStyle(activePosition === 'bottom')}
-              onClick={() => setActivePosition('bottom')}
-              onMouseOver={e => !isGenerating.bottom && (e.currentTarget.style.background = activePosition === 'bottom' ? '#043d82' : '#FFD5CC')}
-              onMouseOut={e => !isGenerating.bottom && (e.currentTarget.style.background = activePosition === 'bottom' ? '#054697' : '#FFE8E4')}
-            >
-              Bottom Image
-            </button>
-          </div>
+          {/* Position selection buttons removed as requested */}
           
           <button
             onClick={() => generateAIImage(activePosition)}
