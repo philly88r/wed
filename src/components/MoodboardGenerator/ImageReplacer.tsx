@@ -29,6 +29,13 @@ const PdfLibDemo: React.FC = () => {
     const loadedPdfDoc = await PDFDocument.load(arrayBuffer);
     setPdfDoc(loadedPdfDoc);
     
+    // Get page dimensions for accurate preview
+    const pages = loadedPdfDoc.getPages();
+    const firstPage = pages[0];
+    const { width, height } = firstPage.getSize();
+    setPdfDimensions({ width, height });
+    console.log('PDF dimensions loaded:', width, height);
+    
     // Create preview
     const previewBytes = await loadedPdfDoc.save();
     
@@ -57,6 +64,9 @@ const PdfLibDemo: React.FC = () => {
     setImagePosition(prev => ({ ...prev, [property]: value }));
   };
   
+  // State to store PDF page dimensions for accurate preview
+  const [pdfDimensions, setPdfDimensions] = useState<{ width: number; height: number } | null>(null);
+
   // Apply image to PDF and download
   const applyImageAndDownload = async () => {
     if (!pdfDoc || !selectedImage) return;
@@ -87,11 +97,17 @@ const PdfLibDemo: React.FC = () => {
       console.log('Image dimensions after scaling:', imageDims.width, imageDims.height);
       console.log('Placing image at:', imagePosition.x, imagePosition.y);
       
-      // Draw the image on the page - ensure it's drawn on top of everything
-      // by using the correct coordinate system (PDF uses bottom-left origin)
+      // Calculate the actual position based on PDF coordinates
+      // PDF uses bottom-left origin, our UI uses top-left origin
+      const pdfX = imagePosition.x;
+      const pdfY = pageHeight - imagePosition.y - imageDims.height;
+      
+      console.log('PDF coordinates:', pdfX, pdfY);
+      
+      // Draw the image on the page
       firstPage.drawImage(image, {
-        x: imagePosition.x,
-        y: pageHeight - imagePosition.y - imageDims.height, // Convert from top-left to bottom-left coordinate system
+        x: pdfX,
+        y: pdfY,
         width: imageDims.width,
         height: imageDims.height,
         opacity: 1.0, // Ensure full opacity
@@ -114,12 +130,38 @@ const PdfLibDemo: React.FC = () => {
     }
   };
   
+  // Calculate the preview scaling factor
+  const getPreviewScaling = () => {
+    if (!pdfDimensions) return 1;
+    
+    // Get the iframe container dimensions
+    const previewContainer = document.querySelector('.pdf-preview-container');
+    if (!previewContainer) return 1;
+    
+    const containerWidth = previewContainer.clientWidth - 16; // Account for padding
+    const containerHeight = previewContainer.clientHeight - 16;
+    
+    // Calculate scaling factors
+    const scaleX = containerWidth / pdfDimensions.width;
+    const scaleY = containerHeight / pdfDimensions.height;
+    
+    // Use the smaller scaling factor to ensure the entire PDF fits
+    return Math.min(scaleX, scaleY);
+  };
+  
   // Clean up URLs on unmount
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [previewUrl]);
+  
+  // Update preview when PDF dimensions change
+  useEffect(() => {
+    if (pdfDimensions) {
+      console.log('PDF dimensions for preview scaling:', pdfDimensions);
+    }
+  }, [pdfDimensions]);
   
   const buttonStyle = {
     background: '#FFE8E4',
@@ -283,14 +325,17 @@ const PdfLibDemo: React.FC = () => {
         <div style={{ flex: '1 1 500px' }}>
           <h2 style={{ color: '#054697', fontSize: 20 }}>Preview</h2>
           {previewUrl ? (
-            <div style={{ 
-              position: 'relative', 
-              border: '1px solid #B8BDD7', 
-              borderRadius: 6, 
-              padding: 8, 
-              height: 600, 
-              overflow: 'hidden' 
-            }}>
+            <div 
+              className="pdf-preview-container"
+              style={{ 
+                position: 'relative', 
+                border: '1px solid #B8BDD7', 
+                borderRadius: 6, 
+                padding: 8, 
+                height: 600, 
+                overflow: 'hidden' 
+              }}
+            >
               <iframe 
                 src={previewUrl} 
                 style={{ width: '100%', height: '100%', border: 'none' }}
@@ -298,14 +343,14 @@ const PdfLibDemo: React.FC = () => {
               />
               
               {/* Visual indicator for image placement */}
-              {selectedImage && (
+              {selectedImage && pdfDimensions && (
                 <div 
                   style={{
                     position: 'absolute',
                     top: `${imagePosition.y}px`,
                     left: `${imagePosition.x}px`,
-                    width: `${200 * imagePosition.scale}px`, // Approximate width based on scale
-                    height: `${200 * imagePosition.scale}px`, // Approximate height based on scale
+                    width: `${150 * imagePosition.scale * getPreviewScaling()}px`,
+                    height: `${150 * imagePosition.scale * getPreviewScaling()}px`,
                     border: '2px dashed #054697',
                     backgroundColor: 'rgba(5, 70, 151, 0.2)',
                     pointerEvents: 'none', // Don't interfere with iframe interactions
@@ -314,7 +359,9 @@ const PdfLibDemo: React.FC = () => {
                     justifyContent: 'center',
                     color: '#054697',
                     fontSize: '14px',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    zIndex: 1000, // Ensure it appears on top
+                    transformOrigin: 'top left',
                   }}
                 >
                   Image will appear here
