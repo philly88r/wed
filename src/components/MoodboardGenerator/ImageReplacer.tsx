@@ -100,8 +100,7 @@ const PdfLibDemo: React.FC = () => {
       
       // Calculate the actual position based on PDF coordinates
       // PDF uses bottom-left origin, our UI uses top-left origin
-      // Adjust X position to match the desired position in the downloaded PDF
-      const pdfX = imagePosition.x - 124; // Adjust X coordinate to match desired position (458 - 124 = 334)
+      const pdfX = imagePosition.x; // Use direct X coordinate without adjustment
       const pdfY = pageHeight - imagePosition.y - imageDims.height;
       
       console.log('PDF coordinates:', pdfX, pdfY);
