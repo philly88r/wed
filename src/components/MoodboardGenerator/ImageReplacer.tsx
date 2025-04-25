@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { PDFDocument } from 'pdf-lib';
+import { motion } from 'framer-motion';
 
 interface ImagePosition {
   x: number;
@@ -345,7 +346,23 @@ const PdfLibDemo: React.FC = () => {
               
               {/* Visual indicator for image placement */}
               {selectedImage && pdfDimensions && (
-                <div 
+                <motion.div 
+                  drag
+                  dragMomentum={false}
+                  dragConstraints={{
+                    top: 0,
+                    left: 0,
+                    right: 500,
+                    bottom: 500
+                  }}
+                  onDragEnd={(_, info) => {
+                    // Update position based on drag end position
+                    setImagePosition(prev => ({
+                      ...prev,
+                      x: prev.x + info.offset.x,
+                      y: prev.y + info.offset.y
+                    }));
+                  }}
                   style={{
                     position: 'absolute',
                     top: `${imagePosition.y}px`,
@@ -354,7 +371,7 @@ const PdfLibDemo: React.FC = () => {
                     height: `${150 * imagePosition.scale * getPreviewScaling()}px`,
                     border: '2px dashed #054697',
                     backgroundColor: 'rgba(5, 70, 151, 0.2)',
-                    pointerEvents: 'none', // Don't interfere with iframe interactions
+                    cursor: 'grab',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -364,9 +381,10 @@ const PdfLibDemo: React.FC = () => {
                     zIndex: 1000, // Ensure it appears on top
                     transformOrigin: 'top left',
                   }}
+                  whileDrag={{ cursor: 'grabbing', opacity: 0.8 }}
                 >
-                  Image will appear here
-                </div>
+                  <div style={{ pointerEvents: 'none' }}>Drag to position</div>
+                </motion.div>
               )}
             </div>
           ) : (
@@ -388,6 +406,9 @@ const PdfLibDemo: React.FC = () => {
           )}
           <p style={{ color: 'rgba(5, 70, 151, 0.8)', fontSize: 14, marginTop: 8 }}>
             <strong>Important:</strong> The preview shows an approximate position. The actual placement in the PDF may vary slightly depending on the PDF dimensions.
+          </p>
+          <p style={{ color: '#054697', fontSize: 14, marginTop: 4 }}>
+            <strong>Tip:</strong> You can now drag the image directly on the preview to position it precisely.
           </p>
         </div>
       </div>
