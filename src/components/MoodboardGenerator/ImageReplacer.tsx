@@ -61,41 +61,57 @@ const PdfLibDemo: React.FC = () => {
   const applyImageAndDownload = async () => {
     if (!pdfDoc || !selectedImage) return;
     
-    // Clone the PDF document to avoid modifying the original
-    const modifiedPdfDoc = await PDFDocument.load(await pdfDoc.save());
-    
-    // Embed the image
-    let image;
-    if (selectedImage.type === 'png') {
-      image = await modifiedPdfDoc.embedPng(selectedImage.data);
-    } else {
-      image = await modifiedPdfDoc.embedJpg(selectedImage.data);
+    try {
+      // Clone the PDF document to avoid modifying the original
+      const modifiedPdfDoc = await PDFDocument.load(await pdfDoc.save());
+      
+      // Embed the image
+      let image;
+      if (selectedImage.type === 'png') {
+        image = await modifiedPdfDoc.embedPng(selectedImage.data);
+      } else {
+        image = await modifiedPdfDoc.embedJpg(selectedImage.data);
+      }
+      
+      // Get the first page
+      const pages = modifiedPdfDoc.getPages();
+      const firstPage = pages[0];
+      
+      // Get page dimensions
+      const { width: pageWidth, height: pageHeight } = firstPage.getSize();
+      
+      // Scale the image while preserving aspect ratio
+      const imageDims = image.scale(imagePosition.scale);
+      
+      console.log('Page dimensions:', pageWidth, pageHeight);
+      console.log('Image dimensions after scaling:', imageDims.width, imageDims.height);
+      console.log('Placing image at:', imagePosition.x, imagePosition.y);
+      
+      // Draw the image on the page - ensure it's drawn on top of everything
+      // by using the correct coordinate system (PDF uses bottom-left origin)
+      firstPage.drawImage(image, {
+        x: imagePosition.x,
+        y: pageHeight - imagePosition.y - imageDims.height, // Convert from top-left to bottom-left coordinate system
+        width: imageDims.width,
+        height: imageDims.height,
+        opacity: 1.0, // Ensure full opacity
+      });
+      
+      // Save and trigger download
+      const modifiedPdfBytes = await modifiedPdfDoc.save();
+      const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `edited_${pdfName || 'document.pdf'}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      alert('PDF successfully created with your image! Check your downloads folder.');
+    } catch (error) {
+      console.error('Error applying image to PDF:', error);
+      alert('There was an error adding your image to the PDF. Please try again.');
     }
-    
-    // Scale the image
-    const imageDims = image.scale(imagePosition.scale);
-    
-    // Get the first page
-    const pages = modifiedPdfDoc.getPages();
-    const firstPage = pages[0];
-    
-    // Draw the image on the page
-    firstPage.drawImage(image, {
-      x: imagePosition.x,
-      y: firstPage.getHeight() - imagePosition.y - imageDims.height, // Convert from top-left to bottom-left coordinate system
-      width: imageDims.width,
-      height: imageDims.height,
-    });
-    
-    // Save and trigger download
-    const modifiedPdfBytes = await modifiedPdfDoc.save();
-    const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `edited_${pdfName || 'document.pdf'}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
   
   // Clean up URLs on unmount
@@ -267,12 +283,43 @@ const PdfLibDemo: React.FC = () => {
         <div style={{ flex: '1 1 500px' }}>
           <h2 style={{ color: '#054697', fontSize: 20 }}>Preview</h2>
           {previewUrl ? (
-            <div style={{ border: '1px solid #B8BDD7', borderRadius: 6, padding: 8, height: 600, overflow: 'hidden' }}>
+            <div style={{ 
+              position: 'relative', 
+              border: '1px solid #B8BDD7', 
+              borderRadius: 6, 
+              padding: 8, 
+              height: 600, 
+              overflow: 'hidden' 
+            }}>
               <iframe 
                 src={previewUrl} 
                 style={{ width: '100%', height: '100%', border: 'none' }}
                 title="PDF Preview"
               />
+              
+              {/* Visual indicator for image placement */}
+              {selectedImage && (
+                <div 
+                  style={{
+                    position: 'absolute',
+                    top: `${imagePosition.y}px`,
+                    left: `${imagePosition.x}px`,
+                    width: `${200 * imagePosition.scale}px`, // Approximate width based on scale
+                    height: `${200 * imagePosition.scale}px`, // Approximate height based on scale
+                    border: '2px dashed #054697',
+                    backgroundColor: 'rgba(5, 70, 151, 0.2)',
+                    pointerEvents: 'none', // Don't interfere with iframe interactions
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#054697',
+                    fontSize: '14px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Image will appear here
+                </div>
+              )}
             </div>
           ) : (
             <div 
@@ -292,7 +339,7 @@ const PdfLibDemo: React.FC = () => {
             </div>
           )}
           <p style={{ color: 'rgba(5, 70, 151, 0.8)', fontSize: 14, marginTop: 8 }}>
-            Note: The preview shows the original PDF. The image will be applied when you download.
+            <strong>Important:</strong> The preview shows an approximate position. The actual placement in the PDF may vary slightly depending on the PDF dimensions.
           </p>
         </div>
       </div>
