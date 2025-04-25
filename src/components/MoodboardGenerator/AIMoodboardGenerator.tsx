@@ -1,7 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { PDFDocument } from 'pdf-lib';
-import { Box, Tabs, Tab } from '@mui/material';
-import AltareGallery from './AltareGallery';
 
 // Define template position interface
 interface TemplatePosition {
@@ -20,46 +18,6 @@ interface TemplatePosition {
   height: number;
 }
 
-// Sample gallery images
-const sampleGalleryImages = [
-  {
-    id: '1',
-    url: 'https://via.placeholder.com/600x450/054697/FFFFFF?text=Elegant+Wedding',
-    title: 'Elegant Wedding Theme',
-    date: 'April 24, 2025'
-  },
-  {
-    id: '2',
-    url: 'https://via.placeholder.com/600x450/054697/FFFFFF?text=Rustic+Garden',
-    title: 'Rustic Garden Inspiration',
-    date: 'April 23, 2025'
-  },
-  {
-    id: '3',
-    url: 'https://via.placeholder.com/600x450/054697/FFFFFF?text=Modern+Minimalist',
-    title: 'Modern Minimalist Design',
-    date: 'April 22, 2025'
-  },
-  {
-    id: '4',
-    url: 'https://via.placeholder.com/600x450/054697/FFFFFF?text=Bohemian+Chic',
-    title: 'Bohemian Chic Celebration',
-    date: 'April 21, 2025'
-  },
-  {
-    id: '5',
-    url: 'https://via.placeholder.com/600x450/054697/FFFFFF?text=Classic+Romance',
-    title: 'Classic Romance Theme',
-    date: 'April 20, 2025'
-  },
-  {
-    id: '6',
-    url: 'https://via.placeholder.com/600x450/054697/FFFFFF?text=Beach+Destination',
-    title: 'Beach Destination Wedding',
-    date: 'April 19, 2025'
-  }
-];
-
 const AIMoodboardGenerator: React.FC = () => {
   const pdfInputRef = useRef<HTMLInputElement | null>(null);
   // Input ref for prompt field
@@ -71,8 +29,6 @@ const AIMoodboardGenerator: React.FC = () => {
   const [pdfName, setPdfName] = useState<string>('');
   const [prompt, setPrompt] = useState<string>('');
   const [activePosition, setActivePosition] = useState<'top' | 'bottom'>('top');
-  const [activeTab, setActiveTab] = useState<number>(0);
-  const [galleryImages, setGalleryImages] = useState(sampleGalleryImages);
   
   // Template positions for top and bottom images
   const templatePositions: { [key: string]: TemplatePosition } = {
@@ -278,47 +234,12 @@ const AIMoodboardGenerator: React.FC = () => {
     fontSize: 14,
   });
 
-  // Handle tab change
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-  };
-
-  // Handle gallery image download
-  const handleGalleryDownload = (imageId: string) => {
-    const image = galleryImages.find(img => img.id === imageId);
-    if (image) {
-      // In a real implementation, this would download the actual PDF
-      alert(`Downloading moodboard: ${image.title}`);
-      
-      // For demonstration, open the image in a new tab
-      window.open(image.url, '_blank');
-    }
-  };
-
   return (
-    <div style={{ padding: 32, fontFamily: 'Poppins, sans-serif', background: '#FFF', maxWidth: 1200, margin: '0 auto' }}>
-      <h1 style={{ color: '#054697', textAlign: 'center', fontFamily: 'Giaza, serif', fontSize: '3rem', marginBottom: 8 }}>Altare Moodboard Studio</h1>
-      <p style={{ color: 'rgba(5, 70, 151, 0.8)', textAlign: 'center', maxWidth: 700, margin: '0 auto 24px' }}>
-        Create beautiful wedding moodboards with AI-generated images perfectly positioned around the Altare logo.
+    <div style={{ padding: 32, fontFamily: 'Poppins, sans-serif', background: '#FFF', maxWidth: 1000, margin: '0 auto' }}>
+      <h1 style={{ color: '#054697' }}>AI Moodboard Generator</h1>
+      <p style={{ color: 'rgba(5, 70, 151, 0.8)' }}>
+        Upload the Altare template PDF and generate AI images to place above and below the logo.
       </p>
-      
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs 
-          value={activeTab} 
-          onChange={handleTabChange} 
-          centered
-          sx={{
-            '& .MuiTab-root': { color: 'rgba(5, 70, 151, 0.6)' },
-            '& .Mui-selected': { color: '#054697', fontWeight: 'bold' },
-            '& .MuiTabs-indicator': { backgroundColor: '#054697' }
-          }}
-        >
-          <Tab label="Create Moodboard" />
-          <Tab label="Gallery" />
-        </Tabs>
-      </Box>
-      
-      {activeTab === 0 ? (
       
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, marginBottom: 24 }}>
         <div style={{ flex: '1 1 300px' }}>
@@ -568,9 +489,6 @@ const AIMoodboardGenerator: React.FC = () => {
           </p>
         </div>
       </div>
-      ) : (
-        <AltareGallery images={galleryImages} onDownload={handleGalleryDownload} />
-      )}
     </div>
   );
 };
