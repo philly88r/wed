@@ -625,22 +625,7 @@ export default function VisionBoard() {
               {!showAITemplate && activeTab === 'classic' && (
                 <div className="flex space-x-3">
                   <button
-                    onClick={() => setShowMoodboardTemplate(!showMoodboardTemplate)}
-                    className="inline-flex items-center px-4 py-2 text-sm font-medium"
-                    style={{
-                      backgroundColor: showMoodboardTemplate ? 'transparent' : '#E8B4B4',
-                      color: '#054697',
-                      fontFamily: 'Poppins, sans-serif',
-                      fontWeight: 400,
-                      textTransform: 'uppercase',
-                      border: showMoodboardTemplate ? '1px solid #E8B4B4' : 'none',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {showMoodboardTemplate ? 'Back to Grid View' : 'Gallery'}
-                  </button>
-                  <button
-                    onClick={() => window.location.href = '/pdf-replacer'}
+                    onClick={() => document.getElementById('import-board')?.click()}
                     className="inline-flex items-center px-4 py-2 text-sm font-medium"
                     style={{
                       backgroundColor: '#E8B4B4',
@@ -652,8 +637,16 @@ export default function VisionBoard() {
                       cursor: 'pointer'
                     }}
                   >
-                    Template View
+                    <ExternalLink className="w-5 h-5 mr-2" />
+                    Import Board
                   </button>
+                  <input
+                    type="file"
+                    id="import-board"
+                    accept=".json"
+                    style={{ display: 'none' }}
+                    onChange={handleImport}
+                  />
                 </div>
               )}
               {showAITemplate && (
@@ -800,47 +793,8 @@ export default function VisionBoard() {
                     <Plus className="w-5 h-5 mr-2" />
                     Add Image
                   </button>
-                  <button
-                    onClick={() => document.getElementById('import-board')?.click()}
-                    className="inline-flex items-center px-4 py-2 text-sm font-medium ml-2"
-                    style={{
-                      backgroundColor: '#E8B4B4',
-                      color: '#054697',
-                      fontFamily: 'Poppins, sans-serif',
-                      fontWeight: 400,
-                      textTransform: 'uppercase',
-                      border: 'none',
-                      cursor: 'pointer',
-                      marginLeft: '8px'
-                    }}
-                  >
-                    <ExternalLink className="w-5 h-5 mr-2" />
-                    Import Board
-                  </button>
-                  <input
-                    type="file"
-                    id="import-board"
-                    accept=".json"
-                    style={{ display: 'none' }}
-                    onChange={handleImport}
-                  />
-                  <button
-                    onClick={handleExportMoodboard}
-                    className="inline-flex items-center px-4 py-2 text-sm font-medium ml-2"
-                    style={{
-                      backgroundColor: '#E8B4B4',
-                      color: '#054697',
-                      fontFamily: 'Poppins, sans-serif',
-                      fontWeight: 400,
-                      textTransform: 'uppercase',
-                      border: 'none',
-                      cursor: 'pointer',
-                      marginLeft: '8px'
-                    }}
-                  >
-                    <ExternalLink className="w-5 h-5 mr-2" />
-                    Export Board
-                  </button>
+
+
                 </div>
 
                 {/* Color Palette Picker for Classic Board */}
