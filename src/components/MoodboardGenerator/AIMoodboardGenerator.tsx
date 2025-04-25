@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { PDFDocument } from 'pdf-lib';
-import { Box, Tabs, Tab } from '@mui/material';
+import { Box } from '@mui/material';
 import AltareGallery from './AltareGallery';
 
 // Define template position interface
@@ -72,7 +72,7 @@ const AIMoodboardGenerator: React.FC = () => {
   const [prompt, setPrompt] = useState<string>('');
   const [activePosition, setActivePosition] = useState<'top' | 'bottom'>('top');
   const [activeTab, setActiveTab] = useState<number>(0);
-  const [galleryImages, setGalleryImages] = useState(sampleGalleryImages);
+  const [galleryImages] = useState(sampleGalleryImages);
   
   // Template positions for top and bottom images
   const templatePositions: { [key: string]: TemplatePosition } = {
@@ -278,10 +278,7 @@ const AIMoodboardGenerator: React.FC = () => {
     fontSize: 14,
   });
 
-  // Handle tab change
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-  };
+  // Tab state is now managed directly by button clicks
 
   // Handle gallery image download
   const handleGalleryDownload = (imageId: string) => {
@@ -302,20 +299,39 @@ const AIMoodboardGenerator: React.FC = () => {
         Create beautiful wedding moodboards with AI-generated images perfectly positioned around the Altare logo.
       </p>
       
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs 
-          value={activeTab} 
-          onChange={handleTabChange} 
-          centered
-          sx={{
-            '& .MuiTab-root': { color: 'rgba(5, 70, 151, 0.6)' },
-            '& .Mui-selected': { color: '#054697', fontWeight: 'bold' },
-            '& .MuiTabs-indicator': { backgroundColor: '#054697' }
+      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 4 }}>
+        <button
+          onClick={() => setActiveTab(0)}
+          style={{
+            ...buttonStyle,
+            background: activeTab === 0 ? '#054697' : '#FFE8E4',
+            color: activeTab === 0 ? '#FFFFFF' : '#054697',
+            padding: '12px 24px',
+            fontSize: 16,
+            borderRadius: 30,
+            minWidth: 180,
           }}
+          onMouseOver={e => (e.currentTarget.style.background = activeTab === 0 ? '#043d82' : '#FFD5CC')}
+          onMouseOut={e => (e.currentTarget.style.background = activeTab === 0 ? '#054697' : '#FFE8E4')}
         >
-          <Tab label="Create Moodboard" />
-          <Tab label="Gallery" />
-        </Tabs>
+          Template Editor
+        </button>
+        <button
+          onClick={() => setActiveTab(1)}
+          style={{
+            ...buttonStyle,
+            background: activeTab === 1 ? '#054697' : '#FFE8E4',
+            color: activeTab === 1 ? '#FFFFFF' : '#054697',
+            padding: '12px 24px',
+            fontSize: 16,
+            borderRadius: 30,
+            minWidth: 180,
+          }}
+          onMouseOver={e => (e.currentTarget.style.background = activeTab === 1 ? '#043d82' : '#FFD5CC')}
+          onMouseOut={e => (e.currentTarget.style.background = activeTab === 1 ? '#054697' : '#FFE8E4')}
+        >
+          Gallery View
+        </button>
       </Box>
       
       {activeTab === 0 ? (
