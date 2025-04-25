@@ -58,6 +58,9 @@ const PdfLibDemo: React.FC = () => {
     const imageType = file.type.includes('png') ? 'png' : 'jpeg';
     
     setSelectedImage({ data: imageData, type: imageType });
+    
+    // Log for debugging
+    console.log('Image uploaded:', file.name, 'Type:', imageType, 'Size:', imageData.length);
   };
   
   // Handle position changes
@@ -70,18 +73,31 @@ const PdfLibDemo: React.FC = () => {
 
   // Apply image to PDF and download
   const applyImageAndDownload = async () => {
-    if (!pdfDoc || !selectedImage) return;
+    if (!pdfDoc || !selectedImage) {
+      console.error('Missing PDF or image:', { pdfDoc: !!pdfDoc, selectedImage: !!selectedImage });
+      return;
+    }
     
     try {
       // Clone the PDF document to avoid modifying the original
       const modifiedPdfDoc = await PDFDocument.load(await pdfDoc.save());
+      console.log('PDF document cloned successfully');
       
       // Embed the image
       let image;
-      if (selectedImage.type === 'png') {
-        image = await modifiedPdfDoc.embedPng(selectedImage.data);
-      } else {
-        image = await modifiedPdfDoc.embedJpg(selectedImage.data);
+      try {
+        if (selectedImage.type === 'png') {
+          console.log('Embedding PNG image, size:', selectedImage.data.length);
+          image = await modifiedPdfDoc.embedPng(selectedImage.data);
+        } else {
+          console.log('Embedding JPG image, size:', selectedImage.data.length);
+          image = await modifiedPdfDoc.embedJpg(selectedImage.data);
+        }
+        console.log('Image embedded successfully');
+      } catch (embedError) {
+        console.error('Error embedding image:', embedError);
+        alert('Error embedding image. Please try a different image format.');
+        return;
       }
       
       // Get the first page
@@ -100,7 +116,7 @@ const PdfLibDemo: React.FC = () => {
       
       // Calculate the actual position based on PDF coordinates
       // PDF uses bottom-left origin, our UI uses top-left origin
-      const pdfX = imagePosition.x; // Use direct X coordinate without adjustment
+      const pdfX = imagePosition.x;
       const pdfY = pageHeight - imagePosition.y - imageDims.height;
       
       console.log('PDF coordinates:', pdfX, pdfY);
@@ -354,14 +370,18 @@ const PdfLibDemo: React.FC = () => {
                     right: 500,
                     bottom: 500
                   }}
-                  onDragEnd={(_, info) => {
-                    // Update position based on drag end position
+                  onDrag={(_, info) => {
+                    // Update position in real-time during drag
+                    const newX = Math.max(0, imagePosition.x + info.delta.x);
+                    const newY = Math.max(0, imagePosition.y + info.delta.y);
                     setImagePosition(prev => ({
                       ...prev,
-                      x: prev.x + info.offset.x,
-                      y: prev.y + info.offset.y
+                      x: newX,
+                      y: newY
                     }));
                   }}
+                  // Reset drag state after drag ends
+                  onDragEnd={() => {}}
                   style={{
                     position: 'absolute',
                     top: `${imagePosition.y}px`,
