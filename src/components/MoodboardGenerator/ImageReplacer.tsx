@@ -75,68 +75,6 @@ const PdfLibDemo: React.FC = () => {
 };
 
 export default PdfLibDemo;
-
-  id: string;
-  page: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  name: string;
-}
-
-interface ReplacementImage {
-  file: File;
-  url: string;
-  coords: ImageCoordinates;
-}
-
-type ImageStyle = 'contain' | 'cover';
-
-type ReplacementImages = {
-  [key: string]: ReplacementImage;
-};
-
-// Exact image coordinates for the wedding template PDF
-const IMAGE_COORDINATES: ImageCoordinates[] = [
-  { id: 'living-room', page: 0, x: 55.77258113727666, y: 677.7864475250244, width: 157.87764650836357, height: 120, name: 'Living Room' },
-  { id: 'record-player', page: 0, x: 240, y: 650, width: 160, height: 120, name: 'Record Player Area' },
-  { id: 'studio-light', page: 0, x: 410, y: 650, width: 160, height: 120, name: 'Studio Light' },
-  { id: 'fashion', page: 0, x: 70, y: 250, width: 230, height: 300, name: 'Fashion Photo' },
-  { id: 'wood-panel', page: 0, x: 310, y: 250, width: 260, height: 300, name: 'Wood Panel Room' },
-  { id: 'art-shelf', page: 0, x: 310, y: 180, width: 60, height: 60, name: 'Art Shelf' },
-  { id: 'decor1', page: 0, x: 380, y: 180, width: 60, height: 60, name: 'Decor 1' },
-  { id: 'decor2', page: 0, x: 450, y: 180, width: 60, height: 60, name: 'Decor 2' },
-];
-
-const WeddingPDFImageReplacer: React.FC = () => {
-  const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null);
-  const [pdfRendered, setPdfRendered] = useState<boolean>(false);
-  const [selectedImage, setSelectedImage] = useState<ImageCoordinates | null>(null);
-  const [replacementImages, setReplacementImages] = useState<ReplacementImages>({});
-  const [imageStyle, setImageStyle] = useState<ImageStyle>('contain');
-  const [pdfScale, setPdfScale] = useState<number>(1.0);
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [pdfLoaded, setPdfLoaded] = useState<boolean>(false);
-  const [editMode, setEditMode] = useState<boolean>(false);
-  const draggedItemRef = useRef<string | null>(null);
-  const dragOffsetRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
-  
-  const [editableCoordinates, setEditableCoordinates] = useState<ImageCoordinates[]>([...IMAGE_COORDINATES]);
-  const resizingRef = useRef<boolean>(false);
-  const resizeDirectionRef = useRef<string | null>(null);
-  const resizeStartPosRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 });
-  const resizeItemRef = useRef<string | null>(null);
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const templatePdfRef = useRef<pdfjs.PDFDocumentProxy | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  
-  // Load the template PDF on component mount
-  useEffect(() => {
-    const loadTemplatePDF = async (): Promise<void> => {
-      try {
         console.log('Attempting to load PDF template...');
         const pdfUrl = `${window.location.origin}/wedding_template.pdf`;
         console.log('Loading PDF from:', pdfUrl);
