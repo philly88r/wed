@@ -33,6 +33,7 @@ import PricingProtectedRoute from './components/Auth/PricingProtectedRoute';
 import Profile from './pages/Profile'; // Import the Profile component
 import ImageReplacer from './components/MoodboardGenerator/ImageReplacer'; // Import the ImageReplacer component
 import MoodboardTemplate from './components/MoodboardGenerator/MoodboardTemplate';
+import AIMoodboardGenerator from './components/MoodboardGenerator/AIMoodboardGenerator'; // Import the AI Moodboard Generator
 
 // Define app routes to check against
 const appRoutes = [
@@ -222,7 +223,12 @@ const AppContent = () => {
         } />
         <Route path="/moodboard" element={
           <ProtectedRoute>
-            <MoodboardTemplate />
+            <MoodboardTemplate images={[]} />
+          </ProtectedRoute>
+        } />
+        <Route path="/ai-moodboard" element={
+          <ProtectedRoute>
+            <AIMoodboardGenerator />
           </ProtectedRoute>
         } />
         {/* Wedding name route - use a separate component to handle the logic */}
