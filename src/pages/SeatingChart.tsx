@@ -26,7 +26,6 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import UploadIcon from '@mui/icons-material/Upload';
 
 import { DragDropContext } from 'react-beautiful-dnd';
 import type { DropResult } from 'react-beautiful-dnd';
@@ -147,7 +146,6 @@ export default function SeatingChart() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [assignGuestDialogOpen, setAssignGuestDialogOpen] = useState(false);
   const [guestDialogOpen, setGuestDialogOpen] = useState(false);
-  const [showRoomFloorPlanDialog, setShowRoomFloorPlanDialog] = useState(false);
   
   // Form states
   const [editMode, setEditMode] = useState<'add' | 'edit'>('add');
@@ -1989,36 +1987,6 @@ export default function SeatingChart() {
               }
             }}
           >
-            {/* Floor Plan Upload Button - Added at the top right */}
-            {selectedRoom && (
-              <Box sx={{
-                position: 'absolute',
-                top: 16,
-                right: 16,
-                zIndex: 10,
-              }}>
-                <Button
-                  variant="contained"
-                  startIcon={<UploadIcon />}
-                  onClick={() => setShowRoomFloorPlanDialog(true)}
-                  sx={{
-                    backgroundColor: '#E8B4B4',
-                    color: '#054697',
-                    textTransform: 'uppercase',
-                    fontFamily: 'Poppins, sans-serif',
-                    fontWeight: 400,
-                    borderRadius: 0,
-                    px: 3,
-                    py: 1,
-                    '&:hover': {
-                      backgroundColor: 'rgba(232, 180, 180, 0.8)',
-                    },
-                  }}
-                >
-                  {selectedRoom.floor_plan_url ? 'Update Floor Plan' : 'Upload Floor Plan'}
-                </Button>
-              </Box>
-            )}
             
             {/* Tables container with higher z-index */}
             <Box
@@ -2523,98 +2491,7 @@ export default function SeatingChart() {
           </Alert>
         </Snackbar>
 
-        {/* Room Floor Plan Upload Dialog */}
-        <Dialog 
-          open={showRoomFloorPlanDialog} 
-          onClose={() => setShowRoomFloorPlanDialog(false)}
-          PaperProps={{
-            sx: {
-              borderRadius: 0,
-              p: 1,
-              boxShadow: '0 4px 20px rgba(5, 70, 151, 0.1)',
-              border: '1px solid rgba(5, 70, 151, 0.1)',
-              position: 'relative',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '4px',
-                height: '100%',
-                backgroundColor: '#054697',
-              }
-            }
-          }}
-        >
-          <DialogTitle sx={{ color: '#054697', fontFamily: "'Giaza', serif", letterSpacing: '-0.05em' }}>
-            {selectedRoom?.floor_plan_url ? 'Update Floor Plan' : 'Upload Floor Plan'}
-          </DialogTitle>
-          <DialogContent>
-            <Typography sx={{ mb: 2, color: '#054697', opacity: 0.8 }}>
-              Upload a floor plan image for {selectedRoom?.name}. This will help you position tables more accurately.
-            </Typography>
-            <input
-              accept="image/jpeg,image/png,image/gif"
-              style={{ display: 'none' }}
-              id="floor-plan-upload"
-              type="file"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file && selectedRoom) {
-                  // Create a new File object with explicit type
-                  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-                  let contentType = 'image/jpeg';
-                  if (fileExt === 'png') contentType = 'image/png';
-                  if (fileExt === 'gif') contentType = 'image/gif';
-                  
-                  // Create a new file with the correct content type
-                  const newFile = new File([file], file.name, { type: contentType });
-                  
-                  // Log the file details for debugging
-                  console.log(`Uploading file: ${newFile.name}, type: ${newFile.type}, size: ${newFile.size}`);
-                  
-                  handleRoomFloorPlanUpload(selectedRoom.id, newFile);
-                  setShowRoomFloorPlanDialog(false);
-                }
-              }}
-            />
-            <label htmlFor="floor-plan-upload">
-              <Button
-                variant="contained"
-                component="span"
-                startIcon={<UploadIcon />}
-                sx={{
-                  backgroundColor: '#E8B4B4',
-                  color: '#054697',
-                  textTransform: 'uppercase',
-                  fontFamily: 'Poppins, sans-serif',
-                  fontWeight: 400,
-                  borderRadius: 0,
-                  px: 3,
-                  py: 1,
-                  '&:hover': {
-                    backgroundColor: 'rgba(232, 180, 180, 0.8)',
-                  },
-                }}
-              >
-                Select Image
-              </Button>
-            </label>
-          </DialogContent>
-          <DialogActions>
-            <Button 
-              onClick={() => setShowRoomFloorPlanDialog(false)}
-              sx={{
-                color: '#054697',
-                '&:hover': {
-                  backgroundColor: 'rgba(5, 70, 151, 0.05)',
-                },
-              }}
-            >
-              Cancel
-            </Button>
-          </DialogActions>
-        </Dialog>
+
       </Container>
     </DragDropContext>
   );

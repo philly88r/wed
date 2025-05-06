@@ -393,12 +393,26 @@ const VenueSelector: React.FC<VenueSelectorProps> = ({
                 </div>
               </Box>
               
-              {/* Floor plan section - Simplified with only one button */}
+              {/* Floor plan section */}
               <Box sx={{ mt: 2, pt: 1, borderTop: '1px dashed rgba(5, 70, 151, 0.2)' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="body2" sx={{ color: theme.palette.primary.main, fontWeight: 500 }}>
                     Room Floor Plan
                   </Typography>
+                  <Button
+                    size="small"
+                    startIcon={<UploadIcon />}
+                    onClick={() => setShowRoomFloorPlanDialog(true)}
+                    sx={{ 
+                      backgroundColor: theme.palette.accent.rose,
+                      color: theme.palette.primary.main,
+                      '&:hover': { backgroundColor: '#FFD5CC' },
+                      fontSize: '0.75rem',
+                      py: 0.5
+                    }}
+                  >
+                    {selectedRoom.floor_plan_url ? 'Update' : 'Upload'}
+                  </Button>
                 </Box>
                 
                 {selectedRoom.floor_plan_url ? (
@@ -934,6 +948,99 @@ const VenueSelector: React.FC<VenueSelectorProps> = ({
             }}
           >
             {uploading ? <CircularProgress size={24} sx={{ color: theme.palette.primary.main }} /> : 'Upload'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Room Floor Plan Upload Dialog */}
+      <Dialog 
+        open={showRoomFloorPlanDialog} 
+        onClose={() => setShowRoomFloorPlanDialog(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: 0,
+            p: 1,
+            boxShadow: '0 4px 20px rgba(5, 70, 151, 0.1)',
+            border: '1px solid rgba(5, 70, 151, 0.1)',
+            position: 'relative',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '4px',
+              height: '100%',
+              backgroundColor: theme.palette.primary.main,
+            }
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: theme.palette.primary.main, fontFamily: "'Giaza', serif", letterSpacing: '-0.05em' }}>
+          {selectedRoom?.floor_plan_url ? 'Update Floor Plan' : 'Upload Floor Plan'}
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2, color: theme.palette.primary.main, opacity: 0.8 }}>
+            Upload a floor plan image for {selectedRoom?.name}. This will help you position tables more accurately.
+          </Typography>
+          <input
+            accept="image/jpeg,image/png,image/gif"
+            style={{ display: 'none' }}
+            id="floor-plan-upload"
+            type="file"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file && selectedRoom && onRoomFloorPlanUpload) {
+                // Create a new File object with explicit type
+                const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+                let contentType = 'image/jpeg';
+                if (fileExt === 'png') contentType = 'image/png';
+                if (fileExt === 'gif') contentType = 'image/gif';
+                
+                // Create a new file with the correct content type
+                const newFile = new File([file], file.name, { type: contentType });
+                
+                // Log the file details for debugging
+                console.log(`Uploading file: ${newFile.name}, type: ${newFile.type}, size: ${newFile.size}`);
+                
+                onRoomFloorPlanUpload(selectedRoom.id, newFile);
+                setShowRoomFloorPlanDialog(false);
+              }
+            }}
+          />
+          <label htmlFor="floor-plan-upload">
+            <Button
+              variant="contained"
+              component="span"
+              startIcon={<UploadIcon />}
+              sx={{
+                backgroundColor: theme.palette.accent.rose,
+                color: theme.palette.primary.main,
+                textTransform: 'uppercase',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 400,
+                borderRadius: 0,
+                px: 3,
+                py: 1,
+                '&:hover': {
+                  backgroundColor: 'rgba(232, 180, 180, 0.8)',
+                },
+              }}
+            >
+              Select Image
+            </Button>
+          </label>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setShowRoomFloorPlanDialog(false)}
+            sx={{
+              color: theme.palette.primary.main,
+              '&:hover': {
+                backgroundColor: 'rgba(5, 70, 151, 0.05)',
+              },
+            }}
+          >
+            Cancel
           </Button>
         </DialogActions>
       </Dialog>
