@@ -392,71 +392,56 @@ const VenueSelector: React.FC<VenueSelectorProps> = ({
                   </Box>
                 </div>
               </Box>
-                
-                {/* Floor plan section */}
-                <Box sx={{ mt: 2, pt: 1, borderTop: '1px dashed rgba(5, 70, 151, 0.2)' }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                      <Button
-                        startIcon={<UploadIcon />}
-                        onClick={() => setShowRoomFloorPlanDialog(true)}
-                        sx={{ 
-                          backgroundColor: theme.palette.accent.rose,
-                          color: theme.palette.primary.main,
-                          '&:hover': { backgroundColor: '#FFD5CC' },
-                          fontSize: '0.85rem',
-                          py: 1,
-                          px: 3
-                        }}
-                      >
-                        {selectedRoom.floor_plan_url ? 'UPDATE FLOOR PLAN' : 'UPLOAD FLOOR PLAN'}
-                      </Button>
-                    </Box>
-                    
-                    <Box sx={{ 
-                      display: 'flex', 
-                      flexDirection: 'row', 
-                      justifyContent: 'flex-end',
-                      alignItems: 'flex-start',
-                      width: '100%',
-                      mt: 1
-                    }}>
-                      <Box sx={{ textAlign: 'right', maxWidth: '250px' }}>
-                        <Typography variant="subtitle2" sx={{ color: theme.palette.primary.main, fontWeight: 500 }}>
-                          Room Floor Plan
-                        </Typography>
-                        
-                        {selectedRoom.floor_plan_url ? (
-                          <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              <ImageIcon sx={{ fontSize: '1rem', mr: 0.5, color: theme.palette.primary.main }} />
-                              <Typography variant="caption" sx={{ color: theme.palette.primary.main }}>
-                                Floor plan available
-                              </Typography>
-                            </Box>
-                            <Button
-                              size="small"
-                              variant="text"
-                              component="a"
-                              href={selectedRoom.floor_plan_url}
-                              target="_blank"
-                              sx={{ color: theme.palette.primary.main, fontSize: '0.7rem', textDecoration: 'underline', ml: 1 }}
-                            >
-                              View
-                            </Button>
-                          </Box>
-                        ) : (
-                          <Typography variant="caption" sx={{ color: 'rgba(5, 70, 151, 0.7)', display: 'block', mt: 1 }}>
-                            No floor plan uploaded yet.
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
-                  </Box>
+              
+              {/* Floor plan section */}
+              <Box sx={{ mt: 2, pt: 1, borderTop: '1px dashed rgba(5, 70, 151, 0.2)' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="body2" sx={{ color: theme.palette.primary.main, fontWeight: 500 }}>
+                    Room Floor Plan
+                  </Typography>
+                  <Button
+                    size="small"
+                    startIcon={<UploadIcon />}
+                    onClick={() => setShowRoomFloorPlanDialog(true)}
+                    sx={{ 
+                      backgroundColor: theme.palette.accent.rose,
+                      color: theme.palette.primary.main,
+                      '&:hover': { backgroundColor: '#FFD5CC' },
+                      fontSize: '0.75rem',
+                      py: 0.5
+                    }}
+                  >
+                    {selectedRoom.floor_plan_url ? 'Update' : 'Upload'}
+                  </Button>
                 </Box>
-              </Paper>
-            )}
-          </Box>
+                
+                {selectedRoom.floor_plan_url ? (
+                  <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <ImageIcon sx={{ fontSize: '1rem', mr: 0.5, color: theme.palette.primary.main }} />
+                      <Typography variant="caption" sx={{ color: theme.palette.primary.main }}>
+                        Floor plan available
+                      </Typography>
+                    </Box>
+                    <Button
+                      size="small"
+                      variant="text"
+                      component="a"
+                      href={selectedRoom.floor_plan_url}
+                      target="_blank"
+                      sx={{ color: theme.palette.primary.main, fontSize: '0.7rem', textDecoration: 'underline' }}
+                    >
+                      View
+                    </Button>
+                  </Box>
+                ) : (
+                  <Typography variant="caption" sx={{ color: 'rgba(5, 70, 151, 0.7)', display: 'block', mt: 1 }}>
+                    No floor plan uploaded yet. Upload one to position tables more accurately.
+                  </Typography>
+                )}
+              </Box>
+            </Paper>
+          )}
         </Box>
       )}
       

@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { useState, useEffect } from 'react';
-import { Plus, Users, Mail, Phone, MapPin, Filter, Download, Upload, Search, Copy, Link } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, Users, Mail, Phone, MapPin, Filter, Download, Upload, Search, Copy, Link, FileText, Info } from 'lucide-react';
 import { getSupabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import ChairIcon from '@mui/icons-material/Chair';
@@ -32,6 +32,7 @@ interface Guest {
   table_id?: string;
   created_at: string;
   updated_at: string;
+  created_by?: string;
 }
 
 interface Table {
@@ -117,8 +118,11 @@ export default function Guests() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const supabaseClient = getSupabase();
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    
     if (editingGuest) {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('guests')
         .update({
           full_name: newGuest.full_name,
@@ -128,6 +132,7 @@ export default function Guests() {
           zip_code: newGuest.zip_code,
           country: newGuest.country,
           email: newGuest.email,
+          phone: newGuest.phone
         })
         .eq('id', editingGuest.id);
 
@@ -136,9 +141,12 @@ export default function Guests() {
         return;
       }
     } else {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('guests')
-        .insert([newGuest]);
+        .insert([{
+          ...newGuest,
+          created_by: user?.id
+        }]);
 
       if (error) {
         console.error('Error adding guest:', error);
@@ -154,10 +162,126 @@ export default function Guests() {
       state: '',
       zip_code: '',
       country: '',
-      email: ''
+      email: '',
+      phone: ''
     });
     setEditingGuest(null);
     setShowForm(false);
+  };
+  
+  const handleDownloadTemplate = () => {
+    // Create CSV content with headers
+    const headers = ['full_name', 'email', 'phone', 'address', 'city', 'state', 'zip_code', 'country'];
+    const csvContent = headers.join(',') + '\n';
+    
+    // Create a blob and download link
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'guest_template.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    // Reset status messages
+    setBulkUploadError('');
+    setBulkUploadSuccess('');
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const csvText = e.target?.result as string;
+        const lines = csvText.split('\n');
+        
+        // Validate headers
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        const requiredHeaders = ['full_name', 'email', 'address', 'city', 'state', 'zip_code', 'country'];
+        const optionalHeaders = ['phone'];
+        const allHeaders = [...requiredHeaders, ...optionalHeaders];
+        
+        // Check if all required headers are present
+        const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+        if (missingHeaders.length > 0) {
+          setBulkUploadError(`Missing required columns: ${missingHeaders.join(', ')}`);
+          return;
+        }
+        
+        // Process rows
+        const guests: Partial<Guest>[] = [];
+        let validCount = 0;
+        let errorCount = 0;
+        
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue; // Skip empty lines
+          
+          const values = line.split(',').map(v => v.trim());
+          if (values.length !== headers.length) {
+            errorCount++;
+            continue; // Skip malformed rows
+          }
+          
+          const guest: Partial<Guest> = {};
+          headers.forEach((header, index) => {
+            if (allHeaders.includes(header)) {
+              guest[header as keyof Guest] = values[index];
+            }
+          });
+          
+          // Validate required fields
+          const missingFields = requiredHeaders.filter(h => !guest[h as keyof Guest]);
+          if (missingFields.length > 0) {
+            errorCount++;
+            continue; // Skip rows with missing required fields
+          }
+          
+          guests.push(guest);
+          validCount++;
+        }
+        
+        if (guests.length === 0) {
+          setBulkUploadError('No valid guest entries found in the CSV file');
+          return;
+        }
+        
+        // Insert guests into database
+        const supabaseClient = getSupabase();
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        
+        const { data, error } = await supabaseClient
+          .from('guests')
+          .insert(guests.map(guest => ({
+            ...guest,
+            created_by: user?.id
+          })));
+        
+        if (error) {
+          console.error('Error adding guests:', error);
+          setBulkUploadError(`Error adding guests: ${error.message}`);
+          return;
+        }
+        
+        // Success message
+        setBulkUploadSuccess(`Successfully added ${validCount} guests${errorCount > 0 ? ` (${errorCount} entries skipped due to errors)` : ''}`);
+        await fetchGuests();
+        
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      } catch (error) {
+        console.error('Error processing CSV:', error);
+        setBulkUploadError('Error processing CSV file. Please check the format and try again.');
+      }
+    };
+    
+    reader.readAsText(file);
   };
 
   const deleteGuest = async (id: string) => {
@@ -295,8 +419,13 @@ export default function Guests() {
     state: '',
     zip_code: '',
     country: '',
-    email: ''
+    email: '',
+    phone: ''
   });
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [bulkUploadError, setBulkUploadError] = useState<string>('');
+  const [bulkUploadSuccess, setBulkUploadSuccess] = useState<string>('');
 
   const filteredGuests = guests.filter(guest => {
     if (filter === 'all') return true;
@@ -538,6 +667,96 @@ export default function Guests() {
             >
               Add New Guest
             </Button>
+            
+            <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+              <Button
+                variant="outlined"
+                startIcon={<Download />}
+                onClick={handleDownloadTemplate}
+                sx={{
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                }}
+              >
+                Download Template
+              </Button>
+              
+              <Button
+                variant="outlined"
+                startIcon={<Upload />}
+                onClick={() => fileInputRef.current?.click()}
+                sx={{
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontSize: '1rem',
+                }}
+              >
+                Bulk Upload
+              </Button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                accept=".csv"
+                onChange={handleFileUpload}
+              />
+            </Box>
+            
+            {bulkUploadError && (
+              <Alert 
+                severity="error" 
+                sx={{ mb: 3, borderRadius: 2 }}
+                onClose={() => setBulkUploadError('')}
+              >
+                <AlertTitle>Error</AlertTitle>
+                {bulkUploadError}
+              </Alert>
+            )}
+            
+            {bulkUploadSuccess && (
+              <Alert 
+                severity="success" 
+                sx={{ mb: 3, borderRadius: 2 }}
+                onClose={() => setBulkUploadSuccess('')}
+              >
+                <AlertTitle>Success</AlertTitle>
+                {bulkUploadSuccess}
+              </Alert>
+            )}
+            
+            <Paper
+              elevation={1}
+              sx={{
+                p: 3,
+                mb: 3,
+                borderRadius: 2,
+                border: '1px dashed',
+                borderColor: theme.palette.divider,
+                background: '#f9f9f9'
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                <Info size={20} color={theme.palette.info.main} />
+                <Box>
+                  <Typography variant="h6" sx={{ mb: 1, fontSize: '1rem', fontWeight: 600 }}>
+                    Bulk Upload Instructions
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 1 }}>
+                    1. Download the template CSV file
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 1 }}>
+                    2. Fill in your guest information (all fields except 'id' are required)
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 1 }}>
+                    3. Save the file and upload it using the 'Bulk Upload' button
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                    4. The system will add all valid guest entries to your address book
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
 
             {showForm && (
               <Box sx={{ mb: 6 }}>
@@ -626,6 +845,12 @@ export default function Guests() {
                       fullWidth
                       value={newGuest.email || ''}
                       onChange={(e) => setNewGuest({ ...newGuest, email: e.target.value })}
+                    />
+                    <TextField
+                      label="Phone Number"
+                      fullWidth
+                      value={newGuest.phone || ''}
+                      onChange={(e) => setNewGuest({ ...newGuest, phone: e.target.value })}
                     />
                     <Button
                       onClick={handleSubmit}
@@ -816,9 +1041,17 @@ export default function Guests() {
                     <div>{guest.full_name}</div>
                   </td>
                   <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-gray-500" />
-                      <span>{guest.email}</span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-gray-500" />
+                        <span>{guest.email}</span>
+                      </div>
+                      {guest.phone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-gray-500" />
+                          <span>{guest.phone}</span>
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="p-4">
