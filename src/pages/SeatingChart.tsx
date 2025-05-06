@@ -477,18 +477,35 @@ export default function SeatingChart() {
       const userId = await getUserId();
       if (!userId) return;
       
-      // Create a unique file name
-      const fileExt = file.name.split('.').pop();
+      // Create a unique file name with sanitized extension
+      let fileExt = file.name.split('.').pop() || 'jpg';
+      // Ensure extension is lowercase and only contains letters
+      fileExt = fileExt.toLowerCase().replace(/[^a-z]/g, '');
+      // Default to jpg if extension is invalid
+      if (!['jpg', 'jpeg', 'png', 'gif'].includes(fileExt)) {
+        fileExt = 'jpg';
+      }
+      
       const fileName = `room-${roomId}-${Date.now()}.${fileExt}`;
       const filePath = `floor_plans/${fileName}`;
+      
+      // Determine the correct content type based on extension
+      let contentType = 'image/jpeg';
+      if (fileExt === 'png') contentType = 'image/png';
+      if (fileExt === 'gif') contentType = 'image/gif';
+      
+      console.log(`Uploading file: ${fileName} with content type: ${contentType}`);
+      
+      // Convert the file to a blob with the correct content type
+      const fileBlob = new Blob([await file.arrayBuffer()], { type: contentType });
       
       // Upload the file to Supabase Storage with content type
       const supabase = getSupabase();
       const { error: uploadError } = await supabase
         .storage
         .from('venue-floor-plans')
-        .upload(filePath, file, {
-          contentType: file.type,
+        .upload(filePath, fileBlob, {
+          contentType: contentType,
           cacheControl: '3600'
         });
         
