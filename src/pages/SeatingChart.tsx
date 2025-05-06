@@ -510,7 +510,7 @@ export default function SeatingChart() {
         });
         
       if (uploadError) {
-        console.error('Upload error details:', uploadError);
+        console.error('Upload error details:', JSON.stringify(uploadError, null, 2)); // Modified for detailed logging
         throw uploadError;
       }
       
