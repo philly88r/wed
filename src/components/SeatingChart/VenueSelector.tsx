@@ -393,26 +393,12 @@ const VenueSelector: React.FC<VenueSelectorProps> = ({
                 </div>
               </Box>
               
-              {/* Floor plan section */}
+              {/* Floor plan section - Simplified with only one button */}
               <Box sx={{ mt: 2, pt: 1, borderTop: '1px dashed rgba(5, 70, 151, 0.2)' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="body2" sx={{ color: theme.palette.primary.main, fontWeight: 500 }}>
                     Room Floor Plan
                   </Typography>
-                  <Button
-                    size="small"
-                    startIcon={<UploadIcon />}
-                    onClick={() => setShowRoomFloorPlanDialog(true)}
-                    sx={{ 
-                      backgroundColor: theme.palette.accent.rose,
-                      color: theme.palette.primary.main,
-                      '&:hover': { backgroundColor: '#FFD5CC' },
-                      fontSize: '0.75rem',
-                      py: 0.5
-                    }}
-                  >
-                    {selectedRoom.floor_plan_url ? 'Update' : 'Upload'}
-                  </Button>
                 </Box>
                 
                 {selectedRoom.floor_plan_url ? (
