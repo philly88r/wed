@@ -498,19 +498,27 @@ export default function SeatingChart() {
       
       console.log(`Uploading file: ${fileName} with content type: ${contentType}`);
       
-      // Upload the original file directly without conversion
-      // This preserves the binary content of the image
+      // Read the file as an ArrayBuffer
+      const arrayBuffer = await file.arrayBuffer();
+      
+      // Convert ArrayBuffer to Uint8Array
+      const uint8Array = new Uint8Array(arrayBuffer);
+      
+      // Create a new Blob with the correct content type
+      const blob = new Blob([uint8Array], { type: contentType });
+      
+      // Upload the Blob with explicit content type
       const supabase = getSupabase();
       const { error: uploadError } = await supabase
         .storage
         .from('venue-floor-plans')
-        .upload(filePath, file, {
+        .upload(filePath, blob, {
           contentType: contentType,
-          cacheControl: '3600'
+          upsert: true
         });
         
       if (uploadError) {
-        console.error('Upload error details:', JSON.stringify(uploadError, null, 2)); // Modified for detailed logging
+        console.error('Upload error details:', JSON.stringify(uploadError, null, 2));
         throw uploadError;
       }
       
@@ -2546,14 +2554,26 @@ export default function SeatingChart() {
               Upload a floor plan image for {selectedRoom?.name}. This will help you position tables more accurately.
             </Typography>
             <input
-              accept="image/*"
+              accept="image/jpeg,image/png,image/gif"
               style={{ display: 'none' }}
               id="floor-plan-upload"
               type="file"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file && selectedRoom) {
-                  handleRoomFloorPlanUpload(selectedRoom.id, file);
+                  // Create a new File object with explicit type
+                  const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+                  let contentType = 'image/jpeg';
+                  if (fileExt === 'png') contentType = 'image/png';
+                  if (fileExt === 'gif') contentType = 'image/gif';
+                  
+                  // Create a new file with the correct content type
+                  const newFile = new File([file], file.name, { type: contentType });
+                  
+                  // Log the file details for debugging
+                  console.log(`Uploading file: ${newFile.name}, type: ${newFile.type}, size: ${newFile.size}`);
+                  
+                  handleRoomFloorPlanUpload(selectedRoom.id, newFile);
                   setShowRoomFloorPlanDialog(false);
                 }
               }}
