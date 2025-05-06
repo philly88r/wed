@@ -394,9 +394,12 @@ export default function SeatingChart() {
       const { error: uploadError } = await supabase
         .storage
         .from('venue-floor-plans')
-        .upload(filePath, file);
+        .upload(filePath, file, { contentType: file.type });
         
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+      console.error("Upload error details:", uploadError);
+      throw uploadError;
+    }
       
       // Get the public URL for the uploaded file
       const { data: { publicUrl } } = supabase
@@ -451,6 +454,16 @@ export default function SeatingChart() {
 
   // Handle floor plan upload for venue rooms
   const handleRoomFloorPlanUpload = async (roomId: string, file: File) => {
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setSnackbar({
+        open: true,
+        message: "File size exceeds 5MB limit",
+        severity: "error"
+      });
+      return;
+    }
+
     try {
       if (!file || !roomId) {
         setSnackbar({
@@ -469,14 +482,20 @@ export default function SeatingChart() {
       const fileName = `room-${roomId}-${Date.now()}.${fileExt}`;
       const filePath = `floor_plans/${fileName}`;
       
-      // Upload the file to Supabase Storage
+      // Upload the file to Supabase Storage with content type
       const supabase = getSupabase();
       const { error: uploadError } = await supabase
         .storage
         .from('venue-floor-plans')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          contentType: file.type,
+          cacheControl: '3600'
+        });
         
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error details:', uploadError);
+        throw uploadError;
+      }
       
       // Get the public URL for the uploaded file
       const { data: { publicUrl } } = supabase
