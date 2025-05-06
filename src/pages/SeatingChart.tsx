@@ -496,15 +496,13 @@ export default function SeatingChart() {
       
       console.log(`Uploading file: ${fileName} with content type: ${contentType}`);
       
-      // Convert the file to a blob with the correct content type
-      const fileBlob = new Blob([await file.arrayBuffer()], { type: contentType });
-      
-      // Upload the file to Supabase Storage with content type
+      // Upload the original file directly without conversion
+      // This preserves the binary content of the image
       const supabase = getSupabase();
       const { error: uploadError } = await supabase
         .storage
         .from('venue-floor-plans')
-        .upload(filePath, fileBlob, {
+        .upload(filePath, file, {
           contentType: contentType,
           cacheControl: '3600'
         });
