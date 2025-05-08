@@ -140,6 +140,7 @@ export default function SeatingChart() {
   const [venueRooms, setVenueRooms] = useState<VenueRoom[]>([]);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<VenueRoom | null>(null);
+  const [currentFloorPlanUrl, setCurrentFloorPlanUrl] = useState<string | null>(null); // Added state for floor plan URL
   
   // Dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -162,67 +163,60 @@ export default function SeatingChart() {
   const [snackbar, setSnackbar] = useState<SnackbarState>({
     open: false,
     message: '',
-    severity: 'success',
+    severity: 'info',
   });
-  
-  // Remove unused drag state variables
-  // const [isDragging, setIsDragging] = useState(false);
-  // const [dragStart, setDragStart] = useState<{
-  //   x: number;
-  //   y: number;
-  //   tableX: number;
-  //   tableY: number;
-  // } | null>(null);
 
-  // Force navigation to seating-chart to ensure we're on the right page
-  useEffect(() => {
-    const currentPath = window.location.pathname;
-    
-    if (currentPath !== '/seating-chart') {
-      navigate('/seating-chart', { replace: true });
-    }
-  }, [navigate]);
+  // Placeholder for handleDropOnChart to resolve lint error
+  const handleDropOnChart = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    // console.log('Dropped on chart area', event.dataTransfer.getData('text'));
+    // Actual logic for handling dropped tables would go here.
+    // This might involve getting data from event.dataTransfer (if using native HTML D&D)
+    // or this handler might be replaced if using a library like react-beautiful-dnd for the chart area itself.
+  };
 
+  // Check authentication status when component mounts
   useEffect(() => {
-    // Check authentication status when component mounts
-    const checkAuth = async () => {
-      try {
-        // First try to get session which is more reliable and doesn't throw errors if no session exists
-        const supabase = getSupabase();
-        const { data: sessionData } = await supabase.auth.getSession();
-        const isAuthenticated = !!sessionData?.session?.user;
-        
-        setIsLoggedIn(isAuthenticated);
-        
-        if (!isAuthenticated) {
-          // Only show login dialog if not authenticated
-          setLoginDialogOpen(true);
-          setSnackbar({
-            open: true,
-            message: 'Please log in to access the seating chart',
-            severity: 'info'
-          });
-        }
-      } catch (error) {
-        console.error('Error checking authentication:', error);
-        setLoginDialogOpen(true);
-      }
-    };
-    
     checkAuth();
   }, []);
-  
-  // Separate useEffect for data fetching that depends on authentication state
+
   useEffect(() => {
     if (isLoggedIn) {
-      // Only fetch data if user is authenticated
-      fetchTableTemplates();
-      fetchTables();
-      fetchChairs();
-      fetchGuests();
       fetchVenues();
+      fetchTableTemplates();
+      fetchGuests();
     }
   }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (isLoggedIn && selectedRoom?.id) {
+      fetchTables(selectedRoom.id);
+    }
+  }, [isLoggedIn, selectedRoom?.id]);
+
+  useEffect(() => {
+    if (selectedRoom && selectedRoom.floor_plan_url) {
+      const supabase = getSupabase();
+      const { data } = supabase.storage
+        .from('venue-floor-plans') // Ensure this is your bucket name
+        .getPublicUrl(selectedRoom.floor_plan_url);
+      setCurrentFloorPlanUrl(data.publicUrl);
+    } else {
+      setCurrentFloorPlanUrl(null);
+    }
+  }, [selectedRoom]);
+
+  const checkAuth = async () => {
+    const supabase = getSupabase();
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error || !session) {
+      setIsLoggedIn(false);
+      setLoginDialogOpen(true); // Show login if no session or error
+    } else {
+      setIsLoggedIn(true);
+      // const user = session.user; // User object available if needed
+    }
+  };
 
   // Venue management functions
   const fetchVenues = async () => {
@@ -611,31 +605,17 @@ export default function SeatingChart() {
 
   // Get the current user ID or handle authentication gracefully
   const getUserId = async () => {
-    // If we already know the user is not logged in, don't make API calls
-    if (!isLoggedIn) {
-      return null;
-    }
+    const supabase = getSupabase();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    try {
-      // Check if we already have a session
-      const supabase = getSupabase();
-      const { data: sessionData } = await supabase.auth.getSession();
-      
-      if (sessionData?.session) {
-        // We have a valid session
-        return sessionData.session.user.id;
-      }
-      
-      // If no session, update login state and return null
-      setIsLoggedIn(false);
-      setLoginDialogOpen(true);
-      return null;
-    } catch (error) {
-      console.error('Unexpected error in getUserId:', error);
-      setIsLoggedIn(false);
-      setLoginDialogOpen(true);
+    if (userError || !user) {
+      console.error('User not logged in or error fetching user:', userError);
+      setSnackbar({ open: true, message: 'You need to be logged in to perform this action.', severity: 'error' });
+      // Optionally, trigger login dialog or redirect
+      // setLoginDialogOpen(true);
       return null;
     }
+    return user.id;
   };
 
   const fetchTableTemplates = async () => {
@@ -703,52 +683,48 @@ export default function SeatingChart() {
     }
   };
 
-  const fetchTables = async () => {
+  const fetchTables = async (roomId: string) => { // Add roomId parameter
+    const userId = await getUserId();
+    if (!userId) return;
+
     try {
-      // Get the current user ID
-      const userId = await getUserId();
-      
-      // If no userId, we can't fetch tables
-      if (!userId) {
-        console.log('Cannot fetch tables: No authenticated user');
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from('seating_tables')
+        .select('*')
+        .eq('created_by', userId)
+        .eq('room_id', roomId); // Filter by room_id
+
+      if (error) {
+        console.error('Error fetching tables:', error);
+        setSnackbar({ open: true, message: `Error fetching tables: ${error.message}`, severity: 'error' });
         return;
       }
       
-      // Query tables for the current user
-      const supabase = getSupabase();
-      const { data: tableData, error } = await supabase
-        .from('seating_tables')
-        .select('*')
-        .eq('created_by', userId);
-      
-      if (error) {
-        console.error('Database error fetching tables:', error);
-        throw error;
-      }
-      
-      if (tableData) {
-        // Ensure all tables have position_x and position_y properties
-        const formattedTables = tableData.map((table: any) => ({
-          ...table,
-          // If the table has position.x and position.y, map them to position_x and position_y
-          position_x: table.position_x || (table.position ? table.position.x : 300),
-          position_y: table.position_y || (table.position ? table.position.y : 200)
-        }));
-        
-        setTables(formattedTables);
-        
-        // Create chairs for tables that don't have them
-        for (const table of formattedTables) {
-          await createChairsForTable(table.id, table.seats, userId);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching tables:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to fetch tables',
-        severity: 'error'
-      });
+      const tablesWithChairs = await Promise.all(
+        (data || []).map(async (table) => {
+          const { data: chairData, error: chairError } = await supabase
+            .from('table_chairs')
+            .select('*')
+            .eq('table_id', table.id)
+            .eq('created_by', userId);
+          
+          if (chairError) {
+            console.error(`Error fetching chairs for table ${table.id}:`, chairError);
+            return { ...table, chairs: [] };
+          }
+          return { ...table, chairs: chairData || [] };
+        })
+      );
+
+      setTables(tablesWithChairs);
+      // After fetching tables, you might want to fetch all chairs for these tables if not done above
+      // Or ensure chair data is complete within each table object
+      // fetchChairs(tablesWithChairs.map(t => t.id)); // Example if fetchChairs accepts table IDs
+
+    } catch (error: any) {
+      console.error('Error in fetchTables:', error);
+      setSnackbar({ open: true, message: `Error fetching tables: ${error.message}`, severity: 'error' });
     }
   };
 
@@ -1965,49 +1941,30 @@ export default function SeatingChart() {
         
         <Box sx={{ display: 'flex', height: 'calc(100% - 60px)', gap: 3 }}>
           {/* Chart area with improved styling */}
-          <Paper 
+          <Box
             ref={chartAreaRef}
-            sx={{ 
-              flex: 3, 
-              p: 3, 
-              position: 'relative', 
+            id="chart-area-box" // Added an ID for clarity and easier selection if needed
+            sx={{
+              position: 'relative',
+              width: selectedRoom ? `${selectedRoom.width * 10}px` : '1000px',
+              height: selectedRoom ? `${selectedRoom.length * 10}px` : '800px',
+              border: `1px solid ${theme.palette.primary.main}`,
               overflow: 'auto',
-              borderRadius: 0,
-              border: '1px solid rgba(5, 70, 151, 0.1)',
-              boxShadow: '0 4px 20px rgba(5, 70, 151, 0.05)',
-              backgroundColor: '#FBFBF7',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '4px',
-                height: '100%',
-                backgroundColor: '#054697',
-              }
+              backgroundColor: currentFloorPlanUrl ? 'transparent' : theme.palette.background.paper,
+              backgroundImage: currentFloorPlanUrl ? `url(${currentFloorPlanUrl})` : 'none',
+              backgroundSize: 'contain',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              borderRadius: '4px', 
             }}
+            onDrop={handleDropOnChart}
+            onDragOver={(e) => e.preventDefault()} // Necessary for onDrop to work
           >
-            
-            {/* Tables container with higher z-index */}
-            <Box
-              sx={{
-                position: 'relative',
-                width: '100%',
-                height: '100%',
-                zIndex: 2,
-                transform: 'none',
-                transformOrigin: 'center',
-                transition: 'transform 0.3s ease',
-              }}
-              onClick={() => {
-                setSelectedTable(null);
-              }}
-            >
-              {tables.map((table) => (
-                renderTable(table)
-              ))}
-            </Box>
-          </Paper>
+            {tables.map((table) => (
+              renderTable(table)
+            ))}
+          </Box>
           
           {/* Venue selector sidebar */}
           <Paper 
@@ -2085,9 +2042,6 @@ export default function SeatingChart() {
               onClick={() => setDeleteDialogOpen(false)}
               sx={{
                 color: '#054697',
-                textTransform: 'uppercase',
-                fontFamily: 'Poppins, sans-serif',
-                fontWeight: 400,
                 '&:hover': {
                   backgroundColor: 'rgba(5, 70, 151, 0.05)',
                 },
@@ -2100,10 +2054,6 @@ export default function SeatingChart() {
               sx={{
                 backgroundColor: '#E8B4B4',
                 color: '#054697',
-                textTransform: 'uppercase',
-                fontFamily: 'Poppins, sans-serif',
-                fontWeight: 400,
-                borderRadius: 0,
                 '&:hover': {
                   backgroundColor: 'rgba(232, 180, 180, 0.8)',
                 },
