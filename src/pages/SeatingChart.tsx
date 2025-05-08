@@ -383,17 +383,37 @@ export default function SeatingChart() {
       const fileName = `${venueId}-${Date.now()}.${fileExt}`;
       const filePath = `floor_plans/${fileName}`;
       
-      // Upload the file to Supabase Storage
+      console.log(`Uploading original file: ${file.name} with original type: ${file.type}`);
+      
+      // Determine the correct content type based on extension as a fallback
+      let calculatedContentType = 'image/jpeg';
+      if (fileExt === 'png') calculatedContentType = 'image/png';
+      if (fileExt === 'gif') calculatedContentType = 'image/gif';
+      
+      const finalContentType = file.type || calculatedContentType;
+
+      console.log(`[SeatingChart.tsx] About to upload.`);
+      console.log(`[SeatingChart.tsx] File Name: ${file.name}`);
+      console.log(`[SeatingChart.tsx] File Original Type (file.type): ${file.type}`);
+      console.log(`[SeatingChart.tsx] Calculated Fallback Content Type: ${calculatedContentType}`);
+      console.log(`[SeatingChart.tsx] Final ContentType for Supabase: ${finalContentType}`);
+      console.log(`[SeatingChart.tsx] File Object being passed:`, file); // Log the whole file object
+      
+      // Upload the original File object. 
+      // Supabase's upload function should respect the 'type' property of the File object.
       const supabase = getSupabase();
       const { error: uploadError } = await supabase
         .storage
         .from('venue-floor-plans')
-        .upload(filePath, file, { contentType: file.type });
+        .upload(filePath, file, { 
+          contentType: finalContentType, 
+          upsert: true 
+        });
         
       if (uploadError) {
-      console.error("Upload error details:", uploadError);
-      throw uploadError;
-    }
+        console.error('Upload error details:', JSON.stringify(uploadError, null, 2));
+        throw uploadError;
+      }
       
       // Get the public URL for the uploaded file
       const { data: { publicUrl } } = supabase
@@ -401,41 +421,27 @@ export default function SeatingChart() {
         .from('venue-floor-plans')
         .getPublicUrl(filePath);
       
-      // Create a new floor plan record in the database
-      const { data: floorPlanData, error: floorPlanError } = await supabase
-        .from('floor_plans')
-        .insert({
-          name: file.name,
-          image_url: publicUrl,
-          created_by: userId
-        })
-        .select();
-        
-      if (floorPlanError) throw floorPlanError;
-      
       // Update the venue with the floor plan ID
-      if (floorPlanData && floorPlanData.length > 0) {
-        const { error: venueUpdateError } = await supabase
-          .from('venues')
-          .update({ floor_plan_id: floorPlanData[0].id })
-          .eq('id', venueId);
-          
-        if (venueUpdateError) throw venueUpdateError;
+      const { error: venueUpdateError } = await supabase
+        .from('venues')
+        .update({ floor_plan_id: publicUrl })
+        .eq('id', venueId);
         
-        // Update the selected venue in state
-        if (selectedVenue && selectedVenue.id === venueId) {
-          setSelectedVenue({
-            ...selectedVenue,
-            floor_plan_id: floorPlanData[0].id
-          });
-        }
-        
-        setSnackbar({
-          open: true,
-          message: 'Floor plan uploaded successfully',
-          severity: 'success'
+      if (venueUpdateError) throw venueUpdateError;
+      
+      // Update the selected venue in state
+      if (selectedVenue && selectedVenue.id === venueId) {
+        setSelectedVenue({
+          ...selectedVenue,
+          floor_plan_id: publicUrl
         });
       }
+      
+      setSnackbar({
+        open: true,
+        message: 'Floor plan uploaded successfully',
+        severity: 'success'
+      });
     } catch (error) {
       console.error('Error uploading floor plan:', error);
       setSnackbar({
@@ -499,19 +505,30 @@ export default function SeatingChart() {
       console.log(`[SeatingChart.tsx] Final ContentType for Supabase: ${finalContentType}`);
       console.log(`[SeatingChart.tsx] File Object being passed:`, file); // Log the whole file object
       
-      // Upload the original File object. 
-      // Supabase's upload function should respect the 'type' property of the File object.
+      // Create FormData and append the file
+      const formData = new FormData();
+      // The key ('file' here) can be arbitrary but is often 'file'. 
+      // Passing the filename as the third argument to append is good practice.
+      formData.append('file', file, file.name); 
+
+      console.log(`[SeatingChart.tsx] Attempting upload with FormData.`);
+      console.log(`[SeatingChart.tsx] FormData object content (keys):`, Array.from(formData.keys()));
+      // Note: Logging formData directly might not show its deep content in all browsers/consoles.
+
+      // Upload the FormData object.
+      // When using FormData, the Content-Type header is typically set to 'multipart/form-data' by the browser,
+      // and the Supabase client should handle this. We omit the 'contentType' option here.
       const supabase = getSupabase();
       const { error: uploadError } = await supabase
         .storage
         .from('venue-floor-plans')
-        .upload(filePath, file, { 
-          contentType: finalContentType, 
+        .upload(filePath, formData, { // Pass formData as the body
+          // contentType: finalContentType, // Omitting this when using FormData
           upsert: true 
         });
         
       if (uploadError) {
-        console.error('Upload error details:', JSON.stringify(uploadError, null, 2));
+        console.error("Upload error details:", uploadError);
         throw uploadError;
       }
       
