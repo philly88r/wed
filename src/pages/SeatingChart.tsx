@@ -485,6 +485,20 @@ export default function SeatingChart() {
       
       console.log(`Uploading original file: ${file.name} with original type: ${file.type}`);
       
+      // Determine the correct content type based on extension as a fallback
+      let calculatedContentType = 'image/jpeg';
+      if (fileExt === 'png') calculatedContentType = 'image/png';
+      if (fileExt === 'gif') calculatedContentType = 'image/gif';
+      
+      const finalContentType = file.type || calculatedContentType;
+
+      console.log(`[SeatingChart.tsx] About to upload.`);
+      console.log(`[SeatingChart.tsx] File Name: ${file.name}`);
+      console.log(`[SeatingChart.tsx] File Original Type (file.type): ${file.type}`);
+      console.log(`[SeatingChart.tsx] Calculated Fallback Content Type: ${calculatedContentType}`);
+      console.log(`[SeatingChart.tsx] Final ContentType for Supabase: ${finalContentType}`);
+      console.log(`[SeatingChart.tsx] File Object being passed:`, file); // Log the whole file object
+      
       // Upload the original File object. 
       // Supabase's upload function should respect the 'type' property of the File object.
       const supabase = getSupabase();
@@ -492,7 +506,7 @@ export default function SeatingChart() {
         .storage
         .from('venue-floor-plans')
         .upload(filePath, file, { 
-          contentType: file.type, 
+          contentType: finalContentType, 
           upsert: true 
         });
         
