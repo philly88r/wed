@@ -483,30 +483,17 @@ export default function SeatingChart() {
       const fileName = `room-${roomId}-${Date.now()}.${fileExt}`;
       const filePath = `floor_plans/${fileName}`;
       
-      // Determine the correct content type based on extension
-      let contentType = 'image/jpeg';
-      if (fileExt === 'png') contentType = 'image/png';
-      if (fileExt === 'gif') contentType = 'image/gif';
+      console.log(`Uploading original file: ${file.name} with original type: ${file.type}`);
       
-      console.log(`Uploading file: ${fileName} with content type: ${contentType}`);
-      
-      // Read the file as an ArrayBuffer
-      const arrayBuffer = await file.arrayBuffer();
-      
-      // Convert ArrayBuffer to Uint8Array
-      const uint8Array = new Uint8Array(arrayBuffer);
-      
-      // Create a new Blob with the correct content type
-      const blob = new Blob([uint8Array], { type: contentType });
-      
-      // Upload the Blob with explicit content type
+      // Upload the original File object. 
+      // Supabase's upload function should respect the 'type' property of the File object.
       const supabase = getSupabase();
       const { error: uploadError } = await supabase
         .storage
         .from('venue-floor-plans')
-        .upload(filePath, blob, {
-          contentType: contentType,
-          upsert: true
+        .upload(filePath, file, { 
+          contentType: file.type, 
+          upsert: true 
         });
         
       if (uploadError) {
