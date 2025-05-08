@@ -906,7 +906,7 @@ const VenueSelector: React.FC<VenueSelectorProps> = ({
                 justifyContent: 'space-between'
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <ImageIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+                  <ImageIcon sx={{ fontSize: '1rem', mr: 0.5, color: theme.palette.primary.main }} />
                   <Typography variant="body2" sx={{ color: theme.palette.primary.main }}>
                     Floor plan is currently set
                   </Typography>
@@ -933,7 +933,7 @@ const VenueSelector: React.FC<VenueSelectorProps> = ({
             onClick={() => setShowRoomFloorPlanDialog(false)}
             sx={{ color: theme.palette.primary.main }}
           >
-            Cancel
+            Cancel Test
           </Button>
           <Button 
             onClick={handleRoomFloorPlanUpload}
